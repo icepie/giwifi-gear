@@ -11,3 +11,5 @@ A cli tool for login giwifi, and it just a client tool:)
 - etc
 
 # todo
+## dev sequence
+py3 -> py2 -> bash -> go -> other
