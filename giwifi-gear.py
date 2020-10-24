@@ -32,18 +32,26 @@ def get_gateway(req):
     except:
         logcat("get the gateway info error", "E")
 
+def deal_redirect(parameter_list):
+    '''the '''
+    authUrl = requests.get('%s://%s:%s/redirect' % (gtw['protocol'], gtw['host'], gtw['port'], ), timeout=5).url
+    authParmas = {k: v[0] for k, v in parse_qs(urlparse(authUrl).query).items()}
+    loginPage = requests.get('http://login.gwifi.com.cn/cmps/admin.php/api/login/?' + urlparse(authUrl).query, headers=HEADERS, timeout=5).text
+    pagetime = re.search(r'name="page_time" value="(.*?)"', loginPage).group(1)
+    sign = re.search(r'name="sign" value="(.*?)"', loginPage).group(1)
+
+
 def log_out(gtw):
     """log out the giwifi"""
     try:
-        req = requests.get('http://%s/getApp.htm?action=logout' % gtw['host'] )
+        req = requests.get('%s://%s/getApp.htm?action=logout' % (gtw['protocol'], gtw['host'] ))
         logcat("The device has already logout")
     except:
         logcat("The device logout error, please check the connection.", "E")
 
 
-
 if __name__ == '__main__':
     logcat("Trying to get giwifi gateway...")
     gtw = get_gateway(init_gateway())
-    logcat("-> " + gtw['url'])
+    logcat("-> " + gtw['path'])
 
