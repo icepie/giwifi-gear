@@ -4,6 +4,7 @@
 import requests
 import re
 import json
+import time
 from urllib.parse import urlparse, parse_qs
 
 class giwifi(object):
@@ -13,18 +14,39 @@ class giwifi(object):
         self.password = password
 
     def get_gateway(self):
+        """get the gateway when connected but not authenticated"""
+        logcat("Get giwifi gateway...")
         req = requests.get('http://gwifi.com.cn/', timeout=5).text
         try:
             delayurl = re.search(r'delayURL\("(.*)"\);',req).group(1)
-            print(delayurl)
-        except:
-            print("logined")
+            #delayurl = "http://172.21.1.1:8062/redirect?oriUrl=http://www.baidu.com"
 
-    def login_out(self):
-        req = requests.get('http://172.21.1.1/getApp.htm?action=logout')
-        print(req.text)
+            gateway = re.search(r'(\w+):\/\/([^/:]+):(\d*)?([^# ]*)', delayurl)
+
+            #gateway_protocol = gateway.group(1)
+            gateway_host = gateway.group(2)
+            gateway_port = gateway.group(3)
+            #gateway_path = gateway.group(4)
+
+            gateway_dict = {'host': gateway_host, "port": gateway_port}
+
+            return gateway_dict
+            
+        except:
+            logcat("Logout error","E")
+
+    def log_out(self):
+        logcat("Loging out...")
+        try:
+            req = requests.get('http://172.21.1.1/getApp.htm?action=logout')
+            logcat("The device has already logout")
+        except:
+            logcat("The device logout error, please check the connection.","E")
+
+def logcat(msg, level='I'):
+    print('%s %s: %s' % (time.ctime().split(' ')[-2], level, msg))
 
 if __name__ == '__main__':
     G = giwifi()
     G.get_gateway()
-    #G.login_out(requests.Session())
+    #G.log_out(requests.Session())
