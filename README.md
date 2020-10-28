@@ -6,7 +6,7 @@ Python3 and Any OS
 
 # Dep
 requests
-> python3 -m pip install 
+> python3 -m pip install -r requirements.txt
 
 # Usage
 ``` bash
