@@ -10,13 +10,13 @@ from urllib.parse import urlparse, parse_qs
 
 SCRIPT_VERSION = "1.0.2.9"
 
-_HEADERS = {
+HEADERS = {
     'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
     'accept-encoding': 'gzip, deflate, br',
     'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
     'cache-control': 'max-age=0'}
 
-HEADERS = {
+_HEADERS = {
     'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
     'accept-encoding': 'gzip, deflate, br',
     'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
@@ -29,6 +29,7 @@ PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpForm
 PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
 PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
+PARSER.add_argument('-r', '--rebind', action='store_true', help='登出')
 PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行')
 PARSER.add_argument('-v', '--verbose', action='store_true', help='额外输出一些技术性信息')
@@ -69,26 +70,25 @@ def get_gateway(req):
         logcat("自动获取网关错误", "E")
 
 
-if not CONFIG.quit:
-    if not CONFIG.gateway:
-        try:
-            CONFIG.gateway = get_gateway(init_gateway())['host']
-        except:
-            CONFIG.gateway = input('请输入网关地址(%s):' % (CONFIG.gateway))
+if not CONFIG.gateway:
+    try:
+        CONFIG.gateway = get_gateway(init_gateway())['host']
+    except:
+        CONFIG.gateway = input('请输入网关地址(%s):' %
+                                (CONFIG.gateway)) or CONFIG.gateway
 
+
+if not CONFIG.quit:
     if not CONFIG.username:
         CONFIG.username = input('请输入上网账号:')
 
     if not CONFIG.password:
         CONFIG.password = getpass('请输入账号密码:')
-else:
-    if not CONFIG.gateway:
-        try:
-            CONFIG.gateway = get_gateway(init_gateway())['host']
-        except:
-            CONFIG.gateway = input('请输入网关地址(%s):' %
-                                   (CONFIG.gateway)) or CONFIG.gateway
 
+if CONFIG.rebind:
+    if CONFIG.daemon:
+        logcat('请不要将绑定功能与守护模式一起运行!', "E")
+        exit()
 
 def main():
     logcat('正在获取网关信息…')
@@ -107,8 +107,9 @@ def main():
 
         loginPage = requests.get('http://login.gwifi.com.cn/cmps/admin.php/api/login/?' +
                                  urlparse(authUrl).query, headers=HEADERS, timeout=5).text
-        if CONFIG.verbose:
-            logcat(loginPage)
+        
+        #if CONFIG.verbose:
+        #    logcat(loginPage)
 
         pagetime = re.search(
             r'name="page_time" value="(.*?)"', loginPage).group(1)
@@ -168,24 +169,35 @@ def main():
             if CONFIG.verbose:
                 logcat(data)
 
-            result = login(data)
-            if result['status']:
-                authState = getAuthState(authParmas, sign)
-                printStatus(authParmas, authState)
-
-                if authState['auth_state'] == 2:
-                    logcat('认证成功')
+            if CONFIG.rebind:
+                print(1)
+                result = rebindmac(data)
+                if result['status']:
+                    logcat('绑定成功：%s' % (result['info']))
                 else:
-                    logcat('认证失败', "E")
+                    logcat('绑定失败：%s' % (result['info']), "E")
+
             else:
-                logcat('认证失败，提示信息：%s' % (result['info']))
+                result = login(data)
+                if result['status']:
+                    authState = getAuthState(authParmas, sign)
+                    printStatus(authParmas, authState)
+
+                    if authState['auth_state'] == 2:
+                        logcat('认证成功')
+                    else:
+                        logcat('认证失败', "E")
+                else:
+                    logcat('认证失败，提示信息：%s' % (result['info']))
+            
+
 
 
 def login(data):
     ran = random.randint(100, 999)
     logcat('正在尝试认证…')
 
-    resp = json.loads(requests.post('http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round' +
+    resp = json.loads(requests.post('http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=' +
                                     str(ran), data=data, headers=HEADERS, timeout=5).text)
     result = {
         'status': False,
@@ -196,6 +208,29 @@ def login(data):
         logcat(resp)
 
     if 'wifidog/auth' in resp['info']:
+        requests.get(resp['info'])
+        result['status'] = True
+    else:
+        result['info'] = resp['info']
+    return result
+
+
+def rebindmac(data):
+    ran = random.randint(100, 999)
+    logcat('正在尝试换绑/绑定…')
+    data.update({'is_signed': '2'})
+    resp = json.loads(requests.post('http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=' +
+                                    str(ran), data=data, headers=HEADERS, timeout=5).text)
+    result = {
+        'status': False,
+        'info': None
+    }
+
+    if CONFIG.verbose:
+        logcat(resp)
+        logcat(data)
+
+    if 'data' in resp['info']:
         requests.get(resp['info'])
         result['status'] = True
     else:
@@ -242,7 +277,7 @@ def getAuthState(authParmas, sign):
         logcat(resp)
 
     if resp['resultCode'] == 0:
-        return json.loads(resp['data'], "E")
+        return json.loads(resp['data'])
     else:
         return False
 
