@@ -15,14 +15,14 @@ SCRIPT_VERSION = "1.0.2.9"
 
 PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description='GiWiFi GEAR TOOL',
-                                 epilog='(c) 2020 icepie')
+                                 epilog='(c) 2020 icepie.dev@gmail.com')
 PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
 PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
 PARSER.add_argument('-t', '--type', type=str, help='设备类型(pc/pad/phone)')
 PARSER.add_argument('-r', '--rebind', action='store_true', help='登出')
 PARSER.add_argument('-q', '--quit', action='store_true', help='换绑/绑定')
-PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行')
+PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行(去除共享限制)')
 PARSER.add_argument('-v', '--verbose', action='store_true', help='额外输出一些技术性信息')
 PARSER.add_argument('-V', '--version', action='version',
                     version='giwifi-gear {}'.format(SCRIPT_VERSION))
@@ -89,7 +89,7 @@ else:
     CONFIG.type = 'pc'
     logcat('默认设备类型: %s' % CONFIG.type)
 
-HEADERS={}
+HEADERS = {}
 
 if CONFIG.type == 'pc':
 
@@ -164,7 +164,7 @@ def main():
         return
 
     else:
-        if authState['auth_state'] == 2:
+        if authState['auth_state'] == 2 and not CONFIG.daemon:
             printStatus(authParmas, authState)
             logcat('你已登录，无需再次登录')
         else:
@@ -209,8 +209,23 @@ def main():
                     authState = getAuthState(authParmas, sign)
                     printStatus(authParmas, authState)
 
+                    if CONFIG.verbose:
+                        logcat(result)
+
                     if authState['auth_state'] == 2:
                         logcat('认证成功')
+                        if CONFIG.daemon:
+                            try:
+                                iota = 0
+                                while True:
+                                    time.sleep(15)
+                                    requests.get(result['info'])
+                                    iota+=1
+                                    logcat('检测心跳 %s' % iota)
+                            except KeyboardInterrupt:
+                                exit()
+                            except:
+                                logcat('token已失效, 正在重新获取')
                     else:
                         logcat('认证失败', "E")
                 else:
@@ -242,7 +257,6 @@ def login(data):
     if 'wifidog/auth' in resp['info']:
         requests.get(resp['info'])
         result['status'] = True
-    else:
         result['info'] = resp['info']
     return result
 
@@ -346,8 +360,19 @@ def clear():
 
 if __name__ == '__main__':
     if CONFIG.daemon:
-        while True:
-            main()
-            time.sleep(30)
+        try:
+            while True:
+                main()
+                time.sleep(5)
+                logcat("正在检测网关是否刷新...")
+                try:
+                    temp = get_gateway(init_gateway())['host']
+                    if temp:
+                        CONFIG.gateway = temp
+                    logcat("网关已刷新, 准备重新认证")
+                except:
+                    logcat("网关未刷新, 准备重新认证")
+        except KeyboardInterrupt:
+            exit()
     else:
         main()

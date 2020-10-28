@@ -24,11 +24,13 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         密码
   -t TYPE, --type TYPE  设备类型(pc/pad/phone)
-  -r, --rebind          换绑/绑定
-  -q, --quit            登出
-  -d, --daemon          在后台守护运行
+  -r, --rebind          登出
+  -q, --quit            换绑/绑定
+  -d, --daemon          在后台守护运行(去除共享限制)
   -v, --verbose         额外输出一些技术性信息
   -V, --version         show program's version number and exit
+
+(c) 2020 icepie
 
 (c) 2020 icepie.dev@gmail.com
 ``` 
