@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
+
 import os
 import re
 import time
@@ -10,25 +13,13 @@ from urllib.parse import urlparse, parse_qs
 
 SCRIPT_VERSION = "1.0.2.9"
 
-HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
-    'accept-encoding': 'gzip, deflate, br',
-    'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
-    'cache-control': 'max-age=0'}
-
-_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
-    'accept-encoding': 'gzip, deflate, br',
-    'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
-    'cache-control': 'max-age=0'
-}
-
 PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 description='GiWiFi认证登录脚本',
+                                 description='GiWiFi GEAR TOOL',
                                  epilog='(c) 2020 icepie')
 PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
 PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
+PARSER.add_argument('-t', '--type', type=str, help='设备类型(pc/pad/phone)')
 PARSER.add_argument('-r', '--rebind', action='store_true', help='登出')
 PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行')
@@ -75,8 +66,7 @@ if not CONFIG.gateway:
         CONFIG.gateway = get_gateway(init_gateway())['host']
     except:
         CONFIG.gateway = input('请输入网关地址(%s):' %
-                                (CONFIG.gateway)) or CONFIG.gateway
-
+                               (CONFIG.gateway)) or CONFIG.gateway
 
 if not CONFIG.quit:
     if not CONFIG.username:
@@ -90,10 +80,47 @@ if CONFIG.rebind:
         logcat('请不要将绑定功能与守护模式一起运行!', "E")
         exit()
 
+if CONFIG.type:
+    if CONFIG.type not in {'pc', 'pad', 'phone'}:
+        logcat('请使用正确的设备类型参数(pad/pc/phone)!', "E")
+        exit()
+
+else:
+    CONFIG.type = 'pc'
+    logcat('默认设备类型: %s' % CONFIG.type)
+
+HEADERS={}
+
+if CONFIG.type == 'pc':
+
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
+        'cache-control': 'max-age=0'
+    }
+
+elif CONFIG.type == 'pad':
+    HEADERS = {
+        'User-Agent': 'Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25',
+        'accept-encoding': 'gzip, deflate, br',
+        'accept-language': 'zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2',
+        'cache-control': 'max-age=0'
+    }
+
+elif CONFIG.type == 'phone':
+    logcat('手机端验证尚未支持', "E")
+    logcat('自定义设备类型: %s' % CONFIG.type)
+
+
 def main():
     logcat('正在获取网关信息…')
 
     try:
+        if CONFIG.verbose:
+            Hotspot_Group = get_hotspot_group(CONFIG.gateway)
+            logcat(Hotspot_Group)
+
         authUrl = requests.get('http://%s:8062/redirect' %
                                (CONFIG.gateway), headers=HEADERS, timeout=5).url
         if CONFIG.verbose:
@@ -107,8 +134,8 @@ def main():
 
         loginPage = requests.get('http://login.gwifi.com.cn/cmps/admin.php/api/login/?' +
                                  urlparse(authUrl).query, headers=HEADERS, timeout=5).text
-        
-        #if CONFIG.verbose:
+
+        # if CONFIG.verbose:
         #    logcat(loginPage)
 
         pagetime = re.search(
@@ -170,8 +197,7 @@ def main():
                 logcat(data)
 
             if CONFIG.rebind:
-                print(1)
-                result = rebindmac(data)
+                result = reBindMac(data)
                 if result['status']:
                     logcat('绑定成功：%s' % (result['info']))
                 else:
@@ -189,8 +215,14 @@ def main():
                         logcat('认证失败', "E")
                 else:
                     logcat('认证失败，提示信息：%s' % (result['info']))
-            
 
+
+def get_hotspot_group(gtw):
+
+    req = requests.get('http://%s:8060/wifidog/get_hotspot_group' %
+                       (CONFIG.gateway), headers=HEADERS, timeout=5).text
+
+    return req
 
 
 def login(data):
@@ -215,7 +247,7 @@ def login(data):
     return result
 
 
-def rebindmac(data):
+def reBindMac(data):
     ran = random.randint(100, 999)
     logcat('正在尝试换绑/绑定…')
     data.update({'is_signed': '2'})
