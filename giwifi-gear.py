@@ -21,7 +21,7 @@ PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
 PARSER.add_argument('-t', '--type', type=str, help='设备类型(pc/pad/phone)')
 PARSER.add_argument('-r', '--rebind', action='store_true', help='登出')
-PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
+PARSER.add_argument('-q', '--quit', action='store_true', help='换绑/绑定')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行')
 PARSER.add_argument('-v', '--verbose', action='store_true', help='额外输出一些技术性信息')
 PARSER.add_argument('-V', '--version', action='version',
@@ -171,7 +171,7 @@ def main():
             data = {
                 'access_type': authState['access_type'],
                 'acsign': authState['sign'],
-                'btype': 'pc',
+                'btype': CONFIG.type,
                 'client_mac': authState['client_mac'],
                 'contact_phone': '400-038-5858',
                 'devicemode': '',
