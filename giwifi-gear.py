@@ -185,7 +185,7 @@ def login(data):
     ran = random.randint(100, 999)
     logcat('正在尝试认证…')
 
-    resp = json.loads(requests.post('http://login.gwifi.com.cn/cmps/admin.php/api/loginaction' +
+    resp = json.loads(requests.post('http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round' +
                                     str(ran), data=data, headers=HEADERS, timeout=5).text)
     result = {
         'status': False,
