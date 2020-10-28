@@ -30,7 +30,5 @@ optional arguments:
   -v, --verbose         额外输出一些技术性信息
   -V, --version         show program's version number and exit
 
-(c) 2020 icepie
-
 (c) 2020 icepie.dev@gmail.com
 ``` 
