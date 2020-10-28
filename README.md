@@ -1,14 +1,14 @@
-# giwifi-gear（py branch)
+# Giwifi-Gear（py branch)
 A cli tool for login giwifi 
 
-# ENV
+## ENV
 Python3 and Any OS
 
-# Dep
+## Dep
 requests
 > python3 -m pip install -r requirements.txt
 
-# Usage
+## Usage
 ``` bash
 
 usage: giwifi-gear.py [-h] [-g GATEWAY] [-u USERNAME] [-p PASSWORD] [-t TYPE] [-r] [-q] [-d] [-v] [-V]
@@ -24,7 +24,7 @@ optional arguments:
   -p PASSWORD, --password PASSWORD
                         密码
   -t TYPE, --type TYPE  设备类型(pc/pad/phone)
-  -r, --rebind          登出
+  -r, --rebind          换绑/绑定
   -q, --quit            登出
   -d, --daemon          在后台守护运行
   -v, --verbose         额外输出一些技术性信息
