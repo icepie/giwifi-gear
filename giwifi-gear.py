@@ -255,7 +255,7 @@ def login(data):
         logcat(resp)
 
     if 'wifidog/auth' in resp['info']:
-        requests.get(resp['info'])
+        requests.get(resp['info'], headers=HEADERS)
         result['status'] = True
 
     result['info'] = resp['info']
