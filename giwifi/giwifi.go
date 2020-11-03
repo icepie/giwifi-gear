@@ -1,21 +1,57 @@
 package giwifi
 
 import (
-	"net/http"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"regexp"
 )
 
 func GetGateway() {
-	resp, err :=   http.Get("http://gwifi.com.cn")
+
+	resp, err := http.Get("http://gwifi.com.cn")
 	if err != nil {
-        // handle error
+		fmt.Println("连接失败, 请检查是否连接上GiWiFi")
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-        // handle error
+		fmt.Println("连接超时，可能已超出上网区间")
 	}
 
-	fmt.Println(string(body))
+	/*
+	   	body_test = `
+	   <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+	   <html>
+	   <head>
+	   <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	   <title>Loading ...</title>
+	   <script type="text/javascript">
+	           delayURL("http://172.21.1.2:8062/redirect?oriUrl=http://www.baidu.com");
+	           function delayURL(url) {
+	                           window.top.location.href = url;
+	           }
+	   </script>
+	   </head>
+	   <body>
+	           <div></div>
+	   </body>
+	   </html
+	   	`
+	*/
+
+	reg := regexp.MustCompile(`delayURL\("(.*)"\);`)
+	if reg == nil {
+		fmt.Println("连接失败, 请检查是否连接上GiWiFi")
+		return
+	}
+	//提取关键信息
+	result := reg.FindAllStringSubmatch(string(body), -1)
+	if result == nil {
+		fmt.Println("自动获取网关错误")
+		return
+	}
+
+	fmt.Println("delayURL: ", result[0][1])
+	//http://172.21.1.2:8062/redirect?oriUrl=http://www.baidu.com
 }
