@@ -7,7 +7,34 @@ import (
 	"regexp"
 )
 
-func GetGateway() {
+type Urld struct {
+	protocol string
+	host     string
+	port     string
+	path     string
+}
+
+func url_handel(url string) Urld {
+	reg := regexp.MustCompile(`(\w+):\/\/([^/:]+):(\d*)?([^# ]*)`)
+	result := reg.FindAllStringSubmatch(url, -1)
+
+	if result == nil {
+
+		fmt.Println("自动获取网关错误")
+
+	}
+
+	var urldeal Urld
+
+	urldeal.protocol = result[0][1]
+	urldeal.host = result[0][2]
+	urldeal.port = result[0][3]
+	urldeal.path = result[0][4]
+
+	return urldeal
+}
+
+func GetGateway() *Urld {
 
 	resp, err := http.Get("http://gwifi.com.cn")
 	if err != nil {
@@ -43,15 +70,18 @@ func GetGateway() {
 	reg := regexp.MustCompile(`delayURL\("(.*)"\);`)
 	if reg == nil {
 		fmt.Println("连接失败, 请检查是否连接上GiWiFi")
-		return
 	}
 	//提取关键信息
 	result := reg.FindAllStringSubmatch(string(body), -1)
 	if result == nil {
+
 		fmt.Println("自动获取网关错误")
-		return
+
 	}
 
-	fmt.Println("delayURL: ", result[0][1])
+	gtw := url_handel(result[0][1])
+	//fmt.Println("delayURL: ", result[0][1])
+
 	//http://172.21.1.2:8062/redirect?oriUrl=http://www.baidu.com
+	return &gtw
 }
