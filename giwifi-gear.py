@@ -278,11 +278,11 @@ def reBindMac(data):
         logcat(resp)
         logcat(data)
 
-    if 'data' in resp['info']:
-        requests.get(resp['info'])
+    if resp['status'] != 0:
         result['status'] = True
-    else:
-        result['info'] = resp['info']
+
+    result['info'] = resp['info']
+    
     return result
 
 
