@@ -2,7 +2,7 @@
 A cli tool for login giwifi 
 
 ## ENV
-Python3 and Any OS
+Any OS with Python3
 
 ## Dep
 requests
