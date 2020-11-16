@@ -3,7 +3,15 @@ package main
 import (
 	"github.com/icepie/giwifi-gear/giwifi"
 	"fmt"
+	"runtime"
 )
+
+func get_system_info(){
+	SysType := runtime.GOOS
+	SysArch := runtime.GOARCH
+	fmt.Println("OS: " + SysType)
+	fmt.Println("ARCH: " + SysArch)
+}
 
 func gtw_input() giwifi.Urld{
 	gtw := giwifi.Urld{}
@@ -14,6 +22,7 @@ func gtw_input() giwifi.Urld{
 }
 
 func main() {
+	get_system_info()
 	gtw, err:= giwifi.GetGateway() //try to get the gateway ip
 	if err != nil{
 		fmt.Printf("%v\n",err)
