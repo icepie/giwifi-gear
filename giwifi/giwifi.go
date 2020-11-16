@@ -1,49 +1,48 @@
 package giwifi
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"errors"
 )
 
 type Urld struct {
-	protocol string
-	host     string
-	port     string
-	path     string
+	Protocol string
+	Host     string
+	Port     string
+	Path     string
 }
 
-func url_handel(url string) Urld {
+func url_handel(url string) (Urld, error) {
 	reg := regexp.MustCompile(`(\w+):\/\/([^/:]+):(\d*)?([^# ]*)`)
 	result := reg.FindAllStringSubmatch(url, -1)
 
 	if result == nil {
-
-		fmt.Println("自动获取网关错误")
-
+		return Urld{}, errors.New("解析错误")
+	
 	}
 
 	var urldeal Urld
 
-	urldeal.protocol = result[0][1]
-	urldeal.host = result[0][2]
-	urldeal.port = result[0][3]
-	urldeal.path = result[0][4]
+	urldeal.Protocol = result[0][1]
+	urldeal.Host = result[0][2]
+	urldeal.Port = result[0][3]
+	urldeal.Path = result[0][4]
 
-	return urldeal
+	return urldeal, nil
 }
 
-func GetGateway() *Urld {
+func GetGateway() (Urld, error) {
 
 	resp, err := http.Get("http://gwifi.com.cn")
 	if err != nil {
-		fmt.Println("连接失败, 请检查是否连接上GiWiFi")
+		return Urld{}, errors.New("连接失败, 请检查是否连接上GiWiFi")
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("连接超时，可能已超出上网区间")
+		return Urld{}, errors.New("连接超时，可能已超出上网区间")
 	}
 
 	/*
@@ -69,19 +68,21 @@ func GetGateway() *Urld {
 
 	reg := regexp.MustCompile(`delayURL\("(.*)"\);`)
 	if reg == nil {
-		fmt.Println("连接失败, 请检查是否连接上GiWiFi")
+		return Urld{} ,errors.New("连接失败, 请检查是否连接上GiWiFi")
 	}
 	//提取关键信息
 	result := reg.FindAllStringSubmatch(string(body), -1)
+
 	if result == nil {
-
-		fmt.Println("自动获取网关错误")
-
+		return Urld{}, errors.New("自动获取网关错误")
 	}
 
-	gtw := url_handel(result[0][1])
+	gtw, err := url_handel(result[0][1])
+	if err != nil {
+		return Urld{}, err
+	}
 	//fmt.Println("delayURL: ", result[0][1])
 
 	//http://172.21.1.2:8062/redirect?oriUrl=http://www.baidu.com
-	return &gtw
+	return gtw, nil
 }
