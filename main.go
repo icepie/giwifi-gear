@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/icepie/giwifi-gear/giwifi"
+	"github.com/icepie/giwifi-gear/internal/giwifi"
 	"fmt"
 	"runtime"
 )
