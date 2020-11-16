@@ -1,7 +1,7 @@
 package main
 
 import (
-	"giwifi-gear/giwifi"
+	"github.com/icepie/giwifi-gear/giwifi"
 	"fmt"
 )
 
