@@ -36,7 +36,7 @@ def logcat(msg, level='I'):
 
 def init_gateway():
     try:
-        req = requests.get('http://gwifi.com.cn/', timeout=5).text
+        req = requests.get('http://test.gwifi.com.cn/', timeout=5).text
         return req
     except requests.exceptions.ConnectionError:
         logcat('连接失败, 请检查是否连接上GiWiFi', "E")
