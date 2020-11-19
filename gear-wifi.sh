@@ -77,8 +77,8 @@ function CHECK_DEP()
 
 function GET_NET_INFO()
 {
-	NET_CARD=$(ip n | grep "REACHABLE" | grep -v "br-lan" | awk '{print $3}')
-	NET_GTW=$(ip n | grep "REACHABLE" | grep -v "br-lan" | awk '{print $1}')
+	NET_CARD=$(ip n | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $3}')
+	NET_GTW=$(ip n | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $1}')
 }
 
 function OUTPUT_SYS_INFO()
