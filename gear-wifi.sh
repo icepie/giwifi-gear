@@ -2,6 +2,30 @@
 # giwifi-gear bash cli tool
 # by icepie
 
+DEVICE_OS=$(uname -o)
+
+
+#############################################
+## General Functions
+#############################################
+
+function logcat()
+{
+
+	local time=$(date "+%Y-%m-%d %H:%M:%S")
+
+	# check the log flag
+	if [ ! -n $2 ];then
+		local flag=$2
+	else
+		local flag='I'
+	fi
+
+	if [ "$1" ];then
+		echo "$flag" "$time": "$1"
+	fi
+
+}
 
 function get_json_value()
 {
@@ -19,17 +43,12 @@ function get_json_value()
   echo ${value}
 }
 
-#get_json_value '{"SetWifiAp": {"on": 1, "password": "88888888", "hotspot_name": "imx8_ap"}}' hotspot_name
+#get_json_value '0' resultCode
 
 
-
-function SYS_INFO()
-{
-	echo $(uname)
-	echo $(uname -a)
-}
-
-
+#############################################
+## Special Functions
+#############################################
 
 ## the func for checking dependency and set the run mode
 function CHECK_DEP()
@@ -38,26 +57,51 @@ function CHECK_DEP()
 	echo 'Checking dependency...'
 
 	if ! [ -x "$(command -v curl)" ]; then
-	  echo 'curl is not installed.' >&2
-		exit 1
+		echo '- curl is not installed.' >&2
 	else
-		echo 'curl has be installed!'
+		echo '- curl has be installed!'
 		RUNMODE='curl'
 		return 0
 	fi
 
 	if ! [ -x "$(command -v wget)" ]; then
-	  echo 'wget is not installed.' >&2
+	  echo '- wget is not installed.' >&2
 		exit 1
 	else
-		echo 'wget has be installed!'
+		echo '- wget has be installed!'
 		RUNMODE='wget'
 		return 0
 	fi
 }
 
 
-#main
-SYS_INFO
+function GET_NET_INFO()
+{
+	NET_CARD=$(ip n | grep "REACHABLE" | grep -v "br-lan" | awk '{print $3}')
+	NET_GTW=$(ip n | grep "REACHABLE" | grep -v "br-lan" | awk '{print $1}')
+}
+
+function OUTPUT_SYS_INFO()
+{
+	echo "OS: $DEVICE_OS"
+	echo "MODE:" $RUNMODE
+	echo "NETCARD:" $NET_CARD
+	echo "GATEWAY:" $NET_GTW
+}
+
+# MAIN FUNCTION
+(
 CHECK_DEP
-echo 'run mode: $RUNMODE'
+
+# must need curl or wget...
+if [ ! -n $RUNMODE ];then
+	echo 'dependency insatiability...' 'E'
+	exit
+fi
+
+GET_NET_INFO
+
+echo '--------------------------' 
+OUTPUT_SYS_INFO
+
+)2>&1	 | tee -a ./build.log
