@@ -1,7 +1,8 @@
-#!/usr/bin/bash
+#!/bin/bash
 # giwifi-gear bash cli tool
 # by icepie
 
+# if [ "uname" == 'Darwin' ]
 DEVICE_OS=$(uname -o)
 
 
@@ -45,6 +46,11 @@ function get_json_value()
 
 #get_json_value '0' resultCode
 
+function json_format(){
+	local json=$1
+	# Del escape character and format text
+	echo $(echo -e $1) | sed "s@\\\\@@g"
+}
 
 #############################################
 ## Special Functions
@@ -77,9 +83,16 @@ function CHECK_DEP()
 
 function GET_NET_INFO()
 {
-	NET_CARD=$(ip n | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $3}')
-	NET_GTW=$(ip n | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $1}')
+	#### linux
+	NET_CARD=$(ip n | grep -v "br-lan" | grep -v "route" | awk '{print $3}') 
+	#lladdr
+	NET_GTW=$(ip n  | grep -v "br-lan" | grep -v "route" | awk '{print $1}')
+
+	#### mac
+	#route get default | grep 'interface' | awk '{print $2}'
+	#route get default | grep 'gateway' | awk '{print $2}'
 }
+
 
 function OUTPUT_SYS_INFO()
 {
@@ -89,19 +102,52 @@ function OUTPUT_SYS_INFO()
 	echo "GATEWAY:" $NET_GTW
 }
 
+
+function GET_AUTH()
+{
+	AUTH_STATE=$(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
+	# os type from index.html
+	# if (isiOS) url += "&os=ios";
+	# if (isAndroid) url += "&os=android";
+	# if (isWinPC) url += "&os=windows";
+	# if (isMac) url += "&os=mac";
+	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
+
+	echo $AUTH_STATE
+}
+
 # MAIN FUNCTION
 (
-CHECK_DEP
 
-# must need curl or wget...
-if [ ! -n $RUNMODE ];then
-	echo 'dependency insatiability...' 'E'
-	exit
-fi
+	CHECK_DEP
 
-GET_NET_INFO
+	# must need curl or wget...
+	if [ ! -n $RUNMODE ];then
+		echo 'dependency insatiability...'
+		exit
+	fi
 
-echo '--------------------------' 
-OUTPUT_SYS_INFO
+	GET_NET_INFO
 
-)2>&1	 | tee -a ./build.log
+	# if not nic detected
+	if [ ! -n "$NET_CARD" ];then
+		echo 'no NIC detected...'
+		echo 'Please connect to GiWiFi!'
+		exit
+	fi
+
+	# if multiple NICs detected...
+	for line in $NET_GTW
+	do
+		echo $(GET_AUTH $line)
+	done
+
+
+	echo '--------------------------' 
+	OUTPUT_SYS_INFO
+
+	echo '--------------------------'
+
+	echo $(GET_AUTH $NET_GTW)
+
+)2>&2 | tee -a ./build.log
