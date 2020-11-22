@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # giwifi-gear bash cli tool
 # by icepie
 
