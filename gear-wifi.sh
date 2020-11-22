@@ -67,7 +67,7 @@ function CHECK_DEP()
 	else
 		echo '- curl has be installed!'
 		RUNMODE='curl'
-		return 0
+		return
 	fi
 
 	if ! [ -x "$(command -v wget)" ]; then
@@ -76,7 +76,7 @@ function CHECK_DEP()
 	else
 		echo '- wget has be installed!'
 		RUNMODE='wget'
-		return 0
+		return
 	fi
 }
 
@@ -98,7 +98,7 @@ function OUTPUT_SYS_INFO()
 {
 	echo "OS: $DEVICE_OS"
 	echo "MODE:" $RUNMODE
-	echo "NETCARD:" $NET_CARD
+	echo "NIC:" $NET_CARD
 	echo "GATEWAY:" $NET_GTW
 }
 
@@ -121,21 +121,21 @@ function GET_AUTH()
 function NIC_GTW_TEST()
 {
 	GTW_NUM=$#
-	if [ $GTW_NUM -gt 1 ];then
+	GW_ES=0
+	#if [ $GTW_NUM -gt 1 ];then
 		#echo $*
-		for i in $*
-		do
-			AUTH_TMP=$(GET_AUTH $i)
-			if [[ $AUTH_TMP == *resultCode* ]]
-			then
-				NET_GTW=$i
-				NET_CARD=$(ip n  | grep "$i" | awk '{print $3}')
-				break
-			fi
-		done
-	else
-		echo 'test2'
-	fi
+	for i in $*
+	do
+		AUTH_TMP=$(GET_AUTH $i)
+		if [[ $AUTH_TMP == *resultCode* ]]
+		then
+			NET_GTW=$i
+			NET_CARD=$(ip n  | grep "$i" | awk '{print $3}')
+			GW_ES=1
+			break
+		fi
+	done
+	#fi
 }
 
 # MAIN FUNCTION
@@ -153,13 +153,17 @@ function NIC_GTW_TEST()
 
 	# if not nic detected
 	if [ ! -n "$NET_CARD" ];then
-		echo 'no NIC(s) detected...'
+		echo 'Please connect to network!'
+		exit
+	fi
+
+	NIC_GTW_TEST $NET_GTW
+
+	if [ "$GW_ES" -eq 0 ];then
 		echo 'Please connect to GiWiFi!'
 		exit
 	fi
 
-	# if NIC(s) detected...
-	NIC_GTW_TEST $NET_GTW
 
 	echo '--------------------------' 
 	OUTPUT_SYS_INFO
@@ -168,4 +172,4 @@ function NIC_GTW_TEST()
 
 	echo $(GET_AUTH $NET_GTW)
 
-)2>&2 | tee -a ./build.log
+)2>&2 | tee -a ./connect.log
