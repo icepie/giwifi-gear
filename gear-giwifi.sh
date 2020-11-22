@@ -84,9 +84,9 @@ function CHECK_DEP()
 function GET_NET_INFO()
 {
 	#### linux
-	NET_CARD=$(ip n | grep -v "br-lan" | grep -v "route" | awk '{print $3}') 
+	NET_CARD=$(ip n | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $3}') 
 	#lladdr
-	NET_GTW=$(ip n  | grep -v "br-lan" | grep -v "route" | awk '{print $1}')
+	NET_GTW=$(ip n  | grep "REACHABLE" | grep -v "br-lan" | grep -v "route" | awk '{print $1}')
 
 	#### mac
 	#route get default | grep 'interface' | awk '{print $2}'
