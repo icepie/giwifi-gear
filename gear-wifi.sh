@@ -105,6 +105,7 @@ function OUTPUT_SYS_INFO()
 
 function GET_AUTH()
 {
+
 	AUTH_STATE=$(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
 	# os type from index.html
 	# if (isiOS) url += "&os=ios";
@@ -114,6 +115,27 @@ function GET_AUTH()
 	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
 
 	echo $AUTH_STATE
+}
+
+
+function NIC_GTW_TEST()
+{
+	GTW_NUM=$#
+	if [ $GTW_NUM -gt 1 ];then
+		#echo $*
+		for i in $*
+		do
+			AUTH_TMP=$(GET_AUTH $i)
+			if [[ $AUTH_TMP == *resultCode* ]]
+			then
+				NET_GTW=$i
+				NET_CARD=$(ip n  | grep "$i" | awk '{print $3}')
+				break
+			fi
+		done
+	else
+		echo 'test2'
+	fi
 }
 
 # MAIN FUNCTION
@@ -131,17 +153,13 @@ function GET_AUTH()
 
 	# if not nic detected
 	if [ ! -n "$NET_CARD" ];then
-		echo 'no NIC detected...'
+		echo 'no NIC(s) detected...'
 		echo 'Please connect to GiWiFi!'
 		exit
 	fi
 
-	# if multiple NICs detected...
-	for line in $NET_GTW
-	do
-		echo $(GET_AUTH $line)
-	done
-
+	# if NIC(s) detected...
+	NIC_GTW_TEST $NET_GTW
 
 	echo '--------------------------' 
 	OUTPUT_SYS_INFO
