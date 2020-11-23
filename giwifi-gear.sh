@@ -47,6 +47,8 @@ function get_json_value()
 
 
 FUNC_INIT(){
+
+    ## set the os type
     # Mac OS X
     if [ "$(uname)" = "Darwin" ]; then
         DEVICE_OS=$(uname -o)
@@ -63,7 +65,32 @@ FUNC_INIT(){
         DEVICE_OS=$(uname)
         OS_TYPE="null"
     fi
+
+    ## null os
+    if [ $OS_TYPE = "null" ];then
+        echo Ur OS not be supported: $DEVICE_OS
+        exit
+    fi
 }
+
+FUNC_GET_GW()
+{
+    ### try to get the gateway by redirect url
+    TEST_URL=$(curl -s 'http://test.gwifi.com.cn/')
+    # if not redirect url, it will return:
+    # <html><body>it works!</body></html> <!--<script> window.top.location.href="shop/" </script>-->
+    if [[ $TEST_URL =~ "it works!" ]];then
+        echo "no redirect url"
+    elif [[ $TEST_URL =~ "delayURL" ]]; then
+        echo $TEST_URL
+        RD_URL=$(echo $TEST_URL | grep -oP '(?<=delayURL\(")(.*)(?="\))')
+        echo $RD_URL
+    else
+        echo "error!"
+    fi
+
+}
+
 
 
 # MAIN FUNC
@@ -71,5 +98,6 @@ FUNC_INIT(){
     FUNC_INIT
     echo $DEVICE_OS
 
+    FUNC_GET_GW
 
 )
