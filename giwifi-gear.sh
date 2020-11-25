@@ -150,6 +150,17 @@ function GW_GET_AUTH()
 ## Part Functions
 #############################################
 
+FUNC_WELCOME(){
+    echo '''
+  ___ ___      ___ ___ _    ___ ___   _   ___ 
+ / __(_) \    / (_) __(_)  / __| __| /_\ | _ \
+| (_ | |\ \/\/ /| | _|| | | (_ | _| / _ \|   /
+ \___|_| \_/\_/ |_|_| |_|  \___|___/_/ \_\_|_\
+                                                                         
+    '''                                                   
+
+}
+
 ## This is a init part for set some env
 FUNC_INIT(){
     ## set the os type
@@ -251,7 +262,7 @@ FUNC_GET_GTW()
             # check the available nic(s)
             if [[ -z $GW_TEST ]]
             then
-                logcat "Failed to get Gateway, plz connect to the network !!" "E"
+                logcat "Failed to get Gateway, plz connect to the GiWiFi !!" "E"
             else
                 GW_TEST_TMP=($GW_TEST)
                 GW_TEST_COUNT=${#GW_TEST_TMP[@]}
@@ -297,9 +308,19 @@ FUNC_GET_GTW()
 
 # MAIN FUNC
 (
+    FUNC_WELCOME
 
     FUNC_INIT
-    echo $DEVICE_OS
+    # Print info
+    (
+        echo "--------------------------------------------"
+        echo "                 OS INFO"
+        echo "--------------------------------------------
+Arch:                      $(uname -m)
+Platform:                  $OS_TYPE
+Kernel Type:               $DEVICE_OS
+--------------------------------------------"
+    )
 
     FUNC_GET_GTW
     echo $GW_GTW_ADDR
