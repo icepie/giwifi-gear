@@ -6,7 +6,9 @@
 ## My Config
 #############################################
 GW_PORT_DEF='8060'
-RD_URL_PORT_DEF='8062'
+RD_URL_PORT_DEF=8062
+PC_UA="User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+PAD_UA="User-Agent: Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
 
 #############################################
 ## General Functions
@@ -254,7 +256,7 @@ FUNC_GET_GTW()
         logcat "Try to fetch gateway from NIC(s)"
         ## try to get gateway from nic(s)
         if [[ $OS_TYPE = "linux" ]]; then
-            NIC_GTW=$(ip neigh | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
+            NIC_GTW=$(ip neigh | grep "REACHABLE" | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
         elif [[ $OS_TYPE = "drawin" ]]; then
             NIC_GTW=$(route get default | grep 'gateway' | awk '{print $2}')
         elif [[ $OS_TYPE = "win" ]]; then
@@ -310,9 +312,9 @@ FUNC_GET_GTW()
                         ((ctmp+=1))
                     done
 
+                    read -p "Please input an integer for select a gateway: " s_num
                     while [ 1 ];
                     do
-                        read -p "Please input an integer for select a gateway: " s_num
                         if [[ "$s_num" =~ ^[1-9]+$ ]] && [[ $s_num  -ge 1 && $s_num -le $GW_TEST_COUNT ]]; then
                             GW_GTW_ADDR=$(echo "${GW_TEST_TMP[(($s_num-1))]}" | sed s'/(authed)//')
                             echo "using $GW_GTW_ADDR as gateway"
@@ -353,7 +355,15 @@ FUNC_GET_AUTH()
 
     logcat "Getting the API URL..."
 
-    GW_API_URL=$(gw_get_api_url "$GW_GTW_ADDR" "$RD_URL_PORT_DEF")
+    # set $GW_RD_URL_PORT
+    if [[ $RD_URL_PORT ]]
+    then
+        GW_RD_URL_PORT=$RD_URL_PORT
+    else
+        GW_RD_URL_PORT=$RD_URL_PORT_DEF
+    fi
+
+    GW_API_URL=$(gw_get_api_url "$GW_GTW_ADDR" "$GW_RD_URL_PORT")
 
     if [[ $GW_API_URL =~ $URI_REGEX ]]; then
         GW_API_URL_QUERY=$(urldecode "${BASH_REMATCH[13]}")
@@ -372,11 +382,9 @@ FUNC_GET_AUTH()
             gw_query["$key"]="$value"
         done
 
-        echo "${gw_query[gw_port]}"
-        GW_PORT=${gw_query[gw_port]}
     }
     
-    echo $GW_PORT
+    GW_PORT=${gw_query[gw_port]}
 
     GW_HOTSPOT=$(gw_get_hotspot_group $GW_GTW_ADDR $GW_PORT)
     #echo $GW_HOTSPOT
@@ -394,6 +402,10 @@ Group Name:                $GW_HOTSPOT_GROUP_NAME
 Group Type:                $GW_HOTSPOT_GROUP_TYPE
 --------------------------------------------"
 
+    ## get
+    GW_API_URL_RT=$(curl -H "$PC_UA" -s "$GW_API_URL")
+    PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
+    echo $PAGE_TIME
 }
 
 # MAIN FUNC
@@ -401,7 +413,7 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
     FUNC_WELCOME
 
     FUNC_INIT
-    # Print info
+    # Print info`
     (
         echo "--------------------------------------------"
         echo "                 OS INFO"
