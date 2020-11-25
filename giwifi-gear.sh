@@ -18,14 +18,14 @@ function logcat()
 	local time=$(date "+%Y-%m-%d %H:%M:%S")
 
 	# check the log flag
-	if [ ! -n $2 ];then
+	if [ "$2" ];then
 		local flag=$2
 	else
 		local flag='I'
 	fi
 
 	if [ "$1" ];then
-		echo "$flag" "$time": "$1"
+		echo "$time" "$flag": "$1"
 	fi
 
 }
@@ -188,12 +188,10 @@ FUNC_GET_GTW()
     # if not redirect url, it will return:
     # <html><body>it works!</body></html> <!--<script> window.top.location.href="shop/" </script>-->
     if [[ $TEST_URL =~ "it works!" ]];then
-        echo "No Redirect URL"
+        logcat "Fail to get the redirect url" "E"
     elif [[ $TEST_URL =~ "delayURL" ]]; then
-
-        echo $TEST_URL
+    
         RD_URL=$(echo $TEST_URL | grep -oP '(?<=delayURL\(")(.*)(?="\))')
-        echo $RD_URL
 
         # LOGIN_PAGE=$(curl -s -I "$RD_URL" | grep 'Location' | awk -F': ' '{print $2}')
 
@@ -203,7 +201,6 @@ FUNC_GET_GTW()
             RD_URL_HOST=${BASH_REMATCH[7]}
             RD_URL_PORT=${BASH_REMATCH[9]}
         fi
-        echo $RD_URL_HOST $RD_URL_PORT
 
     else
         echo "Error!"
@@ -212,6 +209,7 @@ FUNC_GET_GTW()
     ## if fail to get the gateway by redirect url method
     if [[ -z $RD_URL_HOST ]]
     then
+        logcat "Try to fetch gateway from NIC(s)"
         ## try to get gateway from nic(s)
         if [[ $OS_TYPE = "linux" ]]; then
             NIC_GTW=$(ip neigh | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
@@ -224,7 +222,7 @@ FUNC_GET_GTW()
 
         if [[ -z $NIC_GTW ]]
         then
-            echo "Failed to get Gateway, plz connect to the network !!"
+            logcat "Failed to get Gateway, plz connect to the network !!" "E"
         else
             # to auth the nic(s) gateway
             NIC_GTW_TMP=($NIC_GTW)
@@ -253,7 +251,7 @@ FUNC_GET_GTW()
             # check the available nic(s)
             if [[ -z $GW_TEST ]]
             then
-                echo "Failed to get Gateway, plz connect to the network !!"
+                logcat "Failed to get Gateway, plz connect to the network !!" "E"
             else
                 GW_TEST_TMP=($GW_TEST)
                 GW_TEST_COUNT=${#GW_TEST_TMP[@]}
@@ -306,5 +304,5 @@ FUNC_GET_GTW()
     FUNC_GET_GTW
     echo $GW_GTW_ADDR
 
-    GW_GET_AUTH $AUTH_STATE
+    GW_GET_AUTH $GW_GTW_ADDR
 )
