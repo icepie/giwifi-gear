@@ -341,6 +341,12 @@ FUNC_GET_GTW()
 
 FUNC_GET_AUTH()
 {
+    if [ ! $GW_GTW_ADDR ]
+    then
+        logcat "Invalid gateway !" "E"
+        exit
+    fi
+
     logcat "Checking the auth state..."
 
     GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
