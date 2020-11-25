@@ -6,6 +6,7 @@
 ## My Config
 #############################################
 GW_PORT_DEF='8060'
+RD_URL_PORT_DEF='8062'
 
 #############################################
 ## General Functions
@@ -108,6 +109,26 @@ urldecode() {
     printf '%b' "${url_encoded//%/\\x}"
 }
 
+#QUERY_STRING='foo=hello&bar=there&baz=freddy'
+
+get_query_string() {
+  local q="$QUERY_STRING"
+  local re1='^(\w+=\w+)&?'
+  local re2='^(\w+)=(\w+)$'
+  while [[ $q =~ $re1 ]]; do
+    q=${q##*${BASH_REMATCH[0]}}
+    [[ ${BASH_REMATCH[1]} =~ $re2 ]] && eval "$1+=([${BASH_REMATCH[1]}]=${BASH_REMATCH[2]})"
+  done
+}
+# declare -A params
+# get_query_string params
+
+# for k in "${!params[@]}"
+# do
+# 	v="${params[$k]}"
+# 	echo "$k: $v"
+# done
+
 # Following regex is based on https://tools.ietf.org/html/rfc3986#appendix-B with
 # additional sub-expressions to split authority into userinfo, host and port
 #
@@ -133,21 +154,7 @@ readonly URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?(/
 
 function gw_get_auth()
 {
-
-	AUTH_STATE=$(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
-	# os type from index.html
-	# if (isiOS) url += "&os=ios";
-	# if (isAndroid) url += "&os=android";
-	# if (isWinPC) url += "&os=windows";
-	# if (isMac) url += "&os=mac";
-	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
-
-	echo $AUTH_STATE
-}
-
-function gw_get_auth()
-{
-
+    # $1 is $GW_GTW_ADDR
 	echo $(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
     # os type from index.html
 	# if (isiOS) url += "&os=ios";
@@ -160,7 +167,14 @@ function gw_get_auth()
 
 function gw_get_hotspot_group()
 {
+    # $1 is $GW_GTW_ADDR and $2 is $RD_URL_PORT
 	echo $(json_format "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")") 
+}
+
+function gw_get_api_url()
+{
+    # $1 is $GW_GTW_ADDR and $2 is $RD_URL_PORT_DEF
+    echo $((curl -s -I "http:/$1:$2/redirect?oriUrl=http://www.baidu.com") | grep "Location" | awk -F ": " '{print $2}')
 }
 
 #############################################
@@ -325,7 +339,46 @@ FUNC_GET_GTW()
 
 FUNC_GET_AUTH()
 {
-    GW_HOTSPOT=$(gw_get_hotspot_group $GW_GTW_ADDR $GW_PORT_DEF)
+    logcat "Checking the auth state..."
+
+    GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
+    GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_INFO data ) 'auth_state')
+
+    if [ $GW_AUTH_RT_STATE == 2 ]
+    then
+        logcat "You're already authed."
+    else
+        logcat "You're not authed."
+    fi
+
+    logcat "Getting the API URL..."
+
+    GW_API_URL=$(gw_get_api_url "$GW_GTW_ADDR" "$RD_URL_PORT_DEF")
+
+    if [[ $GW_API_URL =~ $URI_REGEX ]]; then
+        GW_API_URL_QUERY=$(urldecode "${BASH_REMATCH[13]}")
+    fi
+
+    QUERY_STRING=$GW_API_URL_QUERY
+    {
+    # gw_address=172.21.1.1&gw_port=8060&gw_id=GWIFI-luoyangligong1&ip=172.21.167.114&mac=AC:FD:CE:07:3B:EA&url=http://www.baidu.com&apmac=c4:00:ad:a4:a3:e2&ssid=
+    #parse query string
+        declare -a pairs
+        IFS='&' read -ra pairs <<<"$QUERY_STRING"
+
+        declare -A gw_query
+        for pair in "${pairs[@]}"; do
+            IFS='=' read -r key value <<<"$pair"
+            gw_query["$key"]="$value"
+        done
+
+        echo "${gw_query[gw_port]}"
+        GW_PORT=${gw_query[gw_port]}
+    }
+    
+    echo $GW_PORT
+
+    GW_HOTSPOT=$(gw_get_hotspot_group $GW_GTW_ADDR $GW_PORT)
     #echo $GW_HOTSPOT
     GW_HOTSPOT_GROUP_ID=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_id')
     GW_HOTSPOT_GROUP_NAME=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_name')
@@ -341,16 +394,6 @@ Group Name:                $GW_HOTSPOT_GROUP_NAME
 Group Type:                $GW_HOTSPOT_GROUP_TYPE
 --------------------------------------------"
 
-    GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
-    logcat "Checking the auth state..."
-    GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_INFO data ) 'auth_state')
-
-    if [ $GW_AUTH_RT_STATE == 2 ]
-    then
-        logcat "You're already authed."
-    else
-        logcat "You're not authed."
-    fi
 }
 
 # MAIN FUNC
