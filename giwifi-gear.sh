@@ -8,7 +8,6 @@
 GW_IP='172.21.1.1'
 GW_PORT='8062'
 
-
 #############################################
 ## General Functions
 #############################################
@@ -130,7 +129,7 @@ readonly URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?(/
 # fi
 
 #############################################
-## Special Functions
+## GiWiFi API Functions
 #############################################
 
 function GW_GET_AUTH()
@@ -147,9 +146,12 @@ function GW_GET_AUTH()
 	echo $AUTH_STATE
 }
 
+#############################################
+## Part Functions
+#############################################
+
 ## This is a init part for set some env
 FUNC_INIT(){
-
     ## set the os type
     # Mac OS X
     if [ "$(uname)" = "Darwin" ]; then
@@ -180,6 +182,7 @@ FUNC_INIT(){
 ## if can not get the redirect url, will check the nic(s) gateway...
 FUNC_GET_GTW()
 {
+    logcat "Try to fetch gateway from redirect url"
     ### try to get the gateway by redirect url
     TEST_URL=$(curl -s 'http://test.gwifi.com.cn/')
     # if not redirect url, it will return:
@@ -190,8 +193,11 @@ FUNC_GET_GTW()
 
         echo $TEST_URL
         RD_URL=$(echo $TEST_URL | grep -oP '(?<=delayURL\(")(.*)(?="\))')
+        echo $RD_URL
 
-        LOGIN_PAGE
+        # LOGIN_PAGE=$(curl -s -I "$RD_URL" | grep 'Location' | awk -F': ' '{print $2}')
+
+        # echo $LOGIN_PAGE
 
         if [[ $RD_URL =~ $URI_REGEX ]]; then
             RD_URL_HOST=${BASH_REMATCH[7]}
@@ -203,11 +209,90 @@ FUNC_GET_GTW()
         echo "Error!"
     fi
     
-    ## try to get gateway from nic(s)
-    if [[ $OS_TYPE = "linux" ]]; then
-        echo "nice"
-    fi
+    ## if fail to get the gateway by redirect url method
+    if [[ -z $RD_URL_HOST ]]
+    then
+        ## try to get gateway from nic(s)
+        if [[ $OS_TYPE = "linux" ]]; then
+            NIC_GTW=$(ip neigh | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
+        elif [[ $OS_TYPE = "drawin" ]]; then
+            NIC_GTW=$(route get default | grep 'gateway' | awk '{print $2}')
+        elif [[ $OS_TYPE = "win" ]]; then
+            NIC_GTW=$((chcp.com 437 && ipconfig /all) | grep 'Default Gateway' | awk -F': ' '{print $2}')
+        fi
 
+
+        if [[ -z $NIC_GTW ]]
+        then
+            echo "Failed to get Gateway, plz connect to the network !!"
+        else
+            # to auth the nic(s) gateway
+            NIC_GTW_TMP=($NIC_GTW)
+            NIC_GTW_COUNT=${#NIC_GTW_TMP[@]} 
+
+            # traversing the nic(s) gateway to auth
+            for i in $NIC_GTW
+            do
+                AUTH_TMP=$(GW_GET_AUTH $i)
+                if [[ $AUTH_TMP == *resultCode* ]]
+                then
+                    NET_GTW=$i
+                    GW_TEST+=$i
+                    ## check the auth state
+                    RES_CODE=$(get_json_value $(get_json_value  $AUTH_TMP data ) 'auth_state')
+                    if [[ $RES_CODE == 2 ]]
+                    then
+                        GW_TEST+="(authed) "
+                    else
+                        GW_TEST+=" "
+                    fi
+                    #NET_CARD=$(ip n  | grep "$i" | awk '{print $3}')
+                fi
+            done
+
+            # check the available nic(s)
+            if [[ -z $GW_TEST ]]
+            then
+                echo "Failed to get Gateway, plz connect to the network !!"
+            else
+                GW_TEST_TMP=($GW_TEST)
+                GW_TEST_COUNT=${#GW_TEST_TMP[@]}
+
+                # set the last gateway
+                if [ $GW_TEST_COUNT -gt 1 ];then
+                    local ctmp=1
+
+                    echo "NOTE: $GW_TEST_COUNT gateways available"
+
+                    for i in $GW_TEST
+                    do
+                        echo "- $ctmp: $i"
+                        ((ctmp+=1))
+                    done
+
+                    while [ 1 ];
+                    do
+                        read -p "Please input an integer for select a gateway: " s_num
+                        if [[ "$s_num" =~ ^[1-9]+$ ]] && [[ $s_num  -ge 1 && $s_num -le $GW_TEST_COUNT ]]; then
+                            GW_GTW_ADDR=$(echo "${GW_TEST_TMP[(($s_num-1))]}" | sed s'/(authed)//')
+                            echo "using $GW_GTW_ADDR as gateway"
+                            break
+                        else
+                            echo "input error!"
+                        fi
+                    done
+                else
+                    GW_GTW_ADDR=$GW_TEST
+                fi
+            fi
+        fi
+
+    else
+        # if you use the redirect url method, the gateway auth will be skipped.  
+        GW_GTW_ADDR=$RD_URL_HOST
+        GW_HOST=$RD_URL_HOST
+        GW_PORT=$RD_URL_PORT
+    fi
 
 }
 
@@ -219,6 +304,7 @@ FUNC_GET_GTW()
     echo $DEVICE_OS
 
     FUNC_GET_GTW
+    echo $GW_GTW_ADDR
 
     GW_GET_AUTH $AUTH_STATE
 )
