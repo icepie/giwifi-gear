@@ -5,8 +5,7 @@
 #############################################
 ## My Config
 #############################################
-GW_IP='172.21.1.1'
-GW_PORT='8062'
+GW_PORT_DEF='8060'
 
 #############################################
 ## General Functions
@@ -132,7 +131,7 @@ readonly URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?(/
 ## GiWiFi API Functions
 #############################################
 
-function GW_GET_AUTH()
+function gw_get_auth()
 {
 
 	AUTH_STATE=$(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
@@ -144,6 +143,24 @@ function GW_GET_AUTH()
 	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
 
 	echo $AUTH_STATE
+}
+
+function gw_get_auth()
+{
+
+	echo $(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
+    # os type from index.html
+	# if (isiOS) url += "&os=ios";
+	# if (isAndroid) url += "&os=android";
+	# if (isWinPC) url += "&os=windows";
+	# if (isMac) url += "&os=mac";
+	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
+
+}
+
+function gw_get_hotspot_group()
+{
+	echo $(json_format "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")") 
 }
 
 #############################################
@@ -242,7 +259,7 @@ FUNC_GET_GTW()
             # traversing the nic(s) gateway to auth
             for i in $NIC_GTW
             do
-                AUTH_TMP=$(GW_GET_AUTH $i)
+                AUTH_TMP=$(gw_get_auth $i)
                 if [[ $AUTH_TMP == *resultCode* ]]
                 then
                     NET_GTW=$i
@@ -300,11 +317,41 @@ FUNC_GET_GTW()
         # if you use the redirect url method, the gateway auth will be skipped.  
         GW_GTW_ADDR=$RD_URL_HOST
         GW_HOST=$RD_URL_HOST
-        GW_PORT=$RD_URL_PORT
+        GW_RU_PORT=$RD_URL_PORT #redirect url port 
     fi
 
 }
 
+
+FUNC_GET_AUTH()
+{
+    GW_HOTSPOT=$(gw_get_hotspot_group $GW_GTW_ADDR $GW_PORT_DEF)
+    #echo $GW_HOTSPOT
+    GW_HOTSPOT_GROUP_ID=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_id')
+    GW_HOTSPOT_GROUP_NAME=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_name')
+    GW_HOTSPOT_GROUP_TYPE=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_type')
+
+    logcat "Getting the hotspot group info..."
+
+    echo "--------------------------------------------"
+    echo "            HOTSPOT GROUP INFO              "
+    echo "--------------------------------------------
+Group ID:                  $GW_HOTSPOT_GROUP_ID
+Group Name:                $GW_HOTSPOT_GROUP_NAME
+Group Type:                $GW_HOTSPOT_GROUP_TYPE
+--------------------------------------------"
+
+    GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
+    logcat "Checking the auth state..."
+    GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_INFO data ) 'auth_state')
+
+    if [ $GW_AUTH_RT_STATE == 2 ]
+    then
+        logcat "You're already authed."
+    else
+        logcat "You're not authed."
+    fi
+}
 
 # MAIN FUNC
 (
@@ -323,7 +370,11 @@ Kernel Type:               $DEVICE_OS
     )
 
     FUNC_GET_GTW
-    echo $GW_GTW_ADDR
+    #echo $GW_GTW_ADDR
+    # GW_HOST=$RD_URL_HOST
+    # GW_PORT=$RD_URL_PORT
 
-    GW_GET_AUTH $GW_GTW_ADDR
-)
+    FUNC_GET_AUTH
+
+
+)2>&2 | tee -a ./connect.log
