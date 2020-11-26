@@ -187,13 +187,14 @@ function gw_loginaction()
     str=$(date +%S%M)
     rannum=${str:1:3}
 
-    echo $(curl -s -X POST  \
-    --header "User-Agent: $PC_UA" \
-    --header 'accept-encoding: gzip, deflate, br'  \
-    --header 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2'  \
-    --header 'cache-control: max-age=0'  \
-    --data "$*" \
-    "http://login.gwifi.com.cn/cmps/admin.php/api/login/?$rannum")
+    echo $(curl -v -X POST  \
+    -A "$PC_UA" \
+    -H 'Content-Type: application/json' \
+    -H 'Accept: application/json, text/javascript, */*; q=0.01' \
+    -H 'Accept-Language: zh-CN,zh;q=0.9,fr;q=0.8,en;q=0.7' \
+    -H 'cache-control: max-age=0' \
+    -d "$*" \
+    "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum")
     
 }
 
@@ -461,7 +462,7 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
                     "user_agent": "", \
                     }"
     echo $GW_LOGIN_DATA
-    echo $(gw_loginaction $GW_LOGIN_DATA)
+    echo -e $(gw_loginaction $GW_LOGIN_DATA)
     #$str=$(date +%S%M)&&echo ${str:1:3}
 }
 
