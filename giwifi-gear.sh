@@ -176,7 +176,13 @@ function gw_get_hotspot_group()
 function gw_get_api_url()
 {
     # $1 is $GW_GTW_ADDR and $2 is $RD_URL_PORT_DEF
-    echo $((curl -s -I "http:/$1:$2/redirect?oriUrl=http://www.baidu.com") | grep "Location" | awk -F ": " '{print $2}')
+    echo $(curl -s -I "http:/$1:$2/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
+}
+
+function gw_get_auth_state()
+{
+    #$1 is $GW_HOST and $2 is $GW_PORT
+    echo $(curl -s -I "http://$1:$2/wifidog/get_auth_state")
 }
 
 #############################################
@@ -256,7 +262,7 @@ FUNC_GET_GTW()
         logcat "Try to fetch gateway from NIC(s)"
         ## try to get gateway from nic(s)
         if [[ $OS_TYPE = "linux" ]]; then
-            NIC_GTW=$(ip neigh | grep "REACHABLE" | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
+            NIC_GTW=$(ip neigh | grep -v "br-lan" | grep -v "router" | awk '{print $1}')
         elif [[ $OS_TYPE = "drawin" ]]; then
             NIC_GTW=$(route get default | grep 'gateway' | awk '{print $2}')
         elif [[ $OS_TYPE = "win" ]]; then
@@ -275,7 +281,10 @@ FUNC_GET_GTW()
             # traversing the nic(s) gateway to auth
             for i in $NIC_GTW
             do
+                echo $NIC_GTW
+                echo $i
                 AUTH_TMP=$(gw_get_auth $i)
+                echo $AUTH_TMP
                 if [[ $AUTH_TMP == *resultCode* ]]
                 then
                     NET_GTW=$i
@@ -324,16 +333,16 @@ FUNC_GET_GTW()
                         fi
                     done
                 else
-                    GW_GTW_ADDR=$GW_TEST
+                    GW_GTW_ADDR=$(echo $(echo "$GW_TEST") | sed s'/(authed)//')
                 fi
             fi
         fi
 
     else
-        # if you use the redirect url method, the gateway auth will be skipped.  
+        # if you use the redirect url method, the gateway auth will be skipped.
         GW_GTW_ADDR=$RD_URL_HOST
         GW_HOST=$RD_URL_HOST
-        GW_RU_PORT=$RD_URL_PORT #redirect url port 
+        GW_RU_PORT=$RD_URL_PORT #redirect url port
     fi
 
 }
@@ -341,6 +350,7 @@ FUNC_GET_GTW()
 
 FUNC_GET_AUTH()
 {
+    #echo "$GW_GTW_ADDR"
     if [ ! $GW_GTW_ADDR ]
     then
         logcat "Invalid gateway !" "E"
@@ -352,7 +362,7 @@ FUNC_GET_AUTH()
     GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
     GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_INFO data ) 'auth_state')
 
-    if [ $GW_AUTH_RT_STATE == 2 ]
+    if [[ $GW_AUTH_RT_STATE == 2 ]]
     then
         logcat "You're already authed."
     else
@@ -390,10 +400,12 @@ FUNC_GET_AUTH()
 
     }
     
+    GW_ADDRESS=${gw_query[gw_address]}
+    echo $GW_ADDRESS
     GW_PORT=${gw_query[gw_port]}
 
-    GW_HOTSPOT=$(gw_get_hotspot_group $GW_GTW_ADDR $GW_PORT)
-    #echo $GW_HOTSPOT
+    GW_HOTSPOT=$(gw_get_hotspot_group $GW_ADDRESS $GW_PORT)
+    echo $GW_HOTSPOT
     GW_HOTSPOT_GROUP_ID=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_id')
     GW_HOTSPOT_GROUP_NAME=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_name')
     GW_HOTSPOT_GROUP_TYPE=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_type')
@@ -408,13 +420,18 @@ Group Name:                $GW_HOTSPOT_GROUP_NAME
 Group Type:                $GW_HOTSPOT_GROUP_TYPE
 --------------------------------------------"
 
+    GW_AUTH_STATE_JSON=$(gw_get_auth_state $GW_ADDRESS $GW_PORT)
+    echo $GW_AUTH_STATE_JSON
     ## get
-    GW_LOGIN_PAGE=$(curl -H "$PC_UA" -s "$GW_API_URL")
+    GW_LOGIN_PAGE=$(curl -s -H "$PC_UA" -s "$GW_API_URL")
     #PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
-	GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
-	GW_SIGN=$(echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
+    GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
+    GW_SIGN=$(echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
     echo $GW_PAGE_TIME
-	echo $GW_SIGN
+    echo $GW_SIGN
+
+
+
 }
 
 # MAIN FUNC
