@@ -409,9 +409,12 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
 --------------------------------------------"
 
     ## get
-    GW_API_URL_RT=$(curl -H "$PC_UA" -s "$GW_API_URL")
-    PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
-    echo $PAGE_TIME
+    GW_LOGIN_PAGE=$(curl -H "$PC_UA" -s "$GW_API_URL")
+    #PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
+	GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
+	GW_SIGN=$(echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
+    echo $GW_PAGE_TIME
+	echo $GW_SIGN
 }
 
 # MAIN FUNC
