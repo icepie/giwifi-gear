@@ -7,8 +7,8 @@
 #############################################
 GW_PORT_DEF='8060'
 RD_URL_PORT_DEF=8062
-PC_UA="User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
-PAD_UA="User-Agent: Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
+PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+PAD_UA="Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
 
 #############################################
 ## General Functions
@@ -89,9 +89,6 @@ function json_format(){
 urlencode() {
     # urlencode <string>
 
-    old_lc_collate=$LC_COLLATE
-    LC_COLLATE=C
-
     local length="${#1}"
     for (( i = 0; i < length; i++ )); do
         local c="${1:$i:1}"
@@ -101,7 +98,6 @@ urlencode() {
         esac
     done
 
-    LC_COLLATE=$old_lc_collate
 }
 
 urldecode() {
@@ -109,6 +105,7 @@ urldecode() {
 
     local url_encoded="${1//+/ }"
     printf '%b' "${url_encoded//%/\\x}"
+
 }
 
 #QUERY_STRING='foo=hello&bar=there&baz=freddy'
@@ -173,7 +170,7 @@ function gw_get_hotspot_group()
 	echo $(json_format "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
-function gw_get_api_url()
+function gw_get_lp_url()
 {
     # $1 is $GW_GTW_ADDR and $2 is $RD_URL_PORT_DEF
     echo $(curl -s -I "http:/$1:$2/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
@@ -183,6 +180,21 @@ function gw_get_auth_state()
 {
     #$1 is $GW_HOST and $2 is $GW_PORT
 	echo $(json_format "$(curl -s "http://$1:$2/wifidog/get_auth_state")")
+}
+
+function gw_loginaction()
+{
+    str=$(date +%S%M)
+    rannum=${str:1:3}
+
+    echo $(curl -s -X POST  \
+    --header "User-Agent: $PC_UA" \
+    --header 'accept-encoding: gzip, deflate, br'  \
+    --header 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2'  \
+    --header 'cache-control: max-age=0'  \
+    --data "$*" \
+    "http://login.gwifi.com.cn/cmps/admin.php/api/login/?$rannum")
+    
 }
 
 #############################################
@@ -281,10 +293,8 @@ FUNC_GET_GTW()
             # traversing the nic(s) gateway to auth
             for i in $NIC_GTW
             do
-                echo $NIC_GTW
-                echo $i
                 AUTH_TMP=$(gw_get_auth $i)
-                echo $AUTH_TMP
+                #echo $AUTH_TMP
                 if [[ $AUTH_TMP == *resultCode* ]]
                 then
                     NET_GTW=$i
@@ -351,16 +361,15 @@ FUNC_GET_GTW()
 FUNC_GET_AUTH()
 {
     #echo "$GW_GTW_ADDR"
-    if [ ! $GW_GTW_ADDR ]
+    if [ $GW_GTW_ADDR ]
     then
-        logcat "Invalid gateway !" "E"
-        exit
+        logcat "Ues $GW_GTW_ADDR as gateway of GiWiFi"
     fi
 
     logcat "Checking the auth state..."
 
-    GW_AUTH_INFO=$(gw_get_auth $GW_GTW_ADDR)
-    GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_INFO data ) 'auth_state')
+    GW_AUTH_JSON=$(gw_get_auth $GW_GTW_ADDR)
+    GW_AUTH_RT_STATE=$(get_json_value $(get_json_value $GW_AUTH_JSON data ) 'auth_state')
 
     if [[ $GW_AUTH_RT_STATE == 2 ]]
     then
@@ -369,7 +378,7 @@ FUNC_GET_AUTH()
         logcat "You're not authed."
     fi
 
-    logcat "Getting the API URL..."
+    logcat "Getting the Login Page URL..."
 
     # set $GW_RD_URL_PORT
     if [[ $RD_URL_PORT ]]
@@ -379,7 +388,7 @@ FUNC_GET_AUTH()
         GW_RD_URL_PORT=$RD_URL_PORT_DEF
     fi
 
-    GW_API_URL=$(gw_get_api_url "$GW_GTW_ADDR" "$GW_RD_URL_PORT")
+    GW_API_URL=$(gw_get_lp_url "$GW_GTW_ADDR" "$GW_RD_URL_PORT")
 
     if [[ $GW_API_URL =~ $URI_REGEX ]]; then
         GW_API_URL_QUERY=$(urldecode "${BASH_REMATCH[13]}")
@@ -404,11 +413,10 @@ FUNC_GET_AUTH()
     #echo $GW_ADDRESS
     GW_PORT=${gw_query[gw_port]}
 
-    GW_HOTSPOT=$(gw_get_hotspot_group $GW_ADDRESS $GW_PORT)
-    echo $GW_HOTSPOT
-    GW_HOTSPOT_GROUP_ID=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_id')
-    GW_HOTSPOT_GROUP_NAME=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_name')
-    GW_HOTSPOT_GROUP_TYPE=$(get_json_value $(get_json_value $GW_HOTSPOT data ) 'hotspot_group_type')
+    GW_HOTSPOT_JSON=$(gw_get_hotspot_group $GW_ADDRESS $GW_PORT)
+    GW_HOTSPOT_GROUP_ID=$(get_json_value $(get_json_value $GW_HOTSPOT_JSON data ) 'hotspot_group_id')
+    GW_HOTSPOT_GROUP_NAME=$(get_json_value $(get_json_value $GW_HOTSPOT_JSON data ) 'hotspot_group_name')
+    GW_HOTSPOT_GROUP_TYPE=$(get_json_value $(get_json_value $GW_HOTSPOT_JSON data ) 'hotspot_group_type')
 
     logcat "Getting the hotspot group info..."
 
@@ -422,7 +430,7 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
 
     GW_AUTH_STATE_JSON=$(gw_get_auth_state $GW_ADDRESS $GW_PORT)
     echo $GW_AUTH_STATE_JSON
-    ## get
+    ## get the login page html
     GW_LOGIN_PAGE=$(curl -s -H "$PC_UA" -s "$GW_API_URL")
     #PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
     GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
@@ -430,8 +438,31 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
     echo $GW_PAGE_TIME
     echo $GW_SIGN
 
-
-
+    GW_LOGIN_DATA="{"access_type":"$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'access_type')", \
+                    "acsign": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'sign')", \
+                    "btype": "pc", \
+                    "client_mac": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'client_mac')", \
+                    "contact_phone": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'contact_phone')", \
+                    "gw_address": "${gw_query[gw_address]}", \
+                    "gw_id": "${gw_query[gw_id]}", \
+                    "gw_port": "${gw_query[gw_port]}", \
+                    "lastaccessurl": "", \
+                    "logout_reason": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'logout_reason')", \
+                    "mac": "${gw_query[mac]}", \
+                    "name": "18437950021", \
+                    "online_time": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'online_time')", \
+                    "page_time": "$GW_PAGE_TIME", \
+                    "password": "100860", \
+                    "sign": "$GW_SIGN", \
+                    "station_cloud": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_cloud')", \
+                    "station_sn": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_sn')", \
+                    "suggest_phone": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'suggest_phone')", \
+                    "url": "${gw_query[url]}", \
+                    "user_agent": "", \
+                    }"
+    echo $GW_LOGIN_DATA
+    echo $(gw_loginaction $GW_LOGIN_DATA)
+    #$str=$(date +%S%M)&&echo ${str:1:3}
 }
 
 # MAIN FUNC
