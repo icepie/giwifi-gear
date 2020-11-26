@@ -157,7 +157,7 @@ readonly URI_REGEX='^(([^:/?#]+):)?(//((([^:/?#]+)@)?([^:/?#]+)(:([0-9]+))?))?(/
 function gw_get_auth()
 {
     # $1 is $GW_GTW_ADDR
-	echo $(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")") 
+	echo $(json_format "$(curl -s "$1/getApp.htm?action=getAuthState&os=mac")")
     # os type from index.html
 	# if (isiOS) url += "&os=ios";
 	# if (isAndroid) url += "&os=android";
@@ -170,7 +170,7 @@ function gw_get_auth()
 function gw_get_hotspot_group()
 {
     # $1 is $GW_GTW_ADDR and $2 is $RD_URL_PORT
-	echo $(json_format "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")") 
+	echo $(json_format "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
 function gw_get_api_url()
@@ -182,7 +182,7 @@ function gw_get_api_url()
 function gw_get_auth_state()
 {
     #$1 is $GW_HOST and $2 is $GW_PORT
-    echo $(curl -s -I "http://$1:$2/wifidog/get_auth_state")
+	echo $(json_format "$(curl -s "http://$1:$2/wifidog/get_auth_state")")
 }
 
 #############################################
@@ -401,7 +401,7 @@ FUNC_GET_AUTH()
     }
     
     GW_ADDRESS=${gw_query[gw_address]}
-    echo $GW_ADDRESS
+    #echo $GW_ADDRESS
     GW_PORT=${gw_query[gw_port]}
 
     GW_HOTSPOT=$(gw_get_hotspot_group $GW_ADDRESS $GW_PORT)
