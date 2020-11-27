@@ -5,7 +5,9 @@
 #############################################
 ## My Config
 #############################################
-GW_PORT_DEF='8060'
+GW_NAME="1010101010101"
+GW_PWD="password"
+GW_PORT_DEF=8060
 RD_URL_PORT_DEF=8062
 PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
 PAD_UA="Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
@@ -463,10 +465,10 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
                     &lastaccessurl=""
                     &logout_reason=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'logout_reason')
                     &mac=$(echo $(urlencode ${gw_query[mac]} ) | sed 's/%22//g'  )
-                    &name=18437950021
+                    &name=$GW_NAME
                     &online_time=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'online_time')
                     &page_time=$GW_PAGE_TIME
-                    &password=100860
+                    &password=$GW_PWD
                     &sign=$(urlencode $GW_SIGN )
                     &station_cloud=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_cloud')
                     &station_sn=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_sn')
