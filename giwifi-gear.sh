@@ -187,13 +187,17 @@ function gw_loginaction()
     str=$(date +%S%M)
     rannum=${str:1:3}
 
-    echo $(curl -v -X POST  \
+    echo $(curl  \
     -A "$PC_UA" \
-    -H 'Content-Type: application/json' \
-    -H 'Accept: application/json, text/javascript, */*; q=0.01' \
-    -H 'Accept-Language: zh-CN,zh;q=0.9,fr;q=0.8,en;q=0.7' \
+    -X POST \
+    -H 'Accept: */*' \
+    -H 'Connection: keep-alive' \
+    -H 'Content-Type: application/x-www-form-urlencoded' \
+    -H 'accept-encoding: gzip, deflate, br' \
+    -H 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2' \
     -H 'cache-control: max-age=0' \
     -d "$*" \
+    --compressed \
     "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum")
     
 }
@@ -390,9 +394,12 @@ FUNC_GET_AUTH()
     fi
 
     GW_API_URL=$(gw_get_lp_url "$GW_GTW_ADDR" "$GW_RD_URL_PORT")
+    echo $GW_API_URL
 
     if [[ $GW_API_URL =~ $URI_REGEX ]]; then
-        GW_API_URL_QUERY=$(urldecode "${BASH_REMATCH[13]}")
+        #$GW_API_URL_QUERY=$(urldecode "${BASH_REMATCH[13]}")
+        GW_API_URL_QUERY=${BASH_REMATCH[13]}
+        echo ${BASH_REMATCH[13]}
     fi
 
     QUERY_STRING=$GW_API_URL_QUERY
@@ -432,35 +439,38 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
     GW_AUTH_STATE_JSON=$(gw_get_auth_state $GW_ADDRESS $GW_PORT)
     echo $GW_AUTH_STATE_JSON
     ## get the login page html
-    GW_LOGIN_PAGE=$(curl -s -H "$PC_UA" -s "$GW_API_URL")
-    #PAGE_TIME=$(echo -e $GW_API_URL_RT | grep page_time)
+    GW_LOGIN_PAGE=$(curl -s -A "$PC_UA" "$GW_API_URL")
+    echo $GW_LOGIN_PAGE
+
     GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
-    GW_SIGN=$(echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
+    GW_SIGN=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
     echo $GW_PAGE_TIME
     echo $GW_SIGN
 
-    GW_LOGIN_DATA="{"access_type":"$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'access_type')", \
-                    "acsign": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'sign')", \
-                    "btype": "pc", \
-                    "client_mac": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'client_mac')", \
-                    "contact_phone": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'contact_phone')", \
-                    "gw_address": "${gw_query[gw_address]}", \
-                    "gw_id": "${gw_query[gw_id]}", \
-                    "gw_port": "${gw_query[gw_port]}", \
-                    "lastaccessurl": "", \
-                    "logout_reason": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'logout_reason')", \
-                    "mac": "${gw_query[mac]}", \
-                    "name": "18437950021", \
-                    "online_time": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'online_time')", \
-                    "page_time": "$GW_PAGE_TIME", \
-                    "password": "100860", \
-                    "sign": "$GW_SIGN", \
-                    "station_cloud": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_cloud')", \
-                    "station_sn": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_sn')", \
-                    "suggest_phone": "$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'suggest_phone')", \
-                    "url": "${gw_query[url]}", \
-                    "user_agent": "", \
-                    }"
+    #'access_type=1&acsign=EE5F452E44613A9CEDE88CD9019D6C6C&btype=pc&client_mac=20%3AF4%3A78%3A0B%3A4A%3AF9&contact_phone=400-038-5858&devicemode=&gw_address=172.21.1.1&gw_id=GWIFI-luoyangligong1&gw_port=8060&lastaccessurl=&logout_reason=41&mac=20%3AF4%3A78%3A0B%3A4A%3AF9&name=5&online_time=22&page_time=1606444544&password=%EF%BC%8C55&sign=eQUkyCb3F7mqZg%252Bsw7z9CZOBMDfpLAiFQvRI1Ty%252B80b4UT3dqgIw2aoa%252FaUTs42ANAWfO8qLw0iigTez6CEqWGi%252B3RWtG%252BSFSp6YFT5aFROQP%252Fun%252FYdnZh738FfMOqFz1Qi8yqPZXaG%252FLb3Dpq5SLUIUlDeXYZKAt9MF4nkYGB9JUJfrDFzkQADZOtUfc1SvKkYbJnfPvEHOWVupJypBg6gUTzwUPUjZPXSbkn7rxxmNLNWRPmrHTN83ofRsHz0F&station_cloud=login.gwifi.com.cn&station_sn=c400ada4a3e2&suggest_phone=400-038-5858&url=http%3A%2F%2Fwww.baidu.com&user_agent=' 
+    GW_LOGIN_DATA="access_type=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'access_type')
+                    &acsign=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'sign')
+                    &btype=pc
+                    &client_mac=$(echo $(urlencode $(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'client_mac') ) | sed 's/%22//g'  )
+                    &contact_phone=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'contact_phone')
+                    &devicemode=""
+                    &gw_address=${gw_query[gw_address]}
+                    &gw_id=${gw_query[gw_id]}
+                    &gw_port=${gw_query[gw_port]}
+                    &lastaccessurl=""
+                    &logout_reason=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'logout_reason')
+                    &mac=$(echo $(urlencode ${gw_query[mac]} ) | sed 's/%22//g'  )
+                    &name=18437950021
+                    &online_time=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'online_time')
+                    &page_time=$GW_PAGE_TIME
+                    &password=100860
+                    &sign=$GW_SIGN
+                    &station_cloud=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_cloud')
+                    &station_sn=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_sn')
+                    &suggest_phone=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'suggest_phone')
+                    &url="http%3A%2F%2Fwww.baidu.com"
+                    &user_agent="" "
+    GW_LOGIN_DATA=$(echo $GW_LOGIN_DATA | sed s/[[:space:]]//g | sed 's/"//g')
     echo $GW_LOGIN_DATA
     echo -e $(gw_loginaction $GW_LOGIN_DATA)
     #$str=$(date +%S%M)&&echo ${str:1:3}
