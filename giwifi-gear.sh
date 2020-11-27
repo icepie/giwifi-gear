@@ -369,6 +369,9 @@ FUNC_GET_AUTH()
     if [ $GW_GTW_ADDR ]
     then
         logcat "Ues $GW_GTW_ADDR as gateway of GiWiFi"
+    else
+        logcat "Failed to Auto-resolving gateway" "E"
+        exit
     fi
 
     logcat "Checking the auth state..."
