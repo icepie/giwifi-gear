@@ -109,7 +109,7 @@ gw_get_auth_url()
 gw_get_login_page()
 {
     GTW=$1
-    echo $(curl -s -L -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com")
+    echo $(curl -s -L -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
 }
 
 # main
@@ -129,7 +129,7 @@ gw_get_login_page()
     echo $(str_str "$QUERY_STRING" "gw_port=" "&" )
 
     GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
-    #echo $GW_LOGIN_PAGE
+
     GW_SIGN=$(url_encode $(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"' ))
     GW_PAGE_TIME=$(str_str "$GW_LOGIN_PAGE" 'name="page_time" value="' '"' )
 
