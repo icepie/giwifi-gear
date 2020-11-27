@@ -199,8 +199,7 @@ function gw_loginaction()
     -H 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2' \
     -H 'cache-control: max-age=0' \
     -d "$*" \
-    --compressed \
-    "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum")
+    "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum" | gunzip)
     
 }
 
