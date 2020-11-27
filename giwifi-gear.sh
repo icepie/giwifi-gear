@@ -440,7 +440,7 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
     echo $GW_AUTH_STATE_JSON
     ## get the login page html
     GW_LOGIN_PAGE=$(curl -s -A "$PC_UA" "$GW_API_URL")
-    echo $GW_LOGIN_PAGE
+    echo $GW_LOGIN_PAGE >> lg.txt
 
     GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
     GW_SIGN=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
@@ -464,11 +464,11 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
                     &online_time=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'online_time')
                     &page_time=$GW_PAGE_TIME
                     &password=100860
-                    &sign=$GW_SIGN
+                    &sign=$(urlencode $GW_SIGN )
                     &station_cloud=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_cloud')
                     &station_sn=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'station_sn')
                     &suggest_phone=$(get_json_value $(get_json_value $GW_AUTH_STATE_JSON 'data' ) 'suggest_phone')
-                    &url="http%3A%2F%2Fwww.baidu.com"
+                    &url=${gw_query[url]}
                     &user_agent="" "
     GW_LOGIN_DATA=$(echo $GW_LOGIN_DATA | sed s/[[:space:]]//g | sed 's/"//g')
     echo $GW_LOGIN_DATA
