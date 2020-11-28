@@ -444,7 +444,6 @@ Group Type:                $GW_HOTSPOT_GROUP_TYPE
     echo $GW_AUTH_STATE_JSON
     ## get the login page html
     GW_LOGIN_PAGE=$(curl -s -A "$PC_UA" "$GW_API_URL")
-    echo $GW_LOGIN_PAGE >> lg.txt
 
     GW_PAGE_TIME=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="page_time" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
     GW_SIGN=$( echo $(echo $GW_LOGIN_PAGE | grep -oP '(?<=name="sign" value=")[0-9a-zA-Z%]+') | awk '{ print $1 }')
