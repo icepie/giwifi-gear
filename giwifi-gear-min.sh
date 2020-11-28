@@ -117,6 +117,7 @@ gw_get_auth_state()
     echo $(json_format "$(curl -s -A "$PC_UA" "http://$1:$2/wifidog/get_auth_state")")
 }
 
+
 # main
 (
     GW_GTW_AUTH=$(gw_get_gtw_auth $GW_GTW)
@@ -142,9 +143,11 @@ gw_get_auth_state()
     echo $GW_SIGN
     echo $GW_PAGE_TIME
 
+
     GW_AUTH_STATE_DATA=$(get_json_value $GW_AUTH_STATE 'data')
-	GW_ID=$(get_json_value $GW_AUTH_STATE_DATA 'gw_id' | sed 's/"//g' )
+    GW_ID=$(get_json_value $GW_AUTH_STATE_DATA 'gw_id' | sed 's/"//g' )
     echo $GW_ID
+    echo $GW_AUTH_STATE
 
 )
 
