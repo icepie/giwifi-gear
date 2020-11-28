@@ -101,6 +101,11 @@ gw_get_gtw_auth()
 	echo $(json_format "$(curl -s -A "$PC_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
 }
 
+gw_logout()
+{
+	echo $(json_format "$(curl -s -A "$PC_UA" "$1/getApp.htm?action=logout")")
+}
+
 gw_get_auth_url()
 {
     echo $(curl -s -I -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
@@ -160,7 +165,6 @@ gw_rebindmac()
     "http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum" | gunzip)")"
     
 }
-
 
 # main
 (
