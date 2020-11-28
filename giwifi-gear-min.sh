@@ -32,20 +32,6 @@ url_decode() {
 
 }
 
-urlencode() {
-    # urlencode <string>
-
-    local length="${#1}"
-    for (( i = 0; i < length; i++ )); do
-        local c="${1:$i:1}"
-        case $c in
-            [a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
-            *) printf '%%%02X' "'$c" ;;
-        esac
-    done
-
-}
-
 # str
 str_str() {
     #str_str <string> "str" "str"
@@ -171,7 +157,7 @@ gw_loginaction()
     echo '-->' $GW_ATUH_URL
     echo ''
 
-    GW_PORT=$(str_str "$GW_ATUH_URL" "gw_port=" "&" )
+    GW_PORT=$(str_str "$GW_ATUH_URL" "gw_port=" "&")
 
 
     # get login page
@@ -184,9 +170,8 @@ gw_loginaction()
     echo ''
 
     # get some values from login page
-    GW_SIGN=$(url_encode $(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"' ))
-    #GW_SIGN=eQUkyCb3F7mqZg%2Bsw7z9CbWY12%2Bs1PHvGcSS8LDB3g7HsqjpW5yxigrTIGot%2FNdbNAWfO8qLw0iigTez6CEqWGi%2B3RWtG%2BSFSp6YFT5aFROQP%2Fun%2FYdnZh738FfMOqFzQwTcgSDryn5df%2FqA68iZRgxJMpaedxAHVe9SaFEGyy52xaqjc4W1ORVKbvqAsLdRKkYbJnfPvEHOWVupJypBg6gUTzwUPUjZPXSbkn7rxxlrX9%2BJ3gRrmAzlFxB6Cifo
-    GW_PAGE_TIME=$(str_str "$GW_LOGIN_PAGE" 'name="page_time" value="' '"' )
+    GW_SIGN=$(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"')
+    GW_PAGE_TIME=$(str_str "$GW_LOGIN_PAGE" 'name="page_time" value="' '"')
 
 
     echo GW_SIGN: $GW_SIGN
@@ -196,9 +181,8 @@ gw_loginaction()
     # get sauth state json
     GW_AUTH_STATE=$(gw_get_auth_state $GW_GTW $GW_PORT)
     GW_AUTH_STATE_DATA=$(get_json_value $GW_AUTH_STATE 'data')
-    GW_ID=$(get_json_value $GW_AUTH_STATE_DATA 'gw_id' | sed 's/"//g' )
+    GW_ID=$(get_json_value $GW_AUTH_STATE_DATA 'gw_id' | sed 's/"//g')
 
- 
     
     echo GW_AUTH_STATE:
     echo '-->' $GW_AUTH_STATE
@@ -223,7 +207,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_DATA 'access_type' | sed 's/"//g')\
 &online_time=$(get_json_value $GW_AUTH_STATE_DATA 'online_time' | sed 's/"//g')\
 &page_time=$GW_PAGE_TIME\
 &password=$GW_PWD\
-&sign=$GW_SIGN\
+&sign=$(url_encode $GW_SIGN)\
 &station_cloud=$(get_json_value $GW_AUTH_STATE_DATA 'station_cloud' | sed 's/"//g')\
 &station_sn=$(get_json_value $GW_AUTH_STATE_DATA 'station_sn' | sed 's/"//g')\
 &suggest_phone=$(get_json_value $GW_AUTH_STATE_DATA 'suggest_phone' | sed 's/"//g')\
