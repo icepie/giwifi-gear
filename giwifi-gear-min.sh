@@ -116,9 +116,9 @@ gw_get_login_page()
     echo $(curl -s -L -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
 }
 
-gw_get_auth_state()
+gw_get_hotspot_group()
 {
-    echo $(json_format "$(curl -s -A "$PC_UA" "http://$1:$2/wifidog/get_auth_state")")
+    echo $(json_format "$(curl -s -A "$PC_UA" "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
 gw_get_auth_state()
