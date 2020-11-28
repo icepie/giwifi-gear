@@ -141,6 +141,27 @@ gw_loginaction()
     
 }
 
+gw_rebindmac()
+{
+    # create random three-digit numbers
+    local str=$(date +%S%M)
+    local rannum=${str:1:3}
+
+    echo "$(json_format "$(curl -s  \
+    -A "$PC_UA" \
+    -X POST \
+    -H 'Accept: */*' \
+    -H 'Connection: keep-alive' \
+    -H 'Content-Type: application/x-www-form-urlencoded' \
+    -H 'accept-encoding: gzip, deflate, br' \
+    -H 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2' \
+    -H 'cache-control: max-age=0' \
+    -d "$1" \
+    "http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum" | gunzip)")"
+    
+}
+
+
 # main
 (
     # gtw auth auth
