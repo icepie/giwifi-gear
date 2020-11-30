@@ -12,4 +12,4 @@ A cli tool for login giwifi, and it just a client tool:)
 
 # todo
 ## dev sequence
-[py3](https://github.com/icepie/giwifi-gear/tree/py) -> py2 -> [bash](https://github.com/icepie/giwifi-gear/tree/sh) -> [go](https://github.com/icepie/giwifi-gear/tree/go) -> other
+[py](https://github.com/icepie/giwifi-gear/tree/py) -> [bash](https://github.com/icepie/giwifi-gear/tree/sh) -> [go](https://github.com/icepie/giwifi-gear/tree/go) -> other
