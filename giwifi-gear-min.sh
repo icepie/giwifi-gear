@@ -2,11 +2,10 @@
 
 # config
 GW_GTW="172.21.1.2"
-GW_USER="1001"
-GW_PWD="66686"
+GW_USER=""
+GW_PWD=""
 GW_BTYPE="pc"
-PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
-
+UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
 
 # url
 url_encode() {
@@ -98,32 +97,32 @@ get_json_value()
 # giwifi api
 gw_get_gtw_auth()
 {
-	echo $(json_format "$(curl -s -A "$PC_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
+	echo $(json_format "$(curl -s -A "$UA" "$1/getApp.htm?action=getAuthState&os=mac")")
 }
 
 gw_logout()
 {
-	echo $(json_format "$(curl -s -A "$PC_UA" "$1/getApp.htm?action=logout")")
+	echo $(json_format "$(curl -s -A "$UA" "$1/getApp.htm?action=logout")")
 }
 
 gw_get_auth_url()
 {
-    echo $(curl -s -I -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
+    echo $(curl -s -I -A "$UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
 }
 
 gw_get_login_page()
 {
-    echo $(curl -s -L -A "$PC_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
+    echo $(curl -s -L -A "$UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
 }
 
 gw_get_hotspot_group()
 {
-    echo $(json_format "$(curl -s -A "$PC_UA" "http:/$1:$2/wifidog/get_hotspot_group")")
+    echo $(json_format "$(curl -s -A "$UA" "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
 gw_get_auth_state()
 {
-    echo $(json_format "$(curl -s -A "$PC_UA" "http://$1:$2/wifidog/get_auth_state")")
+    echo $(json_format "$(curl -s -A "$UA" "http://$1:$2/wifidog/get_auth_state")")
 }
 
 gw_loginaction()
@@ -132,8 +131,8 @@ gw_loginaction()
     local str=$(date +%S%M)
     local rannum=${str:1:3}
 
-    echo "$(json_format "$(curl -s  \
-    -A "$PC_UA" \
+    echo $(json_format "$(curl -s  \
+    -A "$UA" \
     -X POST \
     -H 'Accept: */*' \
     -H 'Connection: keep-alive' \
@@ -142,7 +141,7 @@ gw_loginaction()
     -H 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2' \
     -H 'cache-control: max-age=0' \
     -d "$1" \
-    "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum" | gunzip)")"
+    "http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum" | gunzip)")
     
 }
 
@@ -152,8 +151,8 @@ gw_rebindmac()
     local str=$(date +%S%M)
     local rannum=${str:1:3}
 
-    echo "$(json_format "$(curl -s  \
-    -A "$PC_UA" \
+    echo $(json_format "$(curl -s  \
+    -A "$UA" \
     -X POST \
     -H 'Accept: */*' \
     -H 'Connection: keep-alive' \
@@ -162,8 +161,13 @@ gw_rebindmac()
     -H 'accept-language: zh-CN,zh-TW;q=0.8,zh;q=0.6,en;q=0.4,ja;q=0.2' \
     -H 'cache-control: max-age=0' \
     -d "$1" \
-    "http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum" | gunzip)")"
+    "http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum" | gunzip)")
     
+}
+
+gw_auth_token()
+{
+    echo $(json_format "$(curl -s -A "$UA" "$1")")
 }
 
 # main
@@ -215,6 +219,8 @@ gw_rebindmac()
     echo GW_ID: $GW_ID
     echo ''
 
+
+    # login to get the auth token
     GW_LOGIN_DATA="""\
 access_type=$(get_json_value $GW_AUTH_STATE_DATA 'access_type' | sed 's/"//g')\
 &acsign=$(get_json_value $GW_AUTH_STATE_DATA 'sign' | sed 's/"//g')\
@@ -245,5 +251,21 @@ access_type=$(get_json_value $GW_AUTH_STATE_DATA 'access_type' | sed 's/"//g')\
 
     GW_LOGIN_RT_DATA=$(gw_loginaction $GW_LOGIN_DATA)
     echo $GW_LOGIN_RT_DATA
+
+    GW_LOGIN_RT_DATA_INFO=$(get_json_value "$GW_LOGIN_RT_DATA" 'info' | sed 's/"//g')
+    echo ''
+    echo $GW_LOGIN_RT_DATA_INFO
+
+    # the last step
+    gw_auth_token $GW_LOGIN_RT_DATA_INFO
+
+    # gtw auth auth
+    GW_GTW_AUTH=$(gw_get_gtw_auth $GW_GTW)
+
+    echo ''
+    echo GW_GTW_AUTH:
+    echo '-->' $GW_GTW_AUTH
+    echo ''
+
 )
 
