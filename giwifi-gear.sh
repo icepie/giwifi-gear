@@ -101,18 +101,15 @@ get_json_value()
     }'
 }
 
-
-#############################################
-## giwifi api
-#############################################
-
 json_format(){
 	local json=$1
 	# Del escape character and format text
 	echo $(echo -e $1) | sed "s@\\\\@@g"
 }
 
-# giwifi api
+#############################################
+## giwifi api
+#############################################
 gw_get_gtw_auth()
 {
 	echo $(json_format "$(curl -s -A "$UA" "$1/getApp.htm?action=getAuthState&os=mac")")
@@ -192,6 +189,13 @@ gw_auth_token()
 ## cli related
 #############################################
 init(){
+  # check dep
+  if ! [ -x "$(command -v curl)" ]; then
+  echo 'Error: curl is not installed.' >&2
+  exit 1
+  fi
+
+  # set default ua
   AUTH_UA=$PC_UA
 }
 
@@ -215,7 +219,7 @@ optional arguments:
   -u USERNAME, --username USERNAME
   -p PASSWORD, --password PASSWORD
   -t TYPE, --type TYPE  auth type(use pc/pad/phone, and the default value is pc)
-  -r, --rebind          bind rebind your devices
+  -b, --bind          bind or rebind your devices
   -q, --quit            sign out of account authentication 
   -d, --daemon          running in the background guard (remove sharing restrictions)
   -v, --version         show program's version number and exit
@@ -240,13 +244,13 @@ optional arguments:
 }
 
 main(){
-# check
+# check param
 if [ $# -le 1 ]; then
   usage
-  # 打印usage之后直接用exit退出程序
   exit
 fi
 
+# 
 while true
 do
   case "$1" in
@@ -272,30 +276,28 @@ do
       elif [ $type = pad ];then
         AUTH_UA=$PAD_UA
       elif [ $type = phone ];then
-        echo "error: phone type is not be supported now!"
+        echo "Error: phone type is not be supported now!"
         exit
       else
-        echo "error: plz use the true value(pc/pad/phone)!"
+        echo "Error: plz use the true value(pc/pad/phone)!"
         exit
       fi
       echo "type:    $type"
+      echo "UA:      $AUTH_UA"
       shift
       ;;
-  -r|--rebind)
-      usage
-      exit
+  -b|--bind)
+      ISBIND=1
       ;;
   -q|--quit)
-      usage
-      exit
+      ISQUIT=1
       ;;
   -d|--daemon)
-      usage
-      exit
+      ISDAEMON=1
       ;;
   -v|--version)
       ver
-      exit
+      exit 1
       ;;
   -h|--help)
       usage
@@ -316,6 +318,12 @@ done
 #do 
 #  echo "Parameter #$count: $param"
 #done
+
+if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
+  echo "Error: don't use bind, quit and daemon at same time!"
+  exit 1
+fi
+
 }
 
 # 如果只注册短格式可以如下这样子
@@ -328,7 +336,7 @@ done
 #start
 (
   init
-  eval set -- $(getopt -o g:u:p:t:rdvh --long gateway:,username:,password:,type:,rebind,daemon,version,help -- "$@")
+  eval set -- $(getopt -o g:u:p:t:bdvh --long gateway:,username:,password:,type:,bind,daemon,version,help -- "$@")
   # 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
 
   main $@

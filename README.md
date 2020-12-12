@@ -21,7 +21,7 @@ optional arguments:
   -u USERNAME, --username USERNAME
   -p PASSWORD, --password PASSWORD
   -t TYPE, --type TYPE  auth type(use pc/pad/phone, and the default value is pc)
-  -r, --rebind          bind rebind your devices
+  -b, --bind          bind or rebind your devices
   -q, --quit            sign out of account authentication 
   -d, --daemon          running in the background guard (remove sharing restrictions)
   -v, --version         show program's version number and exit
