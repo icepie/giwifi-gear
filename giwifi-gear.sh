@@ -2,7 +2,7 @@
 VERSION=0.10
 
 ver(){
-    echo "\
+  echo "\
 giwifi-gear version $VERSION\
     "
 }
@@ -48,9 +48,9 @@ optional arguments:
 main(){
 # check
 if [ $# -le 1 ]; then
-    usage
-    # 打印usage之后直接用exit退出程序
-    exit
+  usage
+  # 打印usage之后直接用exit退出程序
+  exit
 fi
 
 while true
@@ -124,6 +124,10 @@ done
 # -o注册短格式选项
 # --long注册长格式选项
 # 选项后接一个冒号表示其后为其参数值，选项后接两个冒号表示其后可以有也可以没有选项值，选项后没有冒号表示其后不是其参数值
-set -- $(getopt -o g:u:p:t:rdvh --long gateway:,username:,password:,type:,rebind,daemon,version,help -- "$@")
-# 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
-main $@
+
+#start
+(
+  set -- $(getopt -o g:u:p:t:rdvh --long gateway:,username:,password:,type:,rebind,daemon,version,help -- "$@")
+  # 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
+  main $@
+)
