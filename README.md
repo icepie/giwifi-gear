@@ -1,4 +1,4 @@
-# giwifi-gear（sh ver)
+# giwifi-gear (sh ver)
 
 # env
 Any OS with `unix shell` (bash or busybox, etc)
