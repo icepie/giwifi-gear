@@ -4,11 +4,11 @@
 Any OS with `unix shell` (bash or busybox, etc)
 
 # dep
-`curl`
+- curl
 
 # Usage
 ```
-❯ ./giwifi-gear.sh
+$ ./giwifi-gear.sh
 giwifi-gear
   A cli tool for login giwifi (multi-platform, fast, small)
 
