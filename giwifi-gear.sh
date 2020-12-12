@@ -5,6 +5,7 @@
 #############################################
 ## config
 #############################################
+VERSION=0.11
 GW_NAME="1010101010101"
 GW_PWD="password"
 GW_PORT_DEF=8060
@@ -187,10 +188,13 @@ gw_auth_token()
     echo $(json_format "$(curl -s -A "$UA" "$1")")
 }
 
-
 #############################################
 ## cli related
 #############################################
+init(){
+  AUTH_UA=$PC_UA
+}
+
 ver(){
   echo "\
 giwifi-gear version $VERSION\
@@ -263,32 +267,38 @@ do
       ;;
   -t|--type)
       type="$2"
+      if [ $type = pc ];then
+        AUTH_UA=$PC_UA
+      elif [ $type = pad ];then
+        AUTH_UA=$PAD_UA
+      elif [ $type = phone ];then
+        echo "error: phone type is not be supported now!"
+        exit
+      else
+        echo "error: plz use the true value(pc/pad/phone)!"
+        exit
+      fi
       echo "type:    $type"
       shift
       ;;
   -r|--rebind)
       usage
-      # 打印usage之后直接用exit退出程序
       exit
       ;;
   -q|--quit)
       usage
-      # 打印usage之后直接用exit退出程序
       exit
       ;;
   -d|--daemon)
       usage
-      # 打印usage之后直接用exit退出程序
       exit
       ;;
   -v|--version)
       ver
-      # 打印ver之后直接用exit退出程序
       exit
       ;;
   -h|--help)
       usage
-      # 打印usage之后直接用exit退出程序
       exit
       ;;
   --)
@@ -317,7 +327,9 @@ done
 
 #start
 (
-  set -- $(getopt -o g:u:p:t:rdvh --long gateway:,username:,password:,type:,rebind,daemon,version,help -- "$@")
+  init
+  eval set -- $(getopt -o g:u:p:t:rdvh --long gateway:,username:,password:,type:,rebind,daemon,version,help -- "$@")
   # 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
+
   main $@
 )
