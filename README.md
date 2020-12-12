@@ -1,34 +1,46 @@
-# Giwifi-Gear（py branch)
+# giwifi-gear (py ver)
 A cli tool for login giwifi 
 
-## ENV
-Any OS with Python3
+## env
+Any OS with `python3`
 
-## Dep
-requests
+## dep
+- requests
+
+
 > python3 -m pip install -r requirements.txt
 
-## Usage
-``` bash
+## usage
+``` 
+$ python3 giwifi-gear.sh
 
-usage: giwifi-gear.py [-h] [-g GATEWAY] [-u USERNAME] [-p PASSWORD] [-t TYPE] [-r] [-q] [-d] [-v] [-V]
+giwifi-gear
+  A cli tool for login giwifi (multi-platform, fast, small)
 
-GiWiFi GEAR TOOL
+usage:
+  giwifi-gear.py [-h] [-g GATEWAY] [-u USERNAME] [-p PASSWORD] [-t TYPE] [-r] [-q] [-d] [-v] [-V]
 
 optional arguments:
   -h, --help            show this help message and exit
   -g GATEWAY, --gateway GATEWAY
-                        网关IP
   -u USERNAME, --username USERNAME
-                        用户名
   -p PASSWORD, --password PASSWORD
-                        密码
-  -t TYPE, --type TYPE  设备类型(pc/pad/phone)
-  -r, --rebind          换绑/绑定
-  -q, --quit            登出
-  -d, --daemon          在后台守护运行(去除共享限制)
-  -v, --verbose         额外输出一些技术性信息
-  -V, --version         show program's version number and exit
+  -t TYPE, --type TYPE  auth type(use pc/pad/phone, and the default value is pc)
+  -r, --rebind          bind rebind your devices
+  -q, --quit            sign out of account authentication 
+  -d, --daemon          running in the background guard (remove sharing restrictions)
+  -v, --verbose         show some debug info
+  -v, --version         show program's version number and exit
+
+  example: 
+    # bind your device with pad type
+    giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+
+    # auth with daemon mode
+    giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -d
+
+    # quit auth
+    giwifi-gear.py -g 172.21.1.1 -q
 
 (c) 2020 icepie.dev@gmail.com
 ``` 
