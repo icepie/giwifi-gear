@@ -233,15 +233,15 @@ optional arguments:
   -d, --daemon          running in the background guard (remove sharing restrictions)
   -v, --version         show program's version number and exit
 
-  example: 
-    # bind your device with pad type
-    ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+example: 
+  # bind your device with pad type
+  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
 
-    # auth with daemon mode
-    ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
+  # auth with daemon mode
+  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
 
-    # quit auth
-    ./giwifi-gear.sh -g 172.21.1.1 -q
+  # quit auth
+  ./giwifi-gear.sh -g 172.21.1.1 -q
 
 (c) 2020 icepie.dev@gmail.com\
 "
