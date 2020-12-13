@@ -185,7 +185,7 @@ gw_rebindmac() {
 		-d "$1" \
 		"http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum" | gunzip
 	)")
-
+    # use gunzip cause some curl not support --compressed option
 }
 
 gw_auth_token() {
@@ -320,11 +320,6 @@ main() {
 		shift
 	done
 
-	#for param in "$@"
-	#do
-	#  echo "Parameter #$count: $param"
-	#done
-
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
 		echo "Error: don't use bind, quit and daemon at same time!"
@@ -347,7 +342,8 @@ main() {
 
 	# quit option
 	if [ $ISQUIT ]; then
-		echo "quiting"
+		GW_QUIT_RTE=$(gw_logout $GW_GTW)
+        echo $GW_QUIT_RTE
 		exit 1
 	fi
 
@@ -439,6 +435,16 @@ access_type=$(get_json_value $GW_AUTH_STATE_DATA 'access_type')\
         echo ''
     fi
 
+    if [ $ISBIND ]; then
+        GW_BIND_DATA=$GW_LOGIN_DATA+"&is_signed=2"
+        echo $GW_BIND_DATA
+        GW_BIND_RTE=$(gw_rebindmac $GW_BIND_DATA)
+        echo $GW_BIND_RTE
+    else
+        GW_LOGIN_RTE=$(gw_loginaction $GW_LOGIN_DATA)
+        echo $GW_LOGIN_RTE
+    fi
+    
 }
 
 #start
