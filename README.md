@@ -12,7 +12,7 @@ Any OS with `python3`
 
 ## usage
 ``` 
-$ python3 giwifi-gear.sh
+$ python3 giwifi-gear.py
 
 giwifi-gear
   A cli tool for login giwifi (multi-platform, fast, small)
