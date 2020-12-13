@@ -5,11 +5,19 @@
 #############################################
 ## config
 #############################################
+# tool info
 VERSION=0.11
-GW_NAME="1010101010101"
-GW_PWD="password"
+
+# user info 
+GW_GTW=""
+GW_USER=""
+GW_PWD=""
+
+# giwifi default info
 GW_PORT_DEF=8060
 RD_URL_PORT_DEF=8062
+
+# auth setting
 PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
 PAD_UA="Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
 
@@ -109,27 +117,33 @@ json_format() {
 ## giwifi api
 #############################################
 gw_get_gtw_auth() {
-	echo $(json_format "$(curl -s -A "$UA" "$1/getApp.htm?action=getAuthState&os=mac")")
+	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
+    # os type from index.html
+	# if (isiOS) url += "&os=ios";
+	# if (isAndroid) url += "&os=android";
+	# if (isWinPC) url += "&os=windows";
+	# if (isMac) url += "&os=mac";
+	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
 }
 
 gw_logout() {
-	echo $(json_format "$(curl -s -A "$UA" "$1/getApp.htm?action=logout")")
+	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1/getApp.htm?action=logout")")
 }
 
 gw_get_auth_url() {
-	echo $(curl -s -I -A "$UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
+	echo $(curl -s -I -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
 }
 
 gw_get_login_page() {
-	echo $(curl -s -L -A "$UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
+	echo $(curl -s -L -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
 }
 
 gw_get_hotspot_group() {
-	echo $(json_format "$(curl -s -A "$UA" "http:/$1:$2/wifidog/get_hotspot_group")")
+	echo $(json_format "$(curl -s -A "$AUTH_UA" "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
 gw_get_auth_state() {
-	echo $(json_format "$(curl -s -A "$UA" "http://$1:$2/wifidog/get_auth_state")")
+	echo $(json_format "$(curl -s -A "$AUTH_UA" "http://$1:$2/wifidog/get_auth_state")")
 }
 
 gw_loginaction() {
@@ -139,7 +153,7 @@ gw_loginaction() {
 
 	echo $(json_format "$(
 		curl -s \
-		-A "$UA" \
+		-A "$AUTH_UA" \
 		-X POST \
 		-H 'Accept: */*' \
 		-H 'Connection: keep-alive' \
@@ -160,7 +174,7 @@ gw_rebindmac() {
 
 	echo $(json_format "$(
 		curl -s \
-		-A "$UA" \
+		-A "$AUTH_UA" \
 		-X POST \
 		-H 'Accept: */*' \
 		-H 'Connection: keep-alive' \
@@ -175,7 +189,7 @@ gw_rebindmac() {
 }
 
 gw_auth_token() {
-	echo $(json_format "$(curl -s -A "$UA" "$1")")
+	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1")")
 }
 
 #############################################
@@ -212,20 +226,21 @@ optional arguments:
   -u USERNAME, --username USERNAME
   -p PASSWORD, --password PASSWORD
   -t TYPE, --type TYPE  auth type(use pc/pad/phone, and the default value is pc)
-  -b, --bind          bind or rebind your devices
+  -i, --info            print the debug info
+  -b, --bind            bind or rebind your devices
   -q, --quit            sign out of account authentication 
   -d, --daemon          running in the background guard (remove sharing restrictions)
   -v, --version         show program's version number and exit
 
   example: 
     # bind your device with pad type
-    giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+    ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
 
     # auth with daemon mode
-    giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
+    ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
 
     # quit auth
-    giwifi-gear.sh -g 172.21.1.1 -q
+    ./giwifi-gear.sh -g 172.21.1.1 -q
 
 (c) 2020 icepie.dev@gmail.com\
 "
@@ -247,17 +262,15 @@ main() {
 	while true; do
 		case "$1" in
 		-g | --gateway)
-			gateway="$2"
+			GW_GTW="$2"
 			shift
 			;;
 		-u | --username)
-			username="$2"
-			echo "username:    $username"
+			GW_USER="$2"
 			shift
 			;;
 		-p | --password)
-			password="$2"
-			echo "password:    $password"
+			GW_PWD="$2"
 			shift
 			;;
 		-t | --type)
@@ -276,6 +289,9 @@ main() {
 			echo "type:    $type"
 			echo "UA:      $AUTH_UA"
 			shift
+			;;
+		-i | --info)
+			ISINFO=1
 			;;
 		-b | --bind)
 			ISBIND=1
@@ -317,9 +333,19 @@ main() {
 	fi
 
 	# check the necessary parameters
-	if [ ! $gateway ]; then
+	if [ ! $GW_GTW ]; then
 		echo -n "Plz enter gateway: "
-		read gateway
+		read GW_GTW
+	fi
+
+    # gtw auth auth
+    GW_GTW_AUTH=$(gw_get_gtw_auth $GW_GTW)
+
+    # info option
+	if [ $ISINFO ]; then
+        echo "GW_GTW_AUTH: "
+        echo '-->' $GW_GTW_AUTH
+        echo ''
 	fi
 
 	# quit option
@@ -328,19 +354,41 @@ main() {
 		exit 1
 	fi
 
-	if [ ! $username ]; then
+	if [ ! $GW_USER ]; then
 		echo -n "Plz enter username: "
-		read username
+		read GW_USER
 	fi
 
-	if [ ! $password ]; then
+	if [ ! $GW_PWD ]; then
 		echo -n "Plz enter password: "
-		read password
+		read GW_PWD
 	fi
 
-	echo "gateway: $gateway"
-	echo "username: $username"
-	echo "password: $password"
+	echo "gateway: $GW_GTW"
+	echo "username: $GW_USER"
+	echo "password: $GW_PWD"
+
+    # get login page
+    GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
+    if [ $ISINFO ]; then
+        echo $GW_LOGIN_PAGE
+
+        echo GW_LOGIN_PAGE:
+        echo '-->' $GW_LOGIN_PAGE
+        echo ''
+        echo ''
+    fi
+
+    # get auth url
+    GW_AUTH_URL=$(gw_get_auth_url $GW_GTW)
+    if [ $ISINFO ]; then
+        echo GW_ATUH_URL:
+        echo '-->' $GW_AUTH_URL
+        echo ''
+    fi
+
+    # get the giwfi login page port
+    GW_PORT=$(str_str "$GW_AUTH_URL" "gw_port=" "&")
 
 }
 
@@ -354,7 +402,7 @@ main() {
 #start
 (
 	init
-	eval set -- $(getopt -o g:u:p:t:bqdvh --long gateway:,username:,password:,type:,bind,quit,daemon,version,help -- "$@")
+	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
 	# 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
 
 	main $@
