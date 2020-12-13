@@ -164,7 +164,7 @@ gw_loginaction() {
 		-d "$1" \
 		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum" | gunzip
 	)")
-
+    # use gunzip cause some curl not support --compressed option
 }
 
 gw_rebindmac() {
@@ -204,6 +204,7 @@ init() {
 
 	# set default ua
 	AUTH_UA=$PC_UA
+    GW_BTYPE="pc"
 }
 
 ver() {
@@ -244,11 +245,6 @@ optional arguments:
 
 (c) 2020 icepie.dev@gmail.com\
 "
-	# 短格式中，选项值为可选的选项，选项值只能紧接选项而不可使用任何符号将其他选项隔开；如-p80，不要写成性-p 80
-	# 短格式中，选项值为必有的选项，选项值既可紧接选项也可以使用空格与选项隔开；如-i192.168.1.1，也可写成-i 192.168.1.1
-	# 长格式中，选项值为可选的选项，选项值只能使用=号连接选项；如--port=80，不可写成性--port80或--port 80
-	# 长格式中，选项值为必有的选项，选项值既可使用=号连接选项也可使用空格连接选项；如--ip=192.168.1.1，也可写成--ip 192.168.1.1
-	# 为简便起见，建议凡是短格式都使用“选项+选项值”的形式（-p80），凡是长格式都使用“选项+=+选项值”的形式（--port=80）
 }
 
 main() {
@@ -275,10 +271,13 @@ main() {
 			;;
 		-t | --type)
 			type="$2"
-			if [ $type = pc ]; then
-				AUTH_UA=$PC_UA
-			elif [ $type = pad ]; then
+			# if [ $type = pc ]; then
+			# 	AUTH_UA=$PC_UA
+            #   GW_BTYPE="pc"
+			# elif ...
+            if [ $type = pad ]; then
 				AUTH_UA=$PAD_UA
+                GW_BTYPE="pad"
 			elif [ $type = phone ]; then
 				echo "Error: phone type is not be supported now!"
 				exit
@@ -320,7 +319,7 @@ main() {
 		esac
 		shift
 	done
-	# 剩余所有未解析到的参数存在$@中，可通过遍历$@来获取
+
 	#for param in "$@"
 	#do
 	#  echo "Parameter #$count: $param"
@@ -340,8 +339,6 @@ main() {
 
     # gtw auth auth
     GW_GTW_AUTH=$(gw_get_gtw_auth $GW_GTW)
-
-    # info option
 	if [ $ISINFO ]; then
         echo "GW_GTW_AUTH: "
         echo '-->' $GW_GTW_AUTH
@@ -382,7 +379,7 @@ main() {
     # get auth url
     GW_AUTH_URL=$(gw_get_auth_url $GW_GTW)
     if [ $ISINFO ]; then
-        echo GW_ATUH_URL:
+        echo GW_AUTH_URL:
         echo '-->' $GW_AUTH_URL
         echo ''
     fi
@@ -390,20 +387,63 @@ main() {
     # get the giwfi login page port
     GW_PORT=$(str_str "$GW_AUTH_URL" "gw_port=" "&")
 
-}
+    # get some values from login page
+    GW_SIGN=$(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"')
+    GW_PAGE_TIME=$(str_str "$GW_LOGIN_PAGE" 'name="page_time" value="' '"')
+    if [ $ISINFO ]; then
+        echo GW_SIGN: $GW_SIGN
+        echo GW_PAGE_TIME: $GW_PAGE_TIME
+        echo ''
+    fi
 
-# 如果只注册短格式可以如下这样子
-# set -- $(getopt i:p::h "$@")
-# 如果要注册长格式需要如下这样子
-# -o注册短格式选项
-# --long注册长格式选项
-# 选项后接一个冒号表示其后为其参数值，选项后接两个冒号表示其后可以有也可以没有选项值，选项后没有冒号表示其后不是其参数值
+    # get sauth state json
+    GW_AUTH_STATE=$(gw_get_auth_state $GW_GTW $GW_PORT)
+    GW_AUTH_STATE_DATA=$(get_json_value $GW_AUTH_STATE 'data')
+    GW_ID=$(get_json_value $GW_AUTH_STATE_DATA 'gw_id')
+    if [ $ISINFO ]; then
+        echo GW_AUTH_STATE:
+        echo '-->' $GW_AUTH_STATE
+        echo ''
+        echo GW_ID: $GW_ID
+        echo ''
+    fi
+
+    # login to get the auth token
+    GW_LOGIN_DATA=$(echo """\
+access_type=$(get_json_value $GW_AUTH_STATE_DATA 'access_type')\
+&acsign=$(get_json_value $GW_AUTH_STATE_DATA 'sign')\
+&btype=$GW_BTYPE\
+&client_mac=$(url_encode $(get_json_value $GW_AUTH_STATE_DATA 'client_mac'))\
+&contact_phone=$(get_json_value $GW_AUTH_STATE_DATA 'contact_phone')\
+&devicemode=""\
+&gw_address=$(str_str "$GW_AUTH_URL" "gw_address=" "&")\
+&gw_id=$(str_str "$GW_AUTH_URL" "gw_id=" "&")\
+&gw_port=$(str_str "$GW_AUTH_URL" "gw_port=" "&")\
+&lastaccessurl=""\
+&logout_reason=$(get_json_value $GW_AUTH_STATE_DATA 'logout_reason')\
+&mac=$(url_encode $(str_str "$GW_AUTH_URL" "mac=" "&"))\
+&name=$GW_USER\
+&online_time=$(get_json_value $GW_AUTH_STATE_DATA 'online_time')\
+&page_time=$GW_PAGE_TIME\
+&password=$GW_PWD\
+&sign=$(url_encode $GW_SIGN)\
+&station_cloud=$(get_json_value $GW_AUTH_STATE_DATA 'station_cloud')\
+&station_sn=$(get_json_value $GW_AUTH_STATE_DATA 'station_sn')\
+&suggest_phone=$(get_json_value $GW_AUTH_STATE_DATA 'suggest_phone')\
+&url=$(str_str "$GW_AUTH_URL" "url=" "&")\
+&user_agent=""\
+"""  | sed 's/"//g' )
+
+    if [ $ISINFO ]; then
+        echo GW_LOGIN_DATA: $GW_LOGIN_DATA
+        echo ''
+    fi
+
+}
 
 #start
 (
 	init
 	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
-	# 由于是在main函数中才实现参数处理，所以需要使用$@将所有参数传到main函数
-
 	main $@
 )
