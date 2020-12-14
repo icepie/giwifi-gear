@@ -334,6 +334,8 @@ main() {
 
     # gtw auth auth
     GW_GTW_AUTH=$(gw_get_gtw_auth $GW_GTW)
+    [ $GW_GTW_AUTH ] || echo "Failed to get the gateway info, plz check the gateway host" && exit;
+
 	if [ $ISINFO ]; then
         echo "GW_GTW_AUTH: "
         echo '-->' $GW_GTW_AUTH
@@ -363,6 +365,8 @@ main() {
 
     # get login page
     GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
+    [ $GW_LOGIN_PAGE ] || echo "Failed to get the login page, plz try again" && exit 1;
+
     if [ $ISINFO ]; then
         echo $GW_LOGIN_PAGE
 
