@@ -34,7 +34,7 @@ optional arguments:
 
   example: 
     # bind your device with pad type
-    python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+    python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
 
     # auth with daemon mode
     python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -d
