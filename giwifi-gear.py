@@ -11,20 +11,20 @@ import requests
 from getpass import getpass
 from urllib.parse import urlparse, parse_qs
 
-SCRIPT_VERSION = "1.0.2.9"
+SCRIPT_VERSION = "1.0.3.0"
 
 PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
-                                 description='GiWiFi GEAR TOOL',
+                                 description='giwifi-gear',
                                  epilog='(c) 2020 icepie.dev@gmail.com')
 PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
 PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
 PARSER.add_argument('-t', '--type', type=str, help='设备类型(pc/pad/phone)')
-PARSER.add_argument('-r', '--rebind', action='store_true', help='换绑/绑定')
+PARSER.add_argument('-b', '--bind', action='store_true', help='换绑/绑定')
 PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行(去除共享限制)')
-PARSER.add_argument('-v', '--verbose', action='store_true', help='额外输出一些技术性信息')
-PARSER.add_argument('-V', '--version', action='version',
+PARSER.add_argument('-i', '--info', action='store_true', help='额外输出一些技术性信息')
+PARSER.add_argument('-v', '--version', action='version',
                     version='giwifi-gear {}'.format(SCRIPT_VERSION))
 
 CONFIG = PARSER.parse_args()
@@ -75,7 +75,7 @@ if not CONFIG.quit:
     if not CONFIG.password:
         CONFIG.password = getpass('请输入账号密码:')
 
-if CONFIG.rebind:
+if CONFIG.bind:
     if CONFIG.daemon:
         logcat('请不要将绑定功能与守护模式一起运行!', "E")
         exit()
@@ -117,25 +117,25 @@ def main():
     logcat('正在获取网关信息…')
 
     try:
-        if CONFIG.verbose:
+        if CONFIG.info:
             Hotspot_Group = get_hotspot_group(CONFIG.gateway)
             logcat(Hotspot_Group)
 
         authUrl = requests.get('http://%s:8062/redirect' %
                                (CONFIG.gateway), headers=HEADERS, timeout=5).url
-        if CONFIG.verbose:
+        if CONFIG.info:
             logcat(authUrl)
 
         authParmas = {k: v[0]
                       for k, v in parse_qs(urlparse(authUrl).query).items()}
 
-        if CONFIG.verbose:
+        if CONFIG.info:
             logcat(authParmas)
 
         loginPage = requests.get('http://login.gwifi.com.cn/cmps/admin.php/api/login/?' +
                                  urlparse(authUrl).query, headers=HEADERS, timeout=5).text
 
-        # if CONFIG.verbose:
+        # if CONFIG.info:
         #    logcat(loginPage)
 
         pagetime = re.search(
@@ -193,10 +193,10 @@ def main():
                 'user_agent': '',
             }
 
-            if CONFIG.verbose:
+            if CONFIG.info:
                 logcat(data)
 
-            if CONFIG.rebind:
+            if CONFIG.bind:
                 result = reBindMac(data)
                 if result['status']:
                     logcat('绑定成功：%s' % (result['info']))
@@ -209,7 +209,7 @@ def main():
                     authState = getAuthState(authParmas, sign)
                     printStatus(authParmas, authState)
 
-                    if CONFIG.verbose:
+                    if CONFIG.info:
                         logcat(result)
 
                     if authState['auth_state'] == 2:
@@ -251,7 +251,7 @@ def login(data):
         'info': None
     }
 
-    if CONFIG.verbose:
+    if CONFIG.info:
         logcat(resp)
 
     if 'wifidog/auth' in resp['info']:
@@ -274,7 +274,7 @@ def reBindMac(data):
         'info': None
     }
 
-    if CONFIG.verbose:
+    if CONFIG.info:
         logcat(resp)
         logcat(data)
 
@@ -321,7 +321,7 @@ def getAuthState(authParmas, sign):
         logcat('连接超时，可能已超出上网区间', "E")
         return False
 
-    if CONFIG.verbose:
+    if CONFIG.info:
         logcat(resp)
 
     if resp['resultCode'] == 0:
@@ -331,7 +331,7 @@ def getAuthState(authParmas, sign):
 
 
 def printStatus(authParmas, authState):
-    if not CONFIG.verbose:
+    if not CONFIG.info:
         clear()
 
     print(
