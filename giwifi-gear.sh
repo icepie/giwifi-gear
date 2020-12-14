@@ -6,7 +6,7 @@
 ## config
 #############################################
 # tool info
-VERSION=0.16
+VERSION=0.18
 
 # user info
 GW_GTW=""
@@ -20,6 +20,7 @@ RD_URL_PORT_DEF=8062
 # auth setting
 PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
 PAD_UA="Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25"
+HEART_BEAT=9
 
 #############################################
 ## url handle
@@ -221,6 +222,14 @@ init() {
 	# set default ua
 	AUTH_UA=$PC_UA
 	GW_BTYPE="pc"
+
+	# set the tool path
+	TOOL_PATH=$0
+
+	[ $ISINFO ] && \
+	echo "TOOL_PATH:" && \
+	echo "--> $TOOL_PATH" && \
+	echo ""
 }
 
 ver() {
@@ -263,7 +272,153 @@ example:
 "
 }
 
-login() {
+main() {
+	# # check param
+	# if [ $# -le 0 ]; then
+	#   usage
+	#   exit
+	# fi
+
+	#
+	while true; do
+		case "$1" in
+		-g | --gateway)
+			GW_GTW="$2"
+			shift
+			;;
+		-u | --username)
+			GW_USER="$2"
+			shift
+			;;
+		-p | --password)
+			GW_PWD="$2"
+			shift
+			;;
+		-t | --type)
+			type="$2"
+			if [ $type = pc ]; then
+				AUTH_UA=$PC_UA
+				GW_BTYPE="pc"
+			elif [ $type = pad ]; then
+				AUTH_UA=$PAD_UA
+				GW_BTYPE="pad"
+			elif [ $type = phone ]; then
+				echo "Error: phone type is not be supported now!"
+				exit
+			else
+				echo "Error: plz use the true value(pc/pad/phone)!"
+				exit
+			fi
+			shift
+			;;
+		-i | --info)
+			ISINFO=1
+			;;
+		-b | --bind)
+			ISBIND=1
+			;;
+		-q | --quit)
+			ISQUIT=1
+			;;
+		-d | --daemon)
+			ISDAEMON=1
+			;;
+		-v | --version)
+			ver
+			exit 1
+			;;
+		-h | --help)
+			usage
+			exit
+			;;
+		--)
+			shift
+			break
+			;;
+		*)
+			echo "$1 is not option"
+			;;
+		esac
+		shift
+	done
+
+	# init setting
+	init
+
+	# check the conflicting parameters
+	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
+		echo "Error: don't use bind, quit and daemon at same time!"
+		exit 1
+	fi
+
+	# check the necessary parameters
+	if [ ! $GW_GTW ]; then
+		echo -n "Plz enter gateway: "
+		read GW_GTW
+	fi
+
+	# gtw auth auth
+	logcat "Try to get the auth info..."
+	GW_GTW_AUTH_RTE=$(gw_get_gtw_auth $GW_GTW)
+	[ ! "$GW_GTW_AUTH_RTE" ] && \
+	logcat "Failed to get the gateway info, plz check the gateway host" "E" && \
+	exit 1
+
+	[ $ISINFO ] && \
+	echo "" && \
+	echo "GW_GTW_AUTH_RTE: " && \
+	echo "--> $GW_GTW_AUTH_RTE" && \
+	echo ""
+
+	GW_GTW_AUTH_RTE_DATA="$(get_json_value $GW_GTW_AUTH_RTE 'data')"
+
+	if [ "$(get_json_value $GW_GTW_AUTH_RTE_DATA 'auth_state')" -eq 2 ]; then
+		# 2 is logged
+		logcat "Good! you are authed!"
+
+		[ ! $ISQUIT ] && \
+		[ ! $ISDAEMON ] && \
+		logcat "exit" && \
+		exit 1
+	else
+		logcat "The device not authed!"
+		[ $ISQUIT ] && \
+		logcat "Error: you do not need to logout" && \
+		exit 1
+	fi
+
+	# quit option
+	if [ $ISQUIT ]; then
+		logcat "Try to login out "
+
+		GW_QUIT_RTE=$(gw_logout $GW_GTW)
+		[ ! "$GW_GTW_AUTH_RTE" ] && \
+		logcat "Failed to get the quit info, plz retry" "E" && \
+		exit 1
+
+		[ $ISINFO ] && \
+		echo "" && \
+		echo "GW_QUIT_RTE: " && \
+		echo "--> $GW_QUIT_RTE" && \
+		echo ""
+
+		if [ $(get_json_value $GW_QUIT_RTE 'resultCode') -eq 0 ]; then
+			logcat "sign out of account successfully"
+		else
+			logcat "Failed to sign out of account"
+		fi
+		exit 1
+	fi
+
+	# check the username and password
+	[ ! "$GW_USER" ] && \
+	echo -n "Plz enter username: " && \
+	read GW_USER
+
+	[ ! "$GW_PWD" ] && \
+	echo -n "Plz enter password: " && \
+	read GW_PWD
+
 	# get login page
 	GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
 	[ ! "$GW_LOGIN_PAGE" ] && \
@@ -380,7 +535,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		logcat "Try to get the token whit $GW_BTYPE type..."
 
 		GW_LOGIN_RTE=$(gw_loginaction $GW_LOGIN_DATA)
-		[ ! "$GW_AUTH_URL" ] && \
+		[ ! "$GW_LOGIN_RTE" ] && \
 		logcat "Failed to get the loginaction, plz try again" "E" && \
 		exit 1
 
@@ -404,18 +559,34 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 			exit 1
 
 			# clear screen
+			[ ! $ISINFO ] && \
 			cls || clear
 
-			echo """--------------------------------------------
+			echo """\
+--------------------------------------------
 SSID:             $GW_ID
 AP MAC:           $GW_APMAC
 GateWay:          $GW_ADDRESS
+Type:             $GW_BTYPE
 IP:               $DEV_IP
 MAC:              $DEV_MAC
 Station SN:       $STATION_SN
 Logged:           yes
---------------------------------------------"""
+--------------------------------------------\
+"""
 			logcat "Auth successfully"
+
+			if [ $ISDAEMON ]; then
+				local i=1
+				while :
+				do
+					sleep $HEART_BEAT
+					logcat "Heartbeat: $i" && ((i=i+1))
+					GW_AUTH_RTE=$(gw_auth_token $GW_LOGIN_RTE_INFO)
+					[ ! "$GW_AUTH_RTE" ] && \
+					break;
+				done
+			fi
 
 		else
 			logcat "Failed to get the auth token" "E"
@@ -426,158 +597,8 @@ Logged:           yes
 	fi
 }
 
-main() {
-	# # check param
-	# if [ $# -le 0 ]; then
-	#   usage
-	#   exit
-	# fi
-
-	#
-	while true; do
-		case "$1" in
-		-g | --gateway)
-			GW_GTW="$2"
-			shift
-			;;
-		-u | --username)
-			GW_USER="$2"
-			shift
-			;;
-		-p | --password)
-			GW_PWD="$2"
-			shift
-			;;
-		-t | --type)
-			type="$2"
-			# if [ $type = pc ]; then
-			# 	AUTH_UA=$PC_UA
-			#   GW_BTYPE="pc"
-			# elif ...
-			if [ $type = pad ]; then
-				AUTH_UA=$PAD_UA
-				GW_BTYPE="pad"
-			elif [ $type = phone ]; then
-				echo "Error: phone type is not be supported now!"
-				exit
-			else
-				echo "Error: plz use the true value(pc/pad/phone)!"
-				exit
-			fi
-			echo "type:    $type"
-			echo "UA:      $AUTH_UA"
-			shift
-			;;
-		-i | --info)
-			ISINFO=1
-			;;
-		-b | --bind)
-			ISBIND=1
-			;;
-		-q | --quit)
-			ISQUIT=1
-			;;
-		-d | --daemon)
-			ISDAEMON=1
-			;;
-		-v | --version)
-			ver
-			exit 1
-			;;
-		-h | --help)
-			usage
-			exit
-			;;
-		--)
-			shift
-			break
-			;;
-		*)
-			echo "$1 is not option"
-			;;
-		esac
-		shift
-	done
-
-	# check the conflicting parameters
-	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
-		echo "Error: don't use bind, quit and daemon at same time!"
-		exit 1
-	fi
-
-	# check the necessary parameters
-	if [ ! $GW_GTW ]; then
-		echo -n "Plz enter gateway: "
-		read GW_GTW
-	fi
-
-	# gtw auth auth
-	logcat "Try to get the auth info..."
-	GW_GTW_AUTH_RTE=$(gw_get_gtw_auth $GW_GTW)
-	[ ! "$GW_GTW_AUTH_RTE" ] && \
-	logcat "Failed to get the gateway info, plz check the gateway host" "E" && \
-	exit 1
-
-	[ $ISINFO ] && \
-	echo "" && \
-	echo "GW_GTW_AUTH_RTE: " && \
-	echo "--> $GW_GTW_AUTH_RTE" && \
-	echo ""
-
-	GW_GTW_AUTH_RTE_DATA="$(get_json_value $GW_GTW_AUTH_RTE 'data')"
-
-	if [ "$(get_json_value $GW_GTW_AUTH_RTE_DATA 'auth_state')" -eq 2 ]; then
-		# 2 is logged
-		logcat "Good! you are authed!"
-
-		[ ! $ISQUIT ] && \
-		logcat "exit" && \
-		exit 1
-	else
-		logcat "The device not authed!"
-	fi
-
-	# quit option
-	if [ $ISQUIT ]; then
-		logcat "Try to login out "
-
-		GW_QUIT_RTE=$(gw_logout $GW_GTW)
-		[ ! "$GW_GTW_AUTH_RTE" ] && \
-		logcat "Failed to get the quit info, plz retry" "E" && \
-		exit 1
-
-		[ $ISINFO ] && \
-		echo "" && \
-		echo "GW_QUIT_RTE: " && \
-		echo "--> $GW_QUIT_RTE" && \
-		echo ""
-
-		if [ $(get_json_value $GW_QUIT_RTE 'resultCode') -eq 0 ]; then
-			logcat "sign out of account successfully"
-		else
-			logcat "Failed to sign out of account"
-		fi
-		exit 1
-	fi
-
-	# check the username and password
-	[ ! "$GW_USER" ] && \
-	echo -n "Plz enter username: " && \
-	read GW_USER
-
-	[ ! "$GW_PWD" ] && \
-	echo -n "Plz enter password: " && \
-	read GW_PWD
-
-	# login main func
-	(
-		login
-	)
-}
-
 #start
 (
-	init
 	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
 	main $@
 )
