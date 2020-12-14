@@ -1,4 +1,5 @@
 # giwifi-gear (sh ver)
+A bash cli tool for login giwifi
 
 # env
 Any OS with `unix tools` (bash or busybox, etc)
@@ -6,7 +7,7 @@ Any OS with `unix tools` (bash or busybox, etc)
 # dep
 - curl
 
-# Usage
+# usage
 ```
 $ ./giwifi-gear.sh
 giwifi-gear
