@@ -30,7 +30,7 @@ optional arguments:
 
 example: 
   # bind your device with pad type
-  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
 
   # auth with daemon mode
   ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
