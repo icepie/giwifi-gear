@@ -219,6 +219,11 @@ init() {
 		exit 1
 	fi
 
+	if ! [ -x "$(command -v getopt)" ]; then
+		echo 'Error: getopt is not installed.' >&2
+		exit 1
+	fi
+
 	# set default ua
 	AUTH_UA=$PC_UA
 	GW_BTYPE="pc"
@@ -226,10 +231,6 @@ init() {
 	# set the tool path
 	TOOL_PATH=$0
 
-	[ $ISINFO ] && \
-	echo "TOOL_PATH:" && \
-	echo "--> $TOOL_PATH" && \
-	echo ""
 }
 
 ver() {
@@ -342,8 +343,10 @@ main() {
 		shift
 	done
 
-	# init setting
-	init
+	[ $ISINFO ] && \
+	echo "TOOL_PATH:" && \
+	echo "--> $TOOL_PATH" && \
+	echo ""
 
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
@@ -352,10 +355,10 @@ main() {
 	fi
 
 	# check the necessary parameters
-	if [ ! $GW_GTW ]; then
+	while [ ! $GW_GTW ]; do
 		echo -n "Plz enter gateway: "
 		read GW_GTW
-	fi
+	done
 
 	# gtw auth auth
 	logcat "Try to get the auth info..."
@@ -411,13 +414,15 @@ main() {
 	fi
 
 	# check the username and password
-	[ ! "$GW_USER" ] && \
-	echo -n "Plz enter username: " && \
-	read GW_USER
+	while [ ! $GW_USER ]; do
+		echo -n "Plz enter username: "
+		read GW_USER
+	done
 
-	[ ! "$GW_PWD" ] && \
-	echo -n "Plz enter password: " && \
-	read GW_PWD
+	while [ ! $GW_PWD ]; do
+		echo -n "Plz enter password: "
+		read GW_PWD
+	done
 
 	# get login page
 	GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
@@ -598,6 +603,13 @@ Logged:           yes
 
 #start
 (
+	# init setting
+	init
+
+	# get the opts
 	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
+
+
+	# main func
 	main $@
 )

@@ -6,6 +6,7 @@ Any OS with `unix tools` (bash or busybox, etc)
 
 # dep
 - curl
+- getopt (or you can use giwifi-gear-min.sh)
 
 # usage
 ```
