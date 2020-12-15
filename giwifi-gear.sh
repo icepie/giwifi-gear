@@ -472,7 +472,7 @@ main() {
 	echo "--> $GW_AUTH_STATE_RTE" && \
 	echo "" && \
 	echo "GW_ID: $GW_ID"
-	echo "" && \;
+	echo "";
 
 	GW_APMAC=$(str_str "$GW_AUTH_URL" "apmac=" "&")
 	GW_ADDRESS=$(str_str "$GW_AUTH_URL" "gw_address=" "&")
