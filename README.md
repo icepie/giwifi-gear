@@ -5,9 +5,11 @@ A cli tool for login giwifi
 Any OS with `python3`
 
 ## dep
-- requests
+- [requests](https://github.com/psf/requests)
 
-> python3 -m pip install -r requirements.txt
+```
+python3 -m pip install -r requirements.txt
+```
 
 ## usage
 ``` 
@@ -36,12 +38,21 @@ optional arguments:
 ``` 
 
 ## example: 
-### bind your device with pad type
-> python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
+bind your device with pad type
 
-### auth with daemon mode
-> python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -d
+```
+python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
+```
 
-### quit auth
-> python3 giwifi-gear.py -g 172.21.1.1 -q
+auth with daemon mode
+
+```
+python3 giwifi-gear.py -g 172.21.1.1 -u 13000000001 -p mypassword -d
+```
+
+quit auth
+
+```
+python3 giwifi-gear.py -g 172.21.1.1 -q
+```
 
