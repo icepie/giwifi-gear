@@ -346,12 +346,12 @@ main() {
 	[ $ISINFO ] && \
 	echo "TOOL_PATH:" && \
 	echo "--> $TOOL_PATH" && \
-	echo ""
+	echo "";
 
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
 		echo "Error: don't use bind, quit and daemon at same time!"
-		exit 1
+		exit 1;
 	fi
 
 	# check the necessary parameters
@@ -365,13 +365,13 @@ main() {
 	GW_GTW_AUTH_RTE=$(gw_get_gtw_auth $GW_GTW)
 	[ ! "$GW_GTW_AUTH_RTE" ] && \
 	logcat "Failed to get the gateway info, plz check the gateway host" "E" && \
-	exit 1
+	exit 1;
 
 	[ $ISINFO ] && \
 	echo "" && \
 	echo "GW_GTW_AUTH_RTE: " && \
 	echo "--> $GW_GTW_AUTH_RTE" && \
-	echo ""
+	echo "";
 
 	GW_GTW_AUTH_RTE_DATA="$(get_json_value $GW_GTW_AUTH_RTE 'data')"
 
@@ -403,7 +403,7 @@ main() {
 		echo "" && \
 		echo "GW_QUIT_RTE: " && \
 		echo "--> $GW_QUIT_RTE" && \
-		echo ""
+		echo "";
 
 		if [ $(get_json_value $GW_QUIT_RTE 'resultCode') -eq 0 ]; then
 			logcat "sign out of account successfully"
@@ -428,23 +428,23 @@ main() {
 	GW_LOGIN_PAGE=$(gw_get_login_page $GW_GTW)
 	[ ! "$GW_LOGIN_PAGE" ] && \
 	logcat "Failed to get the login page, plz try again" "E" && \
-	exit 1
+	exit 1;
 
 	[ $ISINFO ] && \
 	echo "GW_LOGIN_PAGE: " && \
 	echo "--> $GW_LOGIN_PAGE" && \
-	echo ""
+	echo "";
 
 	# get auth url
 	GW_AUTH_URL=$(gw_get_auth_url $GW_GTW)
 	[ ! "$GW_AUTH_URL" ] && \
 	logcat "Failed to get the auth url, plz try again" "E" && \
-	exit 1
+	exit 1;
 
 	[ $ISINFO ] && \
 	echo "GW_AUTH_URL: " && \
 	echo "--> $GW_AUTH_URL" && \
-	echo "" && \
+	echo "";
 
 	# get the giwfi login page port
 	GW_PORT=$(str_str "$GW_AUTH_URL" "gw_port=" "&")
@@ -456,13 +456,13 @@ main() {
 	[ $ISINFO ] && \
 	echo "GW_SIGN: $GW_SIGN" && \
 	echo "GW_PAGE_TIME: $GW_PAGE_TIME" && \
-	echo ""
+	echo "";
 
 	# get sauth state json
 	GW_AUTH_STATE_RTE=$(gw_get_auth_state $GW_GTW $GW_PORT)
 	[ ! "$GW_AUTH_STATE_RTE" ] && \
 	logcat "Failed to get the auth state, plz try again" "E" && \
-	exit 1
+	exit 1;
 
 	GW_AUTH_STATE_RTE_DATA=$(get_json_value $GW_AUTH_STATE_RTE 'data')
 	GW_ID=$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'gw_id' | sed 's/"//g')
@@ -472,6 +472,7 @@ main() {
 	echo "--> $GW_AUTH_STATE_RTE" && \
 	echo "" && \
 	echo "GW_ID: $GW_ID"
+	echo "" && \;
 
 	GW_APMAC=$(str_str "$GW_AUTH_URL" "apmac=" "&")
 	GW_ADDRESS=$(str_str "$GW_AUTH_URL" "gw_address=" "&")
@@ -508,7 +509,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 
 	[ $ISINFO ] && \
 	echo "GW_LOGIN_DATA: $GW_LOGIN_DATA" && \
-	echo ''
+	echo '';
 
 	if [ $ISBIND ]; then
 		# bind post need add some data
@@ -517,12 +518,12 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		GW_BIND_RTE=$(gw_rebindmac $GW_BIND_DATA)
 		[ ! "$GW_BIND_RTE" ] && \
 		logcat "Failed to bind(rebind) device, plz try again" "E" && \
-		exit 1
+		exit 1;
 
 		[ $ISINFO ] && \
 		echo "GW_BIND_RTE:" && \
 		echo "--> $GW_BIND_RTE" && \
-		echo ""
+		echo "";
 
 		GW_BIND_RTE_STATUS=$(get_json_value "$GW_BIND_RTE" 'status')
 		GW_BIND_RTE_INFO=$(str_str "$GW_BIND_RTE" ',"info":"' '",')
@@ -533,7 +534,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		else
 			logcat "Failed to bind the device" "E"
 			logcat "Info: $GW_BIND_RTE_INFO"
-			exit 1
+			exit 1;
 		fi
 
 	else
@@ -542,12 +543,12 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		GW_LOGIN_RTE=$(gw_loginaction $GW_LOGIN_DATA)
 		[ ! "$GW_LOGIN_RTE" ] && \
 		logcat "Failed to get the loginaction, plz try again" "E" && \
-		exit 1
+		exit 1;
 
 		[ $ISINFO ] && \
 		echo "GW_LOGIN_RTE:" && \
 		echo "--> $GW_LOGIN_RTE" && \
-		echo ""
+		echo "";
 
 		GW_LOGIN_RTE_STATUS=$(get_json_value "$GW_LOGIN_RTE" 'status')
 		GW_LOGIN_RTE_INFO=$(str_str "$GW_LOGIN_RTE" ',"info":"' '",')
@@ -556,16 +557,17 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		if [ "$GW_LOGIN_RTE_STATUS" -eq 1 ]; then
 			logcat "Get the auth token successfully"
 			logcat "Try to auth whth token..."
+
 			# the last step
 			GW_AUTH_RTE=$(gw_auth_token $GW_LOGIN_RTE_INFO)
 
 			[ ! "$GW_AUTH_RTE" ] && \
 			logcat "Failed to auth use the token, plz try again" "E" && \
-			exit 1
+			exit 1;
 
 			# clear screen
 			[ ! $ISINFO ] && \
-			cls || clear
+			cls || clear;
 
 			echo """\
 --------------------------------------------
@@ -608,7 +610,6 @@ Logged:           yes
 
 	# get the opts
 	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
-
 
 	# main func
 	main $@
