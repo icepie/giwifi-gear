@@ -1,4 +1,4 @@
-#/bin/sh
+#/bin/bash
 # giwifi-gear bash cli tool
 # by icepie
 
@@ -6,7 +6,7 @@
 ## config
 #############################################
 # tool info
-VERSION=0.18
+VERSION=0.20
 
 # user info
 GW_GTW=""
@@ -82,7 +82,6 @@ get_json_value() {
 	awk -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
         foundKeyCount = 0
         while (length(json) > 0) {
-            #pos = index(json, "\""key"\""); ## 这行更快一些，但是如果有value是字符串，且刚好与要查找的key相同，会被误认为是key而导致值获取错误
             pos = match(json, "\""key"\"[ \\t]*?:[ \\t]*");
             if (pos == 0) {if (foundKeyCount == 0) {print defaultValue;} exit 0;}
 
@@ -219,12 +218,7 @@ init() {
 		exit 1
 	fi
 
-	if ! [ -x "$(command -v getopt)" ]; then
-		echo 'Error: getopt is not installed.' >&2
-		exit 1
-	fi
-
-	# set default ua
+# set default ua
 	AUTH_UA=$PC_UA
 	GW_BTYPE="pc"
 
@@ -248,18 +242,18 @@ usage:
   giwifi-gear.sh [-h] [-g GATEWAY] [-u USERNAME] [-p PASSWORD] [-t TYPE] [-i] [-q] [-b] [-d] [-v]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  -g GATEWAY, --gateway GATEWAY
-  -u USERNAME, --username USERNAME
-  -p PASSWORD, --password PASSWORD
-  -t TYPE, --type TYPE  auth type(use pc/pad/phone, and the default value is pc)
-  -i, --info            print the debug info
-  -b, --bind            bind or rebind your devices
-  -q, --quit            sign out of account authentication 
-  -d, --daemon          running in the background guard (remove sharing restrictions)
-  -v, --version         show program's version number and exit
+  -h                    show this help message and exit
+  -g <GATEWAY>          set the gateway
+  -u <USERNAME>         set the username
+  -p <PASSWORD>         set the password
+  -t <TYPE>             auth type(use pc/pad/phone, and the default value is pc)
+  -i                    print the debug info
+  -b                    bind or rebind your devices
+  -q                    sign out of account authentication
+  -d                    running in the daemon mode (remove sharing restrictions)
+  -v                    show the tool version info and exit
 
-example: 
+example:
   # bind your device with pad type
   ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
 
@@ -274,74 +268,6 @@ example:
 }
 
 main() {
-	# # check param
-	# if [ $# -le 0 ]; then
-	#   usage
-	#   exit
-	# fi
-
-	#
-	while true; do
-		case "$1" in
-		-g | --gateway)
-			GW_GTW="$2"
-			shift
-			;;
-		-u | --username)
-			GW_USER="$2"
-			shift
-			;;
-		-p | --password)
-			GW_PWD="$2"
-			shift
-			;;
-		-t | --type)
-			type="$2"
-			if [ $type = pc ]; then
-				AUTH_UA=$PC_UA
-				GW_BTYPE="pc"
-			elif [ $type = pad ]; then
-				AUTH_UA=$PAD_UA
-				GW_BTYPE="pad"
-			elif [ $type = phone ]; then
-				echo "Error: phone type is not be supported now!"
-				exit
-			else
-				echo "Error: plz use the true value(pc/pad/phone)!"
-				exit
-			fi
-			shift
-			;;
-		-i | --info)
-			ISINFO=1
-			;;
-		-b | --bind)
-			ISBIND=1
-			;;
-		-q | --quit)
-			ISQUIT=1
-			;;
-		-d | --daemon)
-			ISDAEMON=1
-			;;
-		-v | --version)
-			ver
-			exit 1
-			;;
-		-h | --help)
-			usage
-			exit
-			;;
-		--)
-			shift
-			break
-			;;
-		*)
-			echo "$1 is not option"
-			;;
-		esac
-		shift
-	done
 
 	[ $ISINFO ] && \
 	echo "TOOL_PATH:" && \
@@ -375,7 +301,13 @@ main() {
 
 	GW_GTW_AUTH_RTE_DATA="$(get_json_value $GW_GTW_AUTH_RTE 'data')"
 
-	if [ "$(get_json_value $GW_GTW_AUTH_RTE_DATA 'auth_state')" -eq 2 ]; then
+	[ $ISINFO ] && \
+	echo "" && \
+	echo "GW_GTW_AUTH_RTE_DATA: " && \
+	echo "--> $GW_GTW_AUTH_RTE_DATA" && \
+	echo "";
+
+	if [ "$(get_json_value $GW_GTW_AUTH_RTE_DATA 'auth_state')" == '2' ]; then
 		# 2 is logged
 		logcat "Good! you are authed!"
 
@@ -609,8 +541,60 @@ Logged:           yes
 	init
 
 	# get the opts
-	eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
+	#eval set -- $(getopt -o g:u:p:t:ibqdvh --long gateway:,username:,password:,type:,info,bind,quit,daemon,version,help -- "$@")
+	while getopts "g:u:p:t:qbdivh" option; do
+	case $option in
+		g)
+			GW_GTW=$OPTARG
+			;;
+		u)
+			GW_USER=$OPTARG
+			;;
+		p)
+			GW_PWD=$OPTARG
+			;;
+		t)
+			if [ $OPTARG = pc ]; then
+				AUTH_UA=$PC_UA
+				GW_BTYPE="pc"
+			elif [ $OPTARG = pad ]; then
+				AUTH_UA=$PAD_UA
+				GW_BTYPE="pad"
+			elif [ $OPTARG = phone ]; then
+				echo "Error: phone type is not be supported now!"
+				exit
+			else
+				echo "Error: plz use the true value(pc/pad/phone)!"
+				exit
+			fi
+			;;
+		q)
+			ISQUIT=1
+			;;
+		b)
+			ISBIND=1
+			;;
+		d)
+			ISDAEMON=1
+			;;
+		i)
+			ISINFO=1
+			;;
+		v)
+			ver
+			exit 0
+			;;
+		h)
+			usage
+			exit 0
+			;;
+		*)
+			echo "Error: plz use the right options!"
+			usage
+			exit 1
+    esac
+done
 
 	# main func
-	main $@
+	main
 )
