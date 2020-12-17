@@ -239,7 +239,7 @@ giwifi-gear
   A cli tool for login giwifi (multi-platform, fast, small)
 
 usage:
-  giwifi-gear.sh [-h] [-g GATEWAY] [-u USERNAME] [-p PASSWORD] [-t TYPE] [-i] [-q] [-b] [-d] [-v]
+  giwifi-gear.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-i] [-q] [-b] [-d] [-v]
 
 optional arguments:
   -h                    show this help message and exit
