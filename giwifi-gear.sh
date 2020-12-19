@@ -403,7 +403,7 @@ main() {
 	echo "GW_AUTH_STATE_RTE:" && \
 	echo "--> $GW_AUTH_STATE_RTE" && \
 	echo "" && \
-	echo "GW_ID: $GW_ID"
+	echo "GW_ID: $GW_ID" && \
 	echo "";
 
 	GW_APMAC=$(str_str "$GW_AUTH_URL" "apmac=" "&")
@@ -470,7 +470,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		fi
 
 	else
-		logcat "Try to get the token whit $GW_BTYPE type..."
+		logcat "Try to get the token with $GW_BTYPE type..."
 
 		GW_LOGIN_RTE=$(gw_loginaction $GW_LOGIN_DATA)
 		[ ! "$GW_LOGIN_RTE" ] && \
