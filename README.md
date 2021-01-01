@@ -24,3 +24,4 @@ A cli tool for login giwifi, and it just a client tool:)
 
 # other
 [luci-app-giwifi-gear](https://github.com/icepie/luci-app-giwifi-gear)
+[使用macvlan驱动将GiWiFi网速成倍提升](https://icepie.github.io/2020/12/26/giwifi-macvlan)
