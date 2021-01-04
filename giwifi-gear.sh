@@ -6,7 +6,7 @@
 ## config
 #############################################
 # tool info
-VERSION=0.20
+VERSION=0.21
 
 # user info
 GW_GTW=""
@@ -205,7 +205,8 @@ gw_rebindmac() {
 }
 
 gw_auth_token() {
-	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1")")
+	echo $(json_format "$(curl -s -I -A "$AUTH_UA" "$1")")
+	# maybe somewhere can not return a web page, so use the -I
 }
 
 #############################################
