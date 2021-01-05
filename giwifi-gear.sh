@@ -205,7 +205,7 @@ gw_rebindmac() {
 }
 
 gw_auth_token() {
-	echo $(json_format "$(curl -s -I -A "$AUTH_UA" "$1")")
+	echo $(curl -s -I -A "$AUTH_UA" "$1")
 	# maybe somewhere can not return a web page, so use the -I
 }
 
@@ -593,7 +593,7 @@ Logged:           yes
 			echo "Error: plz use the right options!"
 			usage
 			exit 1
-    esac
+	esac
 done
 
 	# main func
