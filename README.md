@@ -1,6 +1,8 @@
-# giwifi-gear
-![](https://raw.githubusercontent.com/icepie/giwifi-gear/main/img/logo.png)
-A cli tool for login giwifi, and it just a client tool:)
+<div align="center">
+  <img src="https://raw.githubusercontent.com/icepie/giwifi-gear/main/img/logo.png" alt="">
+  <h1>giwifi-gear</h1>
+  <blockquote>A cli tool for login giwifi, and it just a client tool:) </blockquote>
+</div>
 
 ## feature
 - multi-platform (ios/ipad/android/windows/linux/mac)
