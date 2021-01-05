@@ -11,12 +11,9 @@ A cli tool for login giwifi, and it just a client tool:)
 - etc
 
 # ver
-- [py](https://github.com/icepie/giwifi-gear/tree/py)
-
-- [sh](https://github.com/icepie/giwifi-gear/tree/sh) 
-
-- [go](https://github.com/icepie/giwifi-gear/tree/go)
-
+- ![py-ver](https://img.shields.io/badge/1.0.3.0-3776AB?style=flat-square&logo=python&logoColor=white) -> [py](https://github.com/icepie/giwifi-gear/tree/py)
+- ![sh-ver](https://img.shields.io/badge/0.21-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white) -> [sh](https://github.com/icepie/giwifi-gear/tree/sh) 
+- ![go-ver](https://img.shields.io/badge/none-00ADD8?style=flat-square&logo=go&logoColor=white) -> [go](https://github.com/icepie/giwifi-gear/tree/go)
 - other
 
 # guide
