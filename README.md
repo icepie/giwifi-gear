@@ -1,4 +1,5 @@
 # giwifi-gear
+![](https://raw.githubusercontent.com/icepie/giwifi-gear/main/img/logo.png)
 A cli tool for login giwifi, and it just a client tool:)
 
 ## feature
