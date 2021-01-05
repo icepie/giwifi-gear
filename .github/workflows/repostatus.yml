@@ -1,4 +1,4 @@
-name: CI
+name: Repo Status CI
 on:
   schedule:
     - cron:  "02 * * * *"
