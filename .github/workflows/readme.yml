@@ -1,0 +1,27 @@
+name: CI
+on:
+  schedule:
+    - cron:  "02 * * * *"
+  push:
+    branches:    
+      - master
+      
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      
+    - name: Run a one-line script
+      run: bash .github/workflows/readme.sh
+      
+    - name: Git Auto Commit
+      uses: stefanzweifel/git-auto-commit-action@v4.5.1
+      with:
+           commit_message: 'readme: auto update'
+           branch: master
+           commit_options: '--no-verify --signoff'
+           repository: .
+           commit_user_name: icepie
+           commit_user_email: icepie.dev@gmail.com
