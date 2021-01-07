@@ -30,7 +30,7 @@ url_encode() {
 
 	local length="${#1}"
 	for i in $(seq $length); do
-		local c="${1:$i-1:1}"
+		local c="${1:$((i-1)):1}"
 		case $c in
 		[a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
 		*) printf '%%%02X' "'$c" ;;
