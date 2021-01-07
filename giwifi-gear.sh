@@ -30,7 +30,7 @@ url_encode() {
 
 	local length="${#1}"
 	for i in $(seq $length); do
-		local c="${1:$i-1:1}"
+		local c="${1:$((i-1)):1}"
 		case $c in
 		[a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
 		*) printf '%%%02X' "'$c" ;;
@@ -214,10 +214,7 @@ gw_auth_token() {
 #############################################
 init() {
 	# check dep
-	if ! [ -x "$(command -v curl)" ]; then
-		echo 'Error: curl is not installed.' >&2
-		exit 1
-	fi
+	hash curl 2>/dev/null || { echo 'Error: curl is not installed.' >&2; exit 1; }
 
 # set default ua
 	AUTH_UA=$PC_UA
