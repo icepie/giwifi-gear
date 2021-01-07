@@ -214,10 +214,7 @@ gw_auth_token() {
 #############################################
 init() {
 	# check dep
-	if ! [ -x "$(command -v curl)" ]; then
-		echo 'Error: curl is not installed.' >&2
-		exit 1
-	fi
+	hash curl 2>/dev/null || { echo 'Error: curl is not installed.' >&2; exit 1; }
 
 # set default ua
 	AUTH_UA=$PC_UA
