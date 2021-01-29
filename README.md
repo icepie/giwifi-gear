@@ -5,7 +5,7 @@
 </div>
 
 ## feature
-- multi-platform (ios/ipad/android/windows/linux/mac)
+- multi-platform (ios/android/windows/linux/mac)
 - multi-arch
 - fast (No need to open web pages or other operations)
 - small (Just need a little storage space and memory)
