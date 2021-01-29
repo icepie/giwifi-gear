@@ -1,0 +1,6 @@
+.vscode/
+.env
+.idea
+go.sum
+giwifi-gear-go
+giwifi-gear-go.exe

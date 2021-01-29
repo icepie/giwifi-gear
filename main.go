@@ -1,32 +1,45 @@
 package main
 
 import (
-	"github.com/icepie/giwifi-gear/internal/giwifi"
 	"fmt"
+	"log"
+	"net/url"
 	"runtime"
+
+	"github.com/icepie/giwifi-gear-go/internal/giwifi"
 )
 
-func get_system_info(){
+func getSystemInfo() {
 	SysType := runtime.GOOS
 	SysArch := runtime.GOARCH
 	fmt.Println("OS: " + SysType)
 	fmt.Println("ARCH: " + SysArch)
 }
 
-func gtw_input() giwifi.Urld{
-	gtw := giwifi.Urld{}
-	gtw.Port = "8062"
-	fmt.Printf("请输入手动输入IPV4网关地址: ")
-	fmt.Scanln(&gtw.Host)
-	return gtw
+func inputGTW() (*url.URL, error) {
+	port := giwifi.GatewayPort
+
+	var host string
+	fmt.Scanln(&host)
+
+	u := fmt.Sprintf("http://%s:%d", host, port)
+
+	return url.Parse(u)
 }
 
 func main() {
-	get_system_info()
-	gtw, err:= giwifi.GetGateway() //try to get the gateway ip
-	if err != nil{
-		fmt.Printf("%v\n",err)
-		gtw = gtw_input()
+	getSystemInfo()
+	gtw, err := giwifi.GetGatewayByDelay() //try to get gateway
+	if err != nil {
+		log.Println(err)
+		fmt.Printf("Please enter the gateway manually: ")
+		//manually enter gateway
+		gtw, err = inputGTW()
+		if err != nil {
+			log.Println(err)
+			fmt.Printf("Please enter the right host")
+		}
 	}
-	fmt.Println(gtw.Host)
+
+	fmt.Println(gtw)
 }
