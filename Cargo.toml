@@ -1,5 +1,5 @@
 [package]
-name = "giwifi-gear"
+name = "giwifi-gear-rs"
 version = "0.1.0"
 authors = ["icepie <icepie.dev@gmail.com>"]
 edition = "2018"
