@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strings"
 )
 
 // GetGatewayByDelay Get the gateway of giwifi by delayURL
@@ -44,11 +45,16 @@ func GetGatewayByDelay() (*url.URL, error) {
 			   `
 	*/
 
+	if strings.Contains(string(body), "it works!") {
+		var u *url.URL
+		return u, errors.New("You are authed or no connected to GiWiFi")
+	}
+
 	reg := regexp.MustCompile(`delayURL\("(.*)"\);`)
 	result := reg.FindAllStringSubmatch(string(body), -1)
 	if result == nil {
 		var u *url.URL
-		return u, errors.New("Fail to get the gateway of giwifi by delayURL")
+		return u, errors.New("Fail to get the gateway of GiWiFi by delayURL")
 	}
 
 	gtw, err := url.Parse(result[0][1])
