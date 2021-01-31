@@ -6,7 +6,7 @@ A unix shell cli tool for login giwifi
 
 Any OS
 
-# usage
+## usage
 ```
 $ ./giwifi-gear-go
 giwifi-gear
