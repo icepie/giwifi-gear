@@ -8,7 +8,7 @@ Any OS
 
 # usage
 ```
-$ ./giwifi-gear.sh
+$ ./giwifi-gear-go
 giwifi-gear
   A cli tool for login giwifi (multi-platform, fast, small)
 
