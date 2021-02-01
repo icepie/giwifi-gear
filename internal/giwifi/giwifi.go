@@ -29,6 +29,15 @@ const (
 )
 
 var (
-	// AType auth type (use pc/pad/phone, and the default value is pc)
-	AType string
+	// UA type of PC or PAD
+	UA string
 )
+
+// Init the giwifi auth type
+func Init(atype string) {
+	if atype == "pad" {
+		UA = PADUA
+	} else {
+		UA = PCUA
+	}
+}
