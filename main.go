@@ -79,6 +79,8 @@ options:
 	} else if atype == "phone" {
 		fmt.Println("Error: phone type is not be supported now!")
 		os.Exit(1)
+	} else {
+		giwifi.AType = atype
 	}
 
 	// check the gateway avg
@@ -128,12 +130,14 @@ func main() {
 	initFlag()
 
 	fmt.Printf("user：%v\npassword：%v\ngateway：%v\ntype：%v\n",
-		username, password, gtw, atype)
+		username, password, gtw, giwifi.AType)
 
 	b, err := giwifi.GetGatewayAuthState(gtw)
-	if err == nil {
-		println(b)
+	if err != nil {
+		log.Println(err)
 	}
+
+	println(b)
 
 	getSystemInfo()
 }

@@ -27,3 +27,8 @@ const (
 	// AuthState for get the auth state from wifidog
 	AuthState = "/wifidog/get_auth_state"
 )
+
+var (
+	// AType auth type (use pc/pad/phone, and the default value is pc)
+	AType string
+)

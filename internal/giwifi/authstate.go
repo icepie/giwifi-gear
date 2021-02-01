@@ -11,7 +11,7 @@ func GetGatewayAuthState(gtw *url.URL) (string, error) {
 
 	client := &http.Client{}
 
-	r, _ := http.NewRequest(http.MethodGet, gtw.String()+GatewayAuthState, nil)
+	r, _ := http.NewRequest(http.MethodGet, "http://"+gtw.Hostname()+GatewayAuthState, nil)
 
 	r.Header.Add("User-Agent", PCUA)
 
