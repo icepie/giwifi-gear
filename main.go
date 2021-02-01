@@ -82,20 +82,25 @@ options:
 	}
 
 	// check the gateway avg
+	var isauto = false
 	if gateway == "" {
 		gtw, err = giwifi.GetGatewayByDelay() //try to get gateway
 		if err != nil {
 			log.Println(err)
 			fmt.Printf("Plz enter gateway: ")
 			fmt.Scanln(&gateway)
+		} else {
+			isauto = true
 		}
-	}
 
-	gtw, err = buildGTW(gateway)
-	if err != nil {
-		log.Println(err)
-		fmt.Println("Please enter the right host")
-		os.Exit(1)
+	}
+	if !isauto {
+		gtw, err = buildGTW(gateway)
+		if err != nil {
+			log.Println(err)
+			fmt.Println("Please enter the right host")
+			os.Exit(1)
+		}
 	}
 
 	// check the username avg
