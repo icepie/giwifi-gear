@@ -12,7 +12,7 @@ import (
 // GetGatewayByDelay Get the gateway of giwifi by delayURL
 func GetGatewayByDelay() (*url.URL, error) {
 
-	resp, err := http.Get(TESTURL)
+	resp, err := http.Get(TestURL)
 	if err != nil {
 		var u *url.URL
 		return u, err

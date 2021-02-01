@@ -130,5 +130,10 @@ func main() {
 	fmt.Printf("user：%v\npassword：%v\ngateway：%v\ntype：%v\n",
 		username, password, gtw, atype)
 
+	b, err := giwifi.GetGatewayAuthState(gtw)
+	if err == nil {
+		println(b)
+	}
+
 	getSystemInfo()
 }
