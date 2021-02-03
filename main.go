@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -132,12 +133,42 @@ func main() {
 	fmt.Printf("user：%v\npassword：%v\ngateway：%v\ntype：%v\n",
 		username, password, gtw, atype)
 
-	b, err := giwifi.GetGatewayAuthState(gtw)
+	a, err := giwifi.GetGatewayAuthState(gtw)
 	if err != nil {
 		log.Println(err)
 		os.Exit(1)
 	}
-	println(b)
+	println(a)
+
+	type RteData struct {
+		AppURL      string `json:"app_url"`
+		AuthState   int64  `json:"auth_state"`
+		OnlineTime  int64  `json:"online_time"`
+		RedirectURL string `json:"redirect_url"`
+	}
+
+	type Rte struct {
+		ResultCode int64  `json:"resultCode"`
+		Data       string `json:"data"`
+	}
+
+	// jsonData := []byte(`{"resultCode":0,"data":"{\"app_url\":\"http:\/\/172.21.1.5\/gbapp\/20210108\/GiWiFi-1.1.6.2.dmg\",\"auth_state\":1,\"online_time\":0,\"redirect_url\":\"http:\/\/login.gwifi.com.cn\/cmps\/admin.php\/api\/login\/?gw_address=172.21.1.5&gw_port=8060&gw_id=GWIFI-luoyangligong5&ip=172.21.234.17&mac=20:f4:78:0b:4a:f9&url=&apmac=&ssid=\"}"}`)
+
+	b := Rte{}
+	err = json.Unmarshal([]byte(a), &b)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(b)
+
+	d := RteData{}
+
+	err = json.Unmarshal([]byte(b.Data), &d)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	fmt.Println(d)
 
 	getSystemInfo()
 }
