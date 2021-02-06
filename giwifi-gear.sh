@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 # giwifi-gear bash cli tool
 # by icepie
 
@@ -486,7 +486,7 @@ access_type=$(get_json_value $GW_AUTH_STATE_RTE_DATA 'access_type')\
 		# check the login status
 		if [ "$GW_LOGIN_RTE_STATUS" -eq 1 ]; then
 			logcat "Get the auth token successfully"
-			logcat "Try to auth whth token..."
+			logcat "Try to auth with token..."
 
 			# the last step
 			GW_AUTH_RTE=$(gw_auth_token $GW_LOGIN_RTE_INFO)
