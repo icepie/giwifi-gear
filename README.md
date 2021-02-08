@@ -30,4 +30,4 @@
 
 [luci-app-giwifi-gear](https://github.com/icepie/luci-app-giwifi-gear)
 
-[使用macvlan驱动将GiWiFi网速成倍提升](https://icepie.github.io/2020/12/26/giwifi-macvlan)
+[使用macvlan驱动将GiWiFi网速成倍提升](https://icepie.vercel.app/2020/12/26/giwifi-macvlan)
