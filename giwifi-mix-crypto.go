@@ -5,14 +5,33 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
+	"flag"
 	"fmt"
+	"os"
 )
 
+var (
+	key, iv, plain string
+	ishelp         bool
+)
+
+func initFlag() {
+	flag.StringVar(&plain, "p", "", "the plaintext")
+	flag.StringVar(&iv, "i", "", "iv (initialization vector)")
+	flag.StringVar(&key, "k", "1234567887654321", "the key")
+
+	flag.Parse()
+
+	// check the username avg
+	if plain == "" || iv == "" {
+		fmt.Printf("error")
+		os.Exit(1)
+	}
+}
+
 func main() {
-	key := "1234567887654321"
-	iv := "e13c200ac7e02858"
-	plaintext := "123456"
-	fmt.Printf("Result: %v\n", crypto(plaintext, key, iv, aes.BlockSize))
+	initFlag()
+	fmt.Printf(crypto(plain, key, iv, aes.BlockSize))
 }
 
 func crypto(plaintext string, key string, iv string, blockSize int) string {
