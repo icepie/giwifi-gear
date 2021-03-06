@@ -1,40 +1,14 @@
-package main
+package util
 
 import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/base64"
-	"flag"
-	"fmt"
-	"os"
 )
 
-var (
-	key, iv, plain string
-	ishelp         bool
-)
-
-func initFlag() {
-	flag.StringVar(&plain, "p", "", "the plaintext")
-	flag.StringVar(&iv, "i", "", "iv (initialization vector)")
-	flag.StringVar(&key, "k", "1234567887654321", "the key")
-
-	flag.Parse()
-
-	// check the username avg
-	if plain == "" || iv == "" {
-		fmt.Printf("error")
-		os.Exit(1)
-	}
-}
-
-func main() {
-	initFlag()
-	fmt.Printf(crypto(plain, key, iv, aes.BlockSize))
-}
-
-func crypto(plaintext string, key string, iv string, blockSize int) string {
+// Crypto 定制版本 GiWiFi 专用
+func Crypto(plaintext string, key string, iv string, blockSize int) string {
 	bKey := []byte(key)
 	bIV := []byte(iv)
 	bPlaintext := zeroPadding([]byte(plaintext), blockSize)
