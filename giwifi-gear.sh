@@ -517,7 +517,7 @@ Logged:           yes
 				local i=1
 				while :; do
 					sleep $HEART_BEAT
-					logcat "Heartbeat: $i" && ((i = i + 1))
+					logcat "Heartbeat: $i" && i=$((i+1))
 					GW_AUTH_RTE=$(gw_auth_token $GW_LOGIN_RTE_INFO)
 					[ ! "$GW_AUTH_RTE" ] && \
 					break
