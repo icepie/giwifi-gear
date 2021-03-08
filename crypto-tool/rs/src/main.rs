@@ -48,7 +48,7 @@ fn main() {
         return;
     }
 
-    let key = if matches.opt_present("t") {
+    let key = if matches.opt_present("k") {
         matches.opt_str("k").unwrap().trim().to_string()
     } else {
         DEFAULT_KEY.to_string()
