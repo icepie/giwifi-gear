@@ -21,6 +21,7 @@ func initFlag() {
 	flag.StringVar(&text, "t", "", "the text to be encrypted")
 	flag.StringVar(&iv, "i", "", "iv (initialization vector)")
 	flag.StringVar(&key, "k", defaultKey, "the key")
+	flag.BoolVar(&ishelp, "h", false, "print this help menu")
 
 	flag.Parse()
 
