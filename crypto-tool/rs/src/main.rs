@@ -18,9 +18,7 @@ fn print_usage(program: &str, opts: Options) {
 fn encrypted_string(text: &str, iv: &str, key: &str) -> String {
     let iv = iv.as_bytes();
     let mode = Cbc::<Aes128, ZeroPadding>::new_var(key.as_bytes(), &iv).unwrap();
-
     let enc_buf = mode.encrypt_vec(text.as_bytes());
-
     base64::encode(enc_buf)
 }
 
@@ -63,8 +61,9 @@ fn real_main() -> i32 {
     let text = matches.opt_str("t").unwrap().trim().to_string();
     let iv = matches.opt_str("i").unwrap().trim().to_string();
 
-    if text.len() != 16 || iv.len() != 16 {
+    if iv.len() != 16 || key.len() != 16 {
         print!("error");
+        return 1;
     }
 
     let result = encrypted_string(text.as_str(), iv.as_str(), key.as_str());
