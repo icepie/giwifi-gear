@@ -1,0 +1,6 @@
+.vscode/
+.env
+.idea
+go.sum
+giwifi-mix-crypto
+giwifi-mix-crypto.exe

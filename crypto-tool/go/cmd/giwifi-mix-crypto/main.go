@@ -26,9 +26,15 @@ func initFlag() {
 
 	// check the avg
 	if text == "" || iv == "" {
+		flag.CommandLine.Usage()
+		os.Exit(1)
+	}
+
+	if len(key) != 16 || len(iv) != 16 {
 		fmt.Printf("error")
 		os.Exit(1)
 	}
+
 }
 
 func main() {
