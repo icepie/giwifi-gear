@@ -40,5 +40,5 @@ example:
   # quit auth
   ./giwifi-gear.sh -g 172.21.1.1 -q
 
-(c) 2020 icepie.dev@gmail.com
+(c) 2021 icepie.dev@gmail.com
 ```

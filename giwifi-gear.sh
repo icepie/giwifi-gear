@@ -6,7 +6,7 @@
 ## config
 #############################################
 # tool info
-VERSION=0.21
+VERSION=0.22
 
 # user info
 GW_GTW=""
@@ -261,7 +261,7 @@ example:
   # quit auth
   ./giwifi-gear.sh -g 172.21.1.1 -q
 
-(c) 2020 icepie.dev@gmail.com\
+(c) 2021 icepie.dev@gmail.com\
 "
 }
 
