@@ -522,6 +522,8 @@ Logged:           yes
 					[ ! "$GW_AUTH_RTE" ] && \
 					break
 				done
+				# restart app
+				main
 			fi
 
 		else
