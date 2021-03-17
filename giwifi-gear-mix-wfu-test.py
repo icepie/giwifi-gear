@@ -32,8 +32,8 @@ XML = {
     'cache-control': 'max-age=0'
 }
 
-name = '20110005'
-password = '123456'
+name = ''
+password = ''
 url = '210.44.64.60'
 
 def main():
@@ -118,8 +118,9 @@ def crypto(data, iv):
     # print(text)
     # text = add_to_16(text)
     # cipher_text = cryptos.encrypt(text)
-    data = '/opt/giwifi-mix-crypto-linux-mipsle -p \''+ str(data) + '\' -i \'' + iv + '\''
+    data = './giwifi-mix-crypto -t \''+ str(data) + '\' -i \'' + iv + '\''
     data = adb_shell(str(data))
+    print(data)
     return quote_from_bytes(data)
 
 
