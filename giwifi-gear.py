@@ -132,8 +132,7 @@ def main():
         if CONFIG.info:
             logcat(authParmas)
 
-        loginPage = requests.get('http://login.gwifi.com.cn/cmps/admin.php/api/login/?' +
-                                 urlparse(authUrl).query, headers=HEADERS, timeout=5).text
+        loginPage = requests.get(authUrl, headers=HEADERS, timeout=5).text
 
         # if CONFIG.info:
         #    logcat(loginPage)
