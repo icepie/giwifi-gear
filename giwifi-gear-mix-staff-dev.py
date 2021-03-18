@@ -299,7 +299,7 @@ def logout(authParmas):
         }
         
         resp = json.loads(requests.get(
-            'http://%s:%s/wifidog/userlogout?ip=&mac=' % (authParmas['gw_address'], authParmas['gw_port']), params=params, timeout=5).text)
+            'http://%s:%s/wifidog/userlogout' % (authParmas['gw_address'], authParmas['gw_port']), params=params, timeout=5).text)
         
     except requests.exceptions.Timeout:
         logcat('连接超时，可能已超出上网区间', "E")
