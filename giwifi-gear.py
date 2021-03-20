@@ -11,11 +11,11 @@ import requests
 from getpass import getpass
 from urllib.parse import urlparse, parse_qs
 
-SCRIPT_VERSION = "1.0.3.0"
+SCRIPT_VERSION = "1.0.3.2"
 
 PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description='giwifi-gear',
-                                 epilog='(c) 2020 icepie.dev@gmail.com')
+                                 epilog='(c) 2021 icepie.dev@gmail.com')
 PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
 PARSER.add_argument('-u', '--username', type=str, help='用户名')
 PARSER.add_argument('-p', '--password', type=str, help='密码')
@@ -172,7 +172,7 @@ def main():
                 'acsign': authState['sign'],
                 'btype': CONFIG.type,
                 'client_mac': authState['client_mac'],
-                'contact_phone': '400-038-5858',
+                'contact_phone': authState['contact_phone'],
                 'devicemode': '',
                 'gw_address': authParmas['gw_address'],
                 'gw_id': authParmas['gw_id'],
@@ -185,11 +185,11 @@ def main():
                 'page_time': pagetime,
                 'password': CONFIG.password,
                 'sign': sign,
-                'station_cloud': 'login.gwifi.com.cn',
+                'station_cloud': authState['station_cloud'],
                 'station_sn': authState['station_sn'],
-                'suggest_phone': '400-038-5858',
-                'url': 'http://www.baidu.com',
-                'user_agent': '',
+                'suggest_phone': authState['suggest_phone'],
+                'url': authParmas['url'],
+                'user_agent': authState['user_agent'],
             }
 
             if CONFIG.info:
