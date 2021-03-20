@@ -20,11 +20,13 @@ A cli tool for login giwifi (for special auth methods)
 
 - [x] sh - 移植于 [giwifi-gear.sh](https://github.com/icepie/giwifi-gear/tree/sh) - 不保证所有参数功能可用
 
-### 定制版本
+### 特殊终端 (special)
 
 - [ ] py - 咕咕咕 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
 - [ ] sh - 咕咕咕 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
+
+### 定制版本
 
 #### 潍坊学院 (wfu)
 
