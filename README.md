@@ -12,31 +12,31 @@ A cli tool for login giwifi (for special auth methods)
 
 ## 进度
 
-## 网页接口 (Web Api)
+### 网页接口 (Web Api)
 
-### 教职工 (staff)
+#### 教职工 (staff)
 
 - [x] py - 移植于 [giwifi-gear.py](https://github.com/icepie/giwifi-gear/tree/py) - 不保证所有参数功能可用
 
 - [x] sh - 移植于 [giwifi-gear.sh](https://github.com/icepie/giwifi-gear/tree/sh) - 不保证所有参数功能可用
 
-### 特殊终端 (special)
+#### 特殊终端 (special)
 
 - [ ] py - 咕咕咕 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
 - [ ] sh - 咕咕咕 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
-### 定制版本
+#### 定制版本
 
-#### 潍坊学院 (wfu)
+##### 潍坊学院 (wfu)
 
 - [x] py - [@Tribunny](https://github.com/Tribunny)实现 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
 - [x] sh - 不定期更新 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
-## 客户端接口 (App Api)
+### 客户端接口 (App Api)
 
-### 手机 (phone)
+#### 手机 (phone)
 
 - [ ] py - 预期计划中, 已拿到核心算法
 
