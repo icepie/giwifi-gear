@@ -123,9 +123,7 @@ def main():
 
         authUrl = requests.get('http://%s:8062/redirect' %
                                (CONFIG.gateway), headers=HEADERS, timeout=5).url
-                               
-        print(authUrl)
-        
+
         if CONFIG.info:
             logcat(authUrl)
 
@@ -177,7 +175,7 @@ def main():
                 'acsign': authState['sign'],
                 'btype': CONFIG.type,
                 'client_mac': authState['client_mac'],
-                'contact_phone': '400-038-5858',
+                'contact_phone': authState['contact_phone'],
                 'devicemode': '',
                 'gw_address': authParmas['gw_address'],
                 'gw_id': authParmas['gw_id'],
@@ -190,12 +188,12 @@ def main():
                 'page_time': pagetime,
                 'password': CONFIG.password,
                 'sign': sign,
-                'station_cloud': 'login.gwifi.com.cn',
+                'station_cloud': authState['station_cloud'],
                 'station_sn': authState['station_sn'],
-                'suggest_phone': '400-038-5858',
-                'url': 'http://www.baidu.com',
-                'user_agent': '',
-                'link_data': '',
+                'suggest_phone': authState['suggest_phone'],
+                'url': authParmas['url'],
+                'user_agent': authState['user_agent'],
+                'link_data': authState['link_data'],
             }
 
             if CONFIG.info:
