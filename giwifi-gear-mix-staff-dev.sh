@@ -132,15 +132,15 @@ json_format() {
 #############################################
 ## giwifi api
 #############################################
-gw_get_gtw_auth() {
-	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
-	# os type from index.html
-	# if (isiOS) url += "&os=ios";
-	# if (isAndroid) url += "&os=android";
-	# if (isWinPC) url += "&os=windows";
-	# if (isMac) url += "&os=mac";
-	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
-}
+# gw_get_gtw_auth() {
+# 	echo $(json_format "$(curl -s -A "$AUTH_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
+# 	# os type from index.html
+# 	# if (isiOS) url += "&os=ios";
+# 	# if (isAndroid) url += "&os=android";
+# 	# if (isWinPC) url += "&os=windows";
+# 	# if (isMac) url += "&os=mac";
+# 	# if (isLinux || isUbuntuExplorer()) url += "&os=linux";
+# }
 
 gw_logout() {
 	echo $(json_format "$(curl -s -A "$AUTH_UA" "http://$1:$GW_PORT_DEF/wifidog/userlogout?ip=&mac=")")
@@ -287,7 +287,7 @@ main() {
 
 	# gtw auth auth
 	logcat "Try to get the auth info..."
-	GW_GTW_AUTH_RTE=$(gw_get_gtw_auth $GW_GTW)
+	GW_GTW_AUTH_RTE=$(gw_get_auth_state $GW_GTW $GW_PORT_DEF)
 	[ ! "$GW_GTW_AUTH_RTE" ] && \
 	logcat "Failed to get the gateway info, plz check the gateway host" "E" && \
 	exit 1;
