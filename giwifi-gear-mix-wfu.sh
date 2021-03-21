@@ -22,7 +22,7 @@ HEART_BEAT=9
 #############################################
 ## url handle
 #############################################
-url_encode() {
+function url_encode() {
 	# urlencode <string>
 
 	local length="${#1}"
@@ -36,7 +36,7 @@ url_encode() {
 
 }
 
-url_decode() {
+function url_decode() {
 	# urldecode <string>
 
 	local url_encoded="${1//+/ }"
@@ -47,7 +47,7 @@ url_decode() {
 #############################################
 ## string handle
 #############################################
-str_str() {
+function str_str() {
         #str_str <string> "str" "str"
 
         local str
@@ -57,7 +57,7 @@ str_str() {
 }
 
 
-logcat() {
+function logcat() {
         #%Y-%m-%d
         local time=$(date "+%H:%M:%S")
 
@@ -76,7 +76,7 @@ logcat() {
 #############################################
 ## json handle
 #############################################
-get_json_value() {
+function get_json_value() {
 	awk -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
         foundKeyCount = 0
         while (length(json) > 0) {
@@ -117,7 +117,7 @@ get_json_value() {
     }'
 }
 
-json_format() {
+function json_format() {
 	local json=$1
 	# Del escape character and format text
 	echo $(echo -e $1) | sed "s@\\\\@@g"
@@ -127,15 +127,15 @@ json_format() {
 ## giwifi api for wfu
 #############################################
 
-gw_get_login_page() {
+function gw_get_login_page() {
     echo $(curl -s -L -A "$PC_UA" "http://$1/gportal/web/login" | grep "name=")
 }
 
-gw_mix_crypto() {
+function gw_mix_crypto() {
     echo $($CRYPTO_TOOL -t $1 -i $2)
 }
 
-gw_loginaction() {
+function gw_loginaction() {
 	# create random three-digit numbers
 	local str=$(date +%S%M)
 	local rannum=${str:1:3}
