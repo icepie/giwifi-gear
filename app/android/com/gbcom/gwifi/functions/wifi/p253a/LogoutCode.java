@@ -1,0 +1,46 @@
+package com.gbcom.gwifi.functions.wifi.p253a;
+
+/* renamed from: com.gbcom.gwifi.functions.wifi.a.e */
+public enum LogoutCode {
+    DISCONNECT_REASON_STATUS_DIFF(1),
+    DISCONNECT_REASON_WAITINGOFFLINE_TIME_OUT(2),
+    DISCONNECT_REASON_HOTSPOT_OFFLINE(3),
+    DISCONNECT_REASON_USER_COUNT_NO_UPDATE(4),
+    DISCONNECT_REASON_GW_NOTIFY(5),
+    DISCONNECT_REASON_WAITING_OFFLINE(6),
+    DISCONNECT_REASON_USER_LOGOUT(7),
+    DISCONNECT_REASON_AUTO_WAITING_OFFLINE(8),
+    DISCONNECT_REASON_DAILY(9),
+    DISCONNECT_REASON_AUTO_WAITING_OFFLINE_DIFF_HOTSPOT(10),
+    DISCONNECT_REASON_WAITING_OFFLINE_BY_USER(11),
+    DISCONNECT_REASON_FORMAL_RESTART(12),
+    DISCONNECT_REASON_FORMAL_PLAN_OUT_OF_DATE(20),
+    DISCONNECT_REASON_NO_RATE(31),
+    DISCONNECT_REASON_UNFORMAL_PLAN_OUT_OF_DATE(32),
+    DISCONNECT_REASON_OVER_RATE(33),
+    DISCONNECT_REASON_PC_HEARTBEAT_TIMEOUT(40),
+    DISCONNECT_REASON_OVER_ANTI_PROXY(41),
+    DISCONNECT_REASON_STA_RANDOM_MAC_AUTH(42),
+    DISCONNECT_REASON_STA_CHANNEL_CHANGE(43);
+    
+
+    /* renamed from: u */
+    private int f12968u = 0;
+
+    private LogoutCode(int i) {
+        this.f12968u = i;
+    }
+
+    /* renamed from: a */
+    public int mo27460a() {
+        return this.f12968u;
+    }
+
+    /* renamed from: a */
+    public static boolean m13901a(int i) {
+        if (i == DISCONNECT_REASON_AUTO_WAITING_OFFLINE.mo27460a()) {
+            return true;
+        }
+        return false;
+    }
+}
