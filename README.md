@@ -36,9 +36,13 @@ A cli tool for login giwifi (for special auth methods)
 
 ### 客户端接口 (App Api)
 
-#### 手机 (phone)
+#### 移动端 (phone)
 
 - [ ] py - 预期计划中, 已拿到核心算法
+
+#### 桌面端 (pc)
+
+- [ ] py - 预期计划中, 暂只分析完流程
 
 ## 其他
 
