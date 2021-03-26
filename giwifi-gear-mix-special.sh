@@ -161,15 +161,6 @@ function gw_rebindmac() {
 	)
 }
 
-
-function gw_get_auth_state() {
-	echo $(json_format "$(curl -s -A "$PC_UA" "http://$GW_GTW:$2/wifidog/get_auth_state")")
-}
-
-
-# get the auth state
-echo $(gw_get_auth_state)
-
 # get the login page
 GW_LOGIN_PAGE=$(gw_get_login_page)
 
