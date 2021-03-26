@@ -21,7 +21,7 @@ CONFIG = {
     'app_uuid': 'bad82d414cb15452938cfe605c7faf02' # 随意
 }
 
-SCRIPT_VERSION = "test"
+SCRIPT_VERSION = "test2"
 
 WIN_HEADERS = {
     'User-Agent': 'Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2',
@@ -114,15 +114,15 @@ def GetChallge(MakePass, TokenChallge):
 
 # print('true: \n','e2W8l854a9TbY625NejcYd=c')
 
-def logout(authParmas):
+def logout(authState):
     try:
         params = {
-            'ip': authParmas['ip'],
-            'mac': authParmas['mac'],
+            'ip': authState['client_ip'],
+            'mac': authState['client_mac'],
         }
         
         resp = json.loads(requests.get(
-            'http://%s:%s/wifidog/userlogout' % (authParmas['gw_address'], authParmas['gw_port']), params=params, timeout=5).text)
+            'http://%s:8060/wifidog/userlogout' % (CONFIG['gateway']), params=params, timeout=5).text)
         
     except requests.exceptions.Timeout:
         logcat('连接超时，可能已超出上网区间', "E")
@@ -133,15 +133,10 @@ def logout(authParmas):
     else:
         logcat('下线失败')
 
-def getAuthState(authParmas):
+def getAuthState():
     try:
-        params = {
-            'ip': authParmas['gw_address'],
-            'mac': authParmas['mac'],
-        }
-
-        resp = json.loads(requests.get('http://%s:%s/wifidog/get_auth_state' % (
-            authParmas['gw_address'], authParmas['gw_port']), params=params, timeout=5).text)
+        resp = json.loads(requests.get('http://%s:8060/wifidog/get_auth_state' % (
+            CONFIG['gateway']), timeout=5).text)
         #resp.encoding = "utf-8"
     except KeyError:
         logcat('所需参数不存在', "E")
@@ -183,7 +178,7 @@ def authIdentity():
 # ap_mac=&app_uuid=bad82d414cb15452938cfe605c7faf02&challege=e1Wblb5aa3TbY32cN4jeY4%3D9&gw_address=172.21.1.7&gw_id=GWIFI-luoyangligong6&ip=172.21.120.73&mac=d4%3A61%3A9d%3A03%3Ad4%3A68&name=18437926072&service_type=1&sta_model=mac11.2&sta_nic_type=1&sta_type=pc&version=1.1.6.2
 
 
-def login(authParmas, authState):
+def login(authState):
     ai = authIdentity()
     if ai != False:
         print(ai['challege_id'])
@@ -191,10 +186,10 @@ def login(authParmas, authState):
             'ap_mac': authState['client_mac'],
             'app_uuid': CONFIG['app_uuid'],
             'challege': GetChallge(calPass(CONFIG['password']), ai['challege_id']),
-            'gw_address': authParmas['gw_address'],
-            'gw_id': authParmas['gw_id'],
-            'ip': authParmas['ip'],
-            'mac': authParmas['mac'],
+            'gw_address': CONFIG['gateway'],
+            'gw_id': authState['gw_id'],
+            'ip': authState['client_ip'],
+            'mac': authState['client_mac'],
             'name': CONFIG['username'],
             'service_type': CONFIG['service_type'],
             'sta_model': CONFIG['model'],
@@ -237,18 +232,18 @@ def login(authParmas, authState):
     #config['challege_id'] = json.loads(resp['data'])['challege_id']
 
 
-authUrl = requests.get('http://%s:8062/redirect' %
-                       (CONFIG['gateway']), headers=MAC_HEADERS, timeout=5).url
+# authUrl = requests.get('http://%s:8062/redirect' %
+#                        (CONFIG['gateway']), headers=MAC_HEADERS, timeout=5).url
 
-authParmas = {k: v[0]
-              for k, v in parse_qs(urlparse(authUrl).query).items()}
+# authParmas = {k: v[0]
+#               for k, v in parse_qs(urlparse(authUrl).query).items()}
+
+authState = getAuthState()
 
 if CLI.quit:
-        logout(authParmas)
+        logout(authState)
         exit()
-
-authState = getAuthState(authParmas)
 
 logcat(authState)
 
-login(authParmas, authState)
+login(authState)
