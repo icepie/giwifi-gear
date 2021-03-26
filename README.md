@@ -42,7 +42,7 @@ A cli tool for login giwifi (for special auth methods)
 
 #### 桌面端 (pc)
 
-- [ ] py - 预期计划中, 暂只分析完流程
+- [ x ] py - 已经支持 `win` 和 `mac` 的客户端认证方式, 有空完善 - 不支持客户端接口 `pc` 和 `phone` 走同一个的接口认证方式(那玩意以后单独拿出来鞭尸...)
 
 ## 其他
 
