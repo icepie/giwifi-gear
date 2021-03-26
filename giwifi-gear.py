@@ -189,7 +189,7 @@ def main():
                 'station_sn': authState['station_sn'],
                 'suggest_phone': authState['suggest_phone'],
                 'url': authParmas['url'],
-                'user_agent': authState['user_agent'],
+                'user_agent': '',
             }
 
             if CONFIG.info:
