@@ -12,6 +12,10 @@ GW_USER=""
 GW_PWD=""
 GW_GTW="192.168.111.117"
 
+GW_TYPE="2"
+# special is 2
+# guest is 3
+
 CRYPTO_TOOL="./giwifi-mix-crypto"
 
 # auth setting
@@ -128,7 +132,7 @@ function json_format() {
 #############################################
 
 function gw_get_login_page() {
-    echo $(curl -s -L -A "$PC_UA" "http://$GW_GTW/gportal/web/login?account_type=2" | grep "name=")
+    echo $(curl -s -L -A "$PC_UA" "http://$GW_GTW/gportal/web/login?account_type=$GW_TYPE" | grep "name=")
 }
 
 function gw_mix_crypto() {
