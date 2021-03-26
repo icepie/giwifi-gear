@@ -183,7 +183,7 @@ def login(authState):
     if ai != False:
         print(ai['challege_id'])
         data = {
-            'ap_mac': authState['client_mac'],
+            'ap_mac': '',
             'app_uuid': CONFIG['app_uuid'],
             'challege': GetChallge(calPass(CONFIG['password']), ai['challege_id']),
             'gw_address': CONFIG['gateway'],
