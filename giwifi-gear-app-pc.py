@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
@@ -15,7 +14,7 @@ CONFIG = {
     'password': '12345678',
     'type': 'mac',  # mac or win
     'version': '1.1.6.2',  # mac: 1.1.6.2 , win: 1.1.4.2
-    'model': 'mac11.2', # 随意
+    'model': 'mac11.2', # Microsoft Windows 10' 64-bit
     'service_type': '1',  # (1 or 2) 不能用就挨个试试
     'sta_nic_type': '2',  # (1 or 2) 1为无线模式2为有线模式
     'app_uuid': 'bad82d414cb15452938cfe605c7faf02' # 随意
@@ -81,7 +80,6 @@ def MakeTempPass(TempPass):
         Res += Charlist[Temp]
     return Res
 
-
 def calPass(Pass):
     Res = ""
     temps = 0
@@ -89,10 +87,10 @@ def calPass(Pass):
     for i in range(1, len(Pass)+1):
         temps = temps ^ ord(Pass[i - 1])
         # print(i,MakeTempPass(temps))
-        if i % 3 == 0 or i == len(Pass):
-            # print(i,MakeTempPass(temps))
+        if i % 3 == 0 or (i == 8):
+            #print(i,MakeTempPass(temps))
             Res += MakeTempPass(temps)
-            # print(Res)
+            #print(Res)
         temps = temps << 8
     return Res
 
@@ -103,9 +101,11 @@ def GetChallge(MakePass, TokenChallge):
         res += MakePass[i]
         res += TokenChallge[31 - i]
     a = list(res)
-    a[-2] = "="
-    res = ''.join(a)
 
+    if a[-2] == "2":
+        a[-2] = "="
+
+    res = ''.join(a)
     return res
 
 # 250330d7a095cbb16528a56dfdaf99b2
@@ -185,6 +185,7 @@ def login(authState):
         data = {
             'ap_mac': '',
             'app_uuid': CONFIG['app_uuid'],
+            'algorithm': '1',
             'challege': GetChallge(calPass(CONFIG['password']), ai['challege_id']),
             'gw_address': CONFIG['gateway'],
             'gw_id': authState['gw_id'],
