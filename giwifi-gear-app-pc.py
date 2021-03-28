@@ -154,7 +154,7 @@ def login(authState):
             'ap_mac': '',
             'app_uuid': CONFIG['app_uuid'],
             'algorithm': '1',
-            'challege': GetChallge(calPass(CONFIG['password']), ai['challege_id']),
+            'challege': GetChallge(CONFIG['password'], ai['challege_id']),
             'gw_address': CONFIG['gateway'],
             'gw_id': authState['gw_id'],
             'ip': authState['client_ip'],
