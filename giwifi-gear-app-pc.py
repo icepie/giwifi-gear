@@ -76,9 +76,6 @@ def GetChallge(Pass, TokenChallge):
     for i in range(0, len(MakePass)):
         res += MakePass[i]
         res += TokenChallge[31 - i]
-    a = list(res)
-
-    res = ''.join(a)
     return res
 
 # test = GetChallge("yiyi6666","35f6aa491f6c695c0d77cdce56b94882")
