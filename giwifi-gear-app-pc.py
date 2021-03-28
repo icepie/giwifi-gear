@@ -5,13 +5,14 @@ from sys import version
 import requests
 import time
 import json
+import base64
 import argparse
 from urllib.parse import urlparse, parse_qs
 
 CONFIG = {
     'gateway': '172.21.1.5',
     'username': '13000000000',
-    'password': '12345678',
+    'password': 'password',
     'type': 'mac',  # mac or win
     'version': '1.1.6.2',  # mac: 1.1.6.2 , win: 1.1.4.2
     'model': 'mac11.2', # Microsoft Windows 10' 64-bit
@@ -66,53 +67,23 @@ CLI = PARSER.parse_args()
 #         CONFIG.password = getpass('请输入账号密码:')
 
 
-
 def logcat(msg, level='I'):
     print('%s %s: %s' % (time.ctime().split(' ')[-2], level, msg))
 
-
-def MakeTempPass(TempPass):
-    Res = ""
-    Charlist = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456"
-    Temp = 0
-    for i in range(0, 4):
-        Temp = (TempPass >> ((3 - i) * 6)) & 0x3F
-        Res += Charlist[Temp]
-    return Res
-
-def calPass(Pass):
-    Res = ""
-    temps = 0
-    # print(len(Pass))
-    for i in range(1, len(Pass)+1):
-        temps = temps ^ ord(Pass[i - 1])
-        # print(i,MakeTempPass(temps))
-        if i % 3 == 0 or (i == 8):
-            #print(i,MakeTempPass(temps))
-            Res += MakeTempPass(temps)
-            #print(Res)
-        temps = temps << 8
-    return Res
-
-
-def GetChallge(MakePass, TokenChallge):
+def GetChallge(Pass, TokenChallge):
+    MakePass = str(base64.b64encode(Pass.encode('utf-8')),'utf-8')
     res = ""
     for i in range(0, len(MakePass)):
         res += MakePass[i]
         res += TokenChallge[31 - i]
     a = list(res)
 
-    if a[-2] == "2":
-        a[-2] = "="
-
     res = ''.join(a)
     return res
 
-# 250330d7a095cbb16528a56dfdaf99b2
+# test = GetChallge("yiyi6666","35f6aa491f6c695c0d77cdce56b94882")
 
-# print(GetChallge(calPass(CONFIG['password']),"35f6aa491f6c695c0d77cdce56b94882")) #e4W3lb53a4TbYe24N3j8Y5=6ONFIG['password'],"1d8f25e3c05c62c7bf8365834eb43b34"))
-
-# print('true: \n','e2W8l854a9TbY625NejcYd=c')
+# print(test == 'e2W8l854a9TbY625NejcYd=c')
 
 def logout(authState):
     try:
@@ -224,7 +195,6 @@ def login(authState):
                 requests.get(authurl)
                 iota+=1
                 logcat('检测心跳 %s' % iota)
-
 
 
     # resp = json.loads(requests.post(
