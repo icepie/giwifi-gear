@@ -12,13 +12,13 @@ from urllib.parse import urlparse, parse_qs
 CONFIG = {
     'gateway': '172.21.1.5',
     'username': '13000000000',
-    'password': 'password',
+    'password': '123456',
     'type': 'mac',  # mac or win
     'version': '1.1.6.2',  # mac: 1.1.6.2 , win: 1.1.4.2
-    'model': 'mac11.2', # Microsoft Windows 10' 64-bit
-    'service_type': '1',  # (1 or 2) 不能用就挨个试试
-    'sta_nic_type': '2',  # (1 or 2) 1为无线模式2为有线模式
-    'app_uuid': 'bad82d414cb15452938cfe605c7faf02' # 随意
+    'model': 'mac11.2', # Microsoft Windows 10, 64-bit
+    'service_type': '1',  # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
+    'sta_nic_type': '2',  # 1: 无线模式 2: 为有线模式
+    'app_uuid': 'bad82d414cb15452938cfe605c7faf02' #18C6037C-6379-4317-8FE5-8C9B8E573CF8 (随意) 
 }
 
 SCRIPT_VERSION = "test2"
@@ -46,7 +46,7 @@ PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpForm
 # PARSER.add_argument('-u', '--username', type=str, help='用户名')
 # PARSER.add_argument('-p', '--password', type=str, help='密码')
 # PARSER.add_argument('-t', '--type', type=str, help='设备类型(win/mac)')
-# # PARSER.add_argument('-b', '--bind', action='store_true', help='换绑/绑定')
+PARSER.add_argument('-b', '--bind', action='store_true', help='换绑/绑定')
 PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行(去除共享限制)')
 # PARSER.add_argument('-i', '--info', action='store_true', help='额外输出一些技术性信息')
@@ -145,6 +145,28 @@ def authIdentity():
 
 # ap_mac=&app_uuid=bad82d414cb15452938cfe605c7faf02&challege=e1Wblb5aa3TbY32cN4jeY4%3D9&gw_address=172.21.1.7&gw_id=GWIFI-luoyangligong6&ip=172.21.120.73&mac=d4%3A61%3A9d%3A03%3Ad4%3A68&name=18437926072&service_type=1&sta_model=mac11.2&sta_nic_type=1&sta_type=pc&version=1.1.6.2
 
+def reBindMac(authState):
+    data = {
+        'gw_id': authState['gw_id'],
+        'mac': authState['client_mac'],
+        'name': CONFIG['username'],
+        'sta_model': CONFIG['model'],
+        'sta_nic_type': CONFIG['sta_nic_type'],
+        'sta_type': 'pc',
+        'version': CONFIG['version'],
+        'app_uuid': CONFIG['app_uuid'],
+    }
+    
+    logcat(data)
+    
+    resp = requests.post(
+        'http://login.gwifi.com.cn/cmps/admin.php/ppi/reBindMac', data=data, headers=PC_HEADERS, timeout=5)
+    resp.encoding = "utf-8"
+
+    result = json.loads(resp.text)
+
+    logcat(result)
+
 
 def login(authState):
     ai = authIdentity()
@@ -167,9 +189,8 @@ def login(authState):
             'version': CONFIG['version'],
         }
 
-        print(data)
+        logcat(data)
 
-        logcat(MAC_HEADERS)
         resp = requests.post(
             'http://login.gwifi.com.cn/cmps/admin.php/ppi/authChallege', data=data, headers=PC_HEADERS, timeout=5)
         # print(curlify.to_curl(resp.request, compressed=True))
@@ -177,11 +198,11 @@ def login(authState):
 
         result = json.loads(resp.text)
 
-        print(result)
+        logcat(result)
 
         authurl = json.loads(result['data'])['redirect_url']
 
-        print(authurl)
+        logcat(authurl)
 
         requests.get(authurl)
 
@@ -208,10 +229,14 @@ def login(authState):
 
 authState = getAuthState()
 
+logcat(authState)
+
+if CLI.bind:
+        reBindMac(authState)
+        exit()
+
 if CLI.quit:
         logout(authState)
         exit()
-
-logcat(authState)
 
 login(authState)
