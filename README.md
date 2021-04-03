@@ -29,6 +29,8 @@
 
 ## other
 
+[Telegram Group](https://t.me/giwifi)
+
 [luci-app-giwifi-gear](https://github.com/icepie/luci-app-giwifi-gear)
 
 [使用macvlan驱动将GiWiFi网速成倍提升](https://blog.icepie.net/2020/12/26/giwifi-macvlan)
