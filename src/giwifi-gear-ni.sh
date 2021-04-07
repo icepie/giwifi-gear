@@ -12,7 +12,7 @@ VERSION=0.22
 GW_GTW=""
 GW_USER=""
 GW_PWD=""
-GW_NC=""
+GW_NI=""
 
 # giwifi default info
 GW_PORT_DEF=8060
@@ -134,7 +134,7 @@ json_format() {
 ## giwifi api
 #############################################
 gw_get_gtw_auth() {
-	echo $(json_format "$(curl --interface $GW_NC -s -A "$AUTH_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
+	echo $(json_format "$(curl --interface $GW_NI -s -A "$AUTH_UA" "$1/getApp.htm?action=getAuthState&os=mac")")
 	# os type from index.html
 	# if (isiOS) url += "&os=ios";
 	# if (isAndroid) url += "&os=android";
@@ -144,23 +144,23 @@ gw_get_gtw_auth() {
 }
 
 gw_logout() {
-	echo $(json_format "$(curl --interface $GW_NC -s -A "$AUTH_UA" "$1/getApp.htm?action=logout")")
+	echo $(json_format "$(curl --interface $GW_NI -s -A "$AUTH_UA" "$1/getApp.htm?action=logout")")
 }
 
 gw_get_auth_url() {
-	echo $(curl --interface $GW_NC -s -I -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
+	echo $(curl --interface $GW_NI -s -I -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "Location" | awk -F ": " '{print $2}')
 }
 
 gw_get_login_page() {
-	echo $(curl --interface $GW_NC -s -L -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
+	echo $(curl --interface $GW_NI -s -L -A "$AUTH_UA" "http://$1:8062/redirect?oriUrl=http://www.baidu.com" | grep "name=")
 }
 
 gw_get_hotspot_group() {
-	echo $(json_format "$(curl --interface $GW_NC -s -A "$AUTH_UA" "http:/$1:$2/wifidog/get_hotspot_group")")
+	echo $(json_format "$(curl --interface $GW_NI -s -A "$AUTH_UA" "http:/$1:$2/wifidog/get_hotspot_group")")
 }
 
 gw_get_auth_state() {
-	echo $(json_format "$(curl --interface $GW_NC -s -A "$AUTH_UA" "http://$1:$2/wifidog/get_auth_state")")
+	echo $(json_format "$(curl --interface $GW_NI -s -A "$AUTH_UA" "http://$1:$2/wifidog/get_auth_state")")
 }
 
 gw_loginaction() {
@@ -169,7 +169,7 @@ gw_loginaction() {
 	local rannum=${str:1:3}
 
 	echo $(json_format "$(
-		curl --interface $GW_NC -s \
+		curl --interface $GW_NI -s \
 		-A "$AUTH_UA" \
 		-X POST \
 		-H 'Accept: */*' \
@@ -190,7 +190,7 @@ gw_rebindmac() {
 	local rannum=${str:1:3}
 
 	echo $(json_format "$(
-		curl --interface $GW_NC -s \
+		curl --interface $GW_NI -s \
 		-A "$AUTH_UA" \
 		-X POST \
 		-H 'Accept: */*' \
@@ -206,7 +206,7 @@ gw_rebindmac() {
 }
 
 gw_auth_token() {
-	echo $(curl --interface $GW_NC -s -I -A "$AUTH_UA" "$1")
+	echo $(curl --interface $GW_NI -s -I -A "$AUTH_UA" "$1")
 	# maybe somewhere can not return a web page, so use the -I
 }
 
@@ -245,7 +245,7 @@ optional arguments:
   -g <GATEWAY>          set the gateway
   -u <USERNAME>         set the username
   -p <PASSWORD>         set the password
-  -n <NETCARD>         	set the net card
+  -n <NI>         	set the network interface
   -t <TYPE>             auth type(use pc/pad/phone, and the default value is pc)
   -i                    print the debug info
   -b                    bind or rebind your devices
@@ -556,7 +556,7 @@ Logged:           yes
 			GW_PWD=$OPTARG
 			;;
 		n)
-			GW_NC=$OPTARG
+			GW_NI=$OPTARG
 			;;
 		t)
 			if [ $OPTARG = pc ]; then
