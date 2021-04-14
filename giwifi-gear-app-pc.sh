@@ -50,11 +50,21 @@ function is_str_c_str() {
 
 }
 
+function str2hex() {
+    #is_str_c_str <string>
+
+    local length="${#1}"
+    for i in $(seq $length); do
+        printf "%x" "'${1:$i-1:1}"
+    done
+
+}
+
 #############################################
 ## giwifi api
 #############################################
 
-function get_challge () {
+function get_challge() {
     #get_challge <string> <string>
 
     local make_pass="$(printf $1 | base64)"
@@ -66,11 +76,19 @@ function get_challge () {
 
 }
 
+function encrypt_data() {
+    #get_challge <plain> <key> <iv>
+
+    printf "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt -a
+}
+
 test=$(get_challge yiyi6666 35f6aa491f6c695c0d77cdce56b94882)
 echo $test
 if [ "$test" = "e2W8l854a9TbY625NejcYd=c" ] ; then
     echo 'nice!'
 fi
+
+encrypt_data 123456 1234567887654321 113c200ac7e02851
 
 # source_str=123456
 
