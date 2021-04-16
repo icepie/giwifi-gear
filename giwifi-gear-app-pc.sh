@@ -55,7 +55,7 @@ function str2hex() {
 
     local length="${#1}"
     for i in $(seq $length); do
-        printf "%x" "'${1:$i-1:1}"
+        printf '%x' "'${1:$i-1:1}"
     done
 
 }
@@ -65,7 +65,7 @@ function str2hex() {
 #############################################
 
 function get_challge() {
-    #get_challge <string> <string>
+    #get_challge <password> <token>
 
     local make_pass="$(printf $1 | base64)"
     local token_challge="$2"
@@ -76,29 +76,37 @@ function get_challge() {
 
 }
 
-function encrypt_data() {
-    #get_challge <plain> <key> <iv>
+function crypto_encode() {
+    #crypto_encode <plain> <key> <iv>
+    
+    # aes-128-cbc PKCS5Padding (Original data is ZeroPadding, but it is universal on decryption)
+    # default key: 1234567887654321
+    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt | base64
 
-    printf "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt -a
 }
 
+function get_encrypt() {
+    #get_encrypt <plain> <key>
+    
+    # aes-128-ecb PKCS5Padding
+    # default key: 5447c08b53e8dac4
+    # don't need iv
+    printf '%s' "$1" | openssl enc -e -aes-128-ecb -K $(str2hex "$2") -nosalt | base64
+
+}
+
+# for pc app
 test=$(get_challge yiyi6666 35f6aa491f6c695c0d77cdce56b94882)
 echo $test
 if [ "$test" = "e2W8l854a9TbY625NejcYd=c" ] ; then
     echo 'nice!'
 fi
 
-encrypt_data 123456 1234567887654321 113c200ac7e02851
+# for web of special and guest
+crypto_encode 'nasName=WFXY_NE40E-X8_GateWay_01&nasIp=&userIp=100.65.3.95&userMac=&ssid=&apMac=&pid=20&vlan=&sign=LFiSeFHUow0deKzCi5JxC4Ac2gVY1FVrwTtiKCOhQo1UfReGDe3pBFPrw1VFn73h3Z022q3BnOOH1y38R2buDQ%253D%253D&iv=dca6402ddedb2f56&name=20110005&password=123456' 1234567887654321 dca6402ddedb2f56
 
-# source_str=123456
+# for phone app
+get_encrypt '184*****6072' '5447c08b53e8dac4'
 
-# key=$(openssl rand -base64 32 | md5)
-# iv=$(openssl rand -base64 32 | md5)
- 
-# encrypt_str=$(printf "${source_str}" | openssl enc -e -aes-128-cbc -a -K 1234567887654321 -iv 113c200ac7e02851 -nosalt)
-# echo ${encrypt_str}
- 
-# # decrypt_str=$(echo "${encrypt_str}" | openssl enc -e -aes-256-cbc -a -K ${key} -iv ${iv} -nosalt -d)
-# # echo ${decrypt_str}
 
 
