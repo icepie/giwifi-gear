@@ -12,7 +12,7 @@ GW_USER=""
 GW_PWD=""
 GW_URL="210.44.64.60"
 
-CRYPTO_TOOL="./giwifi-mix-crypto"
+#CRYPTO_TOOL="./giwifi-mix-crypto"
 
 # auth setting
 PC_UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
@@ -22,6 +22,7 @@ HEART_BEAT=9
 #############################################
 ## url handle
 #############################################
+
 function url_encode() {
 	# urlencode <string>
 
@@ -47,6 +48,7 @@ function url_decode() {
 #############################################
 ## string handle
 #############################################
+
 function str_str() {
         #str_str <string> "str" "str"
 
@@ -56,6 +58,15 @@ function str_str() {
         echo -n "$str"
 }
 
+function str2hex() {
+    #is_str_c_str <string>
+
+    local length="${#1}"
+    for i in $(seq $length); do
+        printf '%x' "'${1:$i-1:1}"
+    done
+
+}
 
 function logcat() {
         #%Y-%m-%d
@@ -127,12 +138,17 @@ function json_format() {
 ## giwifi api for wfu
 #############################################
 
-function gw_get_login_page() {
-    echo $(curl -s -L -A "$PC_UA" "http://$1/gportal/web/login" | grep "name=")
+function crypto_encode() {
+    #crypto_encode <plain> <key> <iv>
+    
+    # aes-128-cbc PKCS5Padding (Original data is ZeroPadding, but it is universal on decryption)
+    # default key: 1234567887654321
+    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt | base64
+
 }
 
-function gw_mix_crypto() {
-    echo $($CRYPTO_TOOL -t $1 -i $2)
+function gw_get_login_page() {
+    echo $(curl -s -L -A "$PC_UA" "http://$1/gportal/web/login" | grep "name=")
 }
 
 function gw_loginaction() {
@@ -184,7 +200,7 @@ nasName=$GW_NAS_NAME\
 #  "
 
 # use giwifi-mix-crypto to build the login data
-GW_LOGIN_DATA="data=$(url_encode $(gw_mix_crypto $GW_LOGIN_RAW_DATA $GW_IV))&iv=$GW_IV"
+GW_LOGIN_DATA="data=$(url_encode "$(crypto_encode "$GW_LOGIN_RAW_DATA" '1234567887654321' "$GW_IV")")&iv=$GW_IV"
 
 echo $GW_LOGIN_DATA
 
