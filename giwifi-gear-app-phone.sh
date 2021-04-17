@@ -12,11 +12,16 @@ GW_PWD=''
 GW_SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 GW_STA_TYPE='phone' # pad or phone
 GW_STA_MODEL='Xiaomi,Redmi K20 Pro Premium Edition,30,11' # MANUFACTURER,MODEL,SDK,RELEASE;
-GW_PHONE_UA='(GiWiFi;Android11;Xiaomi;Redmi K20 Pro Premium Edition)'
+GW_PHONE_UA='(GiWiFi;Android11;Xiaomi;Redmi K20 Pro Premium Edition)' # (GiWiFi;iPhone OS 10_3;Apple;iPad11,3)
+GW_PHONE_IM='00000000-023e-0e94-ffff-ffffef05ac4a' # IMEI UUID
+GW_PHONE_IS_INSTALL_WX='1' # is installed WeChat?
+GW_PHONE_APP_AUTH_MODE='1'
+GW_PHONE_APP_UUID='b88a2e1b-6142-4378-a94954ea3287cce5' # xxx-xxx-xxx-xxx
 GW_PHONE_APP_ID='gi752e58b11af83d96'
 GW_PHONE_APP_KEY='YXJjc29mdGZhY2VyZWNvZ25pemVkZXRlY3Q'
 GW_PHONE_APP_ENCRYPT_KEY='5447c08b53e8dac4'
 GW_PHONE_APP_VERSION='2.4.1.4'
+GW_PORT='8060'
 
 #############################################
 ## url handle
@@ -71,7 +76,7 @@ str2hex() {
 
     local length="${#1}"
     for i in $(seq $length); do
-        printf '%x' "'${1:$i-1:1}"
+        printf '%x' "'${1:$((i-1)):1}"
     done
 
 }
@@ -172,33 +177,35 @@ get_encrypt() {
 gw_get_auth_state() {
     # gw_get_auth_state <gw_gtw> <gw_port>
 
-	printf '%s' "$(curl -s "http://$1:$2/wifidog/get_auth_state")"
+	printf '%s' "$(curl -s -A "$GW_PHONE_UA" "http://$1:$2/wifidog/get_auth_state")"
 
 }
 
 gw_get_hotspot_group() {
     # gw_get_hotspot_group <gw_gtw> <gw_port>
 
-	printf '%s' "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")"
+	printf '%s' "$(curl -s -A "$GW_PHONE_UA" "http:/$1:$2/wifidog/get_hotspot_group")"
 
 }
 
-gw_get_phone_app_user() {
-    # gw_get_phone_app_token <appid> <project_id> <sign> <timestamp> <user_id>
-    
-    printf '%s' "$(curl -s "login.gwifi.com.cn/shop/app/getToken?app_id=$1&project_id=$2&sign=$3&timestamp=$4&user_id=$5")"
+gw_phone_app_get_user() {
+    # gw_phone_app_login <gw_phone_app_login_data>
 
+    printf '%s' "$(curl -s \
+    -A "$GW_PHONE_UA" \
+    -X POST \
+    -d "$1" \
+    'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/getUser.bin')"
 }
 
 gw_phone_app_login() {
     # gw_phone_app_login <gw_phone_app_login_data>
 
-    printf '%s' "$(curl -i \
+    printf '%s' "$(curl -s \
     -A "$GW_PHONE_UA" \
     -X POST \
     -d "$1" \
-    'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/appLogin.bin' \
-    )"
+    'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/appLogin.bin')"
 }
 
 gw_get_phone_app_token() {
@@ -209,9 +216,15 @@ gw_get_phone_app_token() {
 
 }
 
-# gw_phone_app_login() {
-    
-# }
+gw_phone_app_relogin() {
+    # gw_phone_app_login <gw_phone_app_login_data>
+
+    printf '%s' "$(curl -i \
+    -A "$GW_PHONE_UA" \
+    -X POST \
+    -d "$1" \
+    'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/reLogin.bin')"
+}
 
 # # for pc app
 # test=$(get_challge yiyi6666 35f6aa491f6c695c0d77cdce56b94882)
@@ -226,10 +239,10 @@ gw_get_phone_app_token() {
 # for phone app
 #get_encrypt '184*****6072'
 
-GW_AUTH_STATE_RTE="$(gw_get_auth_state '172.21.1.4' '8060')"
+GW_AUTH_STATE_RTE="$(gw_get_auth_state "$GW_GTW" "$GW_PORT")"
 GW_AUTH_STATE_RTE_DATA="$(get_json_value "$GW_AUTH_STATE_RTE" 'data')"
 
-GW_HOTSPOT_GROUP_RTE="$(gw_get_hotspot_group '172.21.1.4' '8060')"
+GW_HOTSPOT_GROUP_RTE="$(gw_get_hotspot_group "$GW_GTW" "$GW_PORT")"
 GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value "$GW_HOTSPOT_GROUP_RTE" 'data')"
 
 # GW_HOTSPOT_GROUP_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_id')"
@@ -238,9 +251,11 @@ GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value "$GW_HOTSPOT_GROUP_RTE" 'data')"
 echo "$GW_AUTH_STATE_RTE_DATA"
 echo "$GW_HOTSPOT_GROUP_RTE_DATA"
 
-GW_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'gw_id')"
-GW_CLIENT_IP="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'client_ip')"
-GW_CLIENT_MAC="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'client_mac')"
+GW_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'gw_id')"
+GW_CLIENT_IP="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_ip')"
+GW_CLIENT_MAC="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_mac')"
+GW_ORG_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'orgId')"
+GW_TS="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'timestamp')"
 echo ''
 
 GW_PHONE_APP_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
@@ -256,6 +271,67 @@ GW_PHONE_APP_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service
 "$(get_encrypt "$GW_ID")" \
 "$(get_encrypt '')")"
 
-echo $GW_PHONE_APP_LOGIN_DATA
+# echo $GW_PHONE_APP_LOGIN_DATA
 
-gw_phone_app_login $GW_PHONE_APP_LOGIN_DATA
+# use double printf to handel unicode
+GW_USER_RTE="$(printf "$(printf "$(gw_phone_app_get_user $GW_PHONE_APP_LOGIN_DATA)")")"
+
+echo "$GW_USER_RTE"
+
+GW_USER_RTE_CODE="$(get_json_value "$GW_USER_RTE" 'resultCode')"
+
+if [ "$GW_USER_RTE_CODE" != '0' ]; then
+    GW_USER_RTE_MSG="$(get_json_value "$GW_USER_RTE" 'resultMsg')"
+    echo "$GW_USER_RTE_MSG"
+    exit 1
+fi
+
+
+GW_USER_RTE_DATA="$(get_json_value "$GW_USER_RTE" 'data')"
+
+GW_USER_UID="$(get_json_value "$GW_USER_RTE_DATA" 'uid')"
+GW_USER_LEVEL_NAME="$(get_json_value "$GW_USER_RTE_DATA" 'user_level_name')"
+
+GW_USER_REMAIN_TIME="$(get_json_value "$GW_USER_RTE_DATA" 'remain_time')"
+GW_USER_LAN_REMAIN_TIME="$(get_json_value "$GW_USER_RTE_DATA" 'lan_remain_time')"
+
+echo "$GW_USER_UID"
+echo "$GW_USER_LEVEL_NAME"
+echo "$GW_USER_REMAIN_TIME"
+echo "$GW_USER_LAN_REMAIN_TIME"
+
+GW_TOKEN_RTE="$(gw_get_phone_app_token "$GW_ORG_ID" "$GW_TS" "$GW_USER_UID")"
+
+GW_TOKEN_RTE_DATA="$(get_json_value "$GW_TOKEN_RTE" 'data')"
+
+GW_ACCESS_TOKEN="$(get_json_value "$GW_TOKEN_RTE_DATA" 'access_token')"
+
+echo "$GW_ACCESS_TOKEN"
+
+GW_PHONE_APP_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+"$(get_encrypt "$GW_GTW")" \
+"$(get_encrypt "$GW_SERVICE_TYPE")" \
+"$(get_encrypt "$GW_PWD")" \
+"$(get_encrypt "$GW_USER")" \
+"$(get_encrypt "$GW_CLIENT_IP")" \
+"$(get_encrypt "$GW_STA_TYPE")" \
+"$(get_encrypt "$GW_STA_MODEL")" \
+"$GW_PHONE_APP_VERSION" \
+"$(get_encrypt "$GW_CLIENT_MAC")" \
+"$(get_encrypt "$GW_ID")" \
+"$(get_encrypt $GW_ACCESS_TOKEN)")"
+
+gw_phone_app_relogin "$GW_PHONE_APP_LOGIN_DATA"
+
+##{"data":"{\"gwAddress\":\"4t8LHSZpJUFtJNX153a41Q==\",\"staticPassword\":\"Ntd4YVjzHnTRNcO4DS5+9Q==\",\"im\":\"kcqwU1oxFY4OPqTW2+67dkXjVy+Owcm7gbXuX7+OwkeHVGGa4z3DyI31Nc56lh32\",\"app_uuid\":\"IEHE9Qfl3VDy4FJKCD1A4VFUmNh8bLN9sGcFz/yX7N990Z17iwCmoyRAwt2ww1bz\",\"ip\":\"NWrK3pPleT9at4RfsqTuMQ==\",\"staType\":\"et9Lc4P9kNDLICPfuKNcSg==\",\"installWX\":\"i5MvUsxpruslGcDFWFWBdg==\",\"apMac\":\"\",\"auth_mode\":\"i5MvUsxpruslGcDFWFWBdg==\",\"imsi\":\"TcgLjpWO6zk99Thd9v0INQ==\",\"ssid\":\"ZtzQtF91r0v801gk820zvw==\",\"password\":\"TcgLjpWO6zk99Thd9v0INQ==\",\"service_type\":1,\"phone\":\"CNjEWzJjKuv/+haAPjwKeg==\",\"filter_id\":\"TcgLjpWO6zk99Thd9v0INQ==\",\"staModel\":\"LChrbcyYCBcTgvqpB5T7rUL1JJSRJV67lH550benImn40jlxN6h6cOIQSnPKiT5i\",\"android_id\":\"ilVpKg9CD2j/4sIvePivr03IC46Vjus5PfU4Xfb9CDU=\"}","version":"2.4.1.4","mac":"8lDTxzmP6drtQHpvQewOaq4GCP0eHGQ8QHn8jEZP1F8=","gatewayId":"rzRVrRvKItu367DlF2z/yJQg3YeRZAvIvmc3/MjfWtQ=","token":"RAGbcB7ZRGyciAcPahBTK+hzSZaLYpFRHht1T9kWR59AHL6G1ajxc0oCgnAaXPOP"}
+
+
+# echo "$GW_USER_RTE_DATA"
+
+# printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s,"token":"%s"}' \
+# "$(get_encrypt "$GW_PWD")" \
+# "$(get_encrypt "$GW_USER")" \
+# "$GW_PHONE_APP_VERSION" \
+# "$(get_encrypt "$GW_CLIENT_MAC")" \
+# "$(get_encrypt "$GW_ID")" \
+# "$(get_encrypt '')"
