@@ -6,9 +6,17 @@
 ## config
 #############################################
 
+GW_GTW='172.21.1.4'
+GW_USER=''
+GW_PWD=''
+GW_SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
+GW_STA_TYPE='phone' # pad or phone
+GW_STA_MODEL='Xiaomi,Redmi K20 Pro Premium Edition,30,11' # MANUFACTURER,MODEL,SDK,RELEASE;
+GW_PHONE_UA='(GiWiFi;Android11;Xiaomi;Redmi K20 Pro Premium Edition)'
 GW_PHONE_APP_ID='gi752e58b11af83d96'
 GW_PHONE_APP_KEY='YXJjc29mdGZhY2VyZWNvZ25pemVkZXRlY3Q'
 GW_PHONE_APP_ENCRYPT_KEY='5447c08b53e8dac4'
+GW_PHONE_APP_VERSION='2.4.1.4'
 
 #############################################
 ## url handle
@@ -182,6 +190,17 @@ gw_get_phone_app_user() {
 
 }
 
+gw_phone_app_login() {
+    # gw_phone_app_login <gw_phone_app_login_data>
+
+    printf '%s' "$(curl -i \
+    -A "$GW_PHONE_UA" \
+    -X POST \
+    -d "$1" \
+    'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/appLogin.bin' \
+    )"
+}
+
 gw_get_phone_app_token() {
     # gw_get_phone_app_token <project_id> <timestamp> <user_id>
     
@@ -205,13 +224,13 @@ gw_get_phone_app_token() {
 # crypto_encode 'nasName=WFXY_NE40E-X8_GateWay_01&nasIp=&userIp=100.65.3.95&userMac=&ssid=&apMac=&pid=20&vlan=&sign=LFiSeFHUow0deKzCi5JxC4Ac2gVY1FVrwTtiKCOhQo1UfReGDe3pBFPrw1VFn73h3Z022q3BnOOH1y38R2buDQ%253D%253D&iv=dca6402ddedb2f56&name=20110005&password=123456' 1234567887654321 dca6402ddedb2f56
 
 # for phone app
-# get_encrypt '184*****6072'
+#get_encrypt '184*****6072'
 
 GW_AUTH_STATE_RTE="$(gw_get_auth_state '172.21.1.4' '8060')"
-GW_AUTH_STATE_RTE_DATA="$(get_json_value $GW_AUTH_STATE_RTE 'data')"
+GW_AUTH_STATE_RTE_DATA="$(get_json_value "$GW_AUTH_STATE_RTE" 'data')"
 
 GW_HOTSPOT_GROUP_RTE="$(gw_get_hotspot_group '172.21.1.4' '8060')"
-GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value $GW_HOTSPOT_GROUP_RTE 'data')"
+GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value "$GW_HOTSPOT_GROUP_RTE" 'data')"
 
 # GW_HOTSPOT_GROUP_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_id')"
 # GW_HOTSPOT_GROUP_NAME="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_name')"
@@ -219,5 +238,24 @@ GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value $GW_HOTSPOT_GROUP_RTE 'data')"
 echo "$GW_AUTH_STATE_RTE_DATA"
 echo "$GW_HOTSPOT_GROUP_RTE_DATA"
 
-#GW_APP_PHONE_LOGIN_DATA="{"data":"{\"gwAddress\":\"4t8LHSZpJUFtJNX153a41Q==\",\"service_type\":\"i5MvUsxpruslGcDFWFWBdg==\",\"staticPassword\":\"Ntd4YVjzHnTRNcO4DS5+9Q==\",\"phone\":\"CNjEWzJjKuv/+haAPjwKeg==\",\"ip\":\"NWrK3pPleT9at4RfsqTuMQ==\",\"staType\":\"et9Lc4P9kNDLICPfuKNcSg==\",\"staModel\":\"LChrbcyYCBcTgvqpB5T7rUL1JJSRJV67lH550benImn40jlxN6h6cOIQSnPKiT5i\",\"apMac\":\"\"}","version":"2.4.1.4","mac":"8lDTxzmP6drtQHpvQewOaq4GCP0eHGQ8QHn8jEZP1F8=","gatewayId":"rzRVrRvKItu367DlF2z/yJQg3YeRZAvIvmc3/MjfWtQ=","token":"ZFWLuvEutELIKHcF5mhqnJotjLV3BkA00lyLk/j+AJo2QorZY7HpUzHmz4Rrkp6H"}"
+GW_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'gw_id')"
+GW_CLIENT_IP="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'client_ip')"
+GW_CLIENT_MAC="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'client_mac')"
+echo ''
 
+GW_PHONE_APP_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+"$(get_encrypt "$GW_GTW")" \
+"$(get_encrypt "$GW_SERVICE_TYPE")" \
+"$(get_encrypt "$GW_PWD")" \
+"$(get_encrypt "$GW_USER")" \
+"$(get_encrypt "$GW_CLIENT_IP")" \
+"$(get_encrypt "$GW_STA_TYPE")" \
+"$(get_encrypt "$GW_STA_MODEL")" \
+"$GW_PHONE_APP_VERSION" \
+"$(get_encrypt "$GW_CLIENT_MAC")" \
+"$(get_encrypt "$GW_ID")" \
+"$(get_encrypt '')")"
+
+echo $GW_PHONE_APP_LOGIN_DATA
+
+gw_phone_app_login $GW_PHONE_APP_LOGIN_DATA
