@@ -3,6 +3,14 @@
 # by icepie
 
 #############################################
+## config
+#############################################
+
+GW_PHONE_APP_ID='gi752e58b11af83d96'
+GW_PHONE_APP_KEY='YXJjc29mdGZhY2VyZWNvZ25pemVkZXRlY3Q'
+GW_PHONE_APP_ENCRYPT_KEY='5447c08b53e8dac4'
+
+#############################################
 ## url handle
 #############################################
 
@@ -106,14 +114,12 @@ cat_json_value() {
 }
 
 get_json_value() {
-
     # get_json_value <json> <key>
     
     local value="$(cat_json_value "$1" "$2")"
     local temp="${value%\"}"
-    value="${temp#\"}"
+    printf '%s' "${temp#\"}"
 
-    printf '%s' $value
 }
 
 #############################################
@@ -137,17 +143,17 @@ crypto_encode() {
     
     # aes-128-cbc PKCS5Padding (Original data is ZeroPadding, but it is universal on decryption)
     # default key: 1234567887654321
-    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt | base64
+    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt -base64 -A
 
 }
 
 get_encrypt() {
-    # get_encrypt <plain> <key>
+    # get_encrypt <plain>
     
     # aes-128-ecb PKCS5Padding
     # default key: 5447c08b53e8dac4
     # don't need iv
-    printf '%s' "$1" | openssl enc -e -aes-128-ecb -K $(str2hex "$2") -nosalt | base64
+    printf '%s' "$1" | openssl enc -e -aes-128-ecb -K $(str2hex "$GW_PHONE_APP_ENCRYPT_KEY") -nosalt -base64 -A
 
 }
 
@@ -159,13 +165,34 @@ gw_get_auth_state() {
     # gw_get_auth_state <gw_gtw> <gw_port>
 
 	printf '%s' "$(curl -s "http://$1:$2/wifidog/get_auth_state")"
+
 }
 
 gw_get_hotspot_group() {
     # gw_get_hotspot_group <gw_gtw> <gw_port>
 
 	printf '%s' "$(curl -s "http:/$1:$2/wifidog/get_hotspot_group")"
+
 }
+
+gw_get_phone_app_user() {
+    # gw_get_phone_app_token <appid> <project_id> <sign> <timestamp> <user_id>
+    
+    printf '%s' "$(curl -s "login.gwifi.com.cn/shop/app/getToken?app_id=$1&project_id=$2&sign=$3&timestamp=$4&user_id=$5")"
+
+}
+
+gw_get_phone_app_token() {
+    # gw_get_phone_app_token <project_id> <timestamp> <user_id>
+    
+    local sign="$(printf '%s' "app_id=$GW_PHONE_APP_ID&project_id=$1&timestamp=$2&user_id=$3&key=$GW_PHONE_APP_KEY" | openssl md5 | awk '{print $2}')"
+    printf '%s' "$(curl -s "login.gwifi.com.cn/shop/app/getToken?app_id=$GW_PHONE_APP_ID&project_id=$1&sign=$sign&timestamp=$2&user_id=$3")"
+
+}
+
+# gw_phone_app_login() {
+    
+# }
 
 # # for pc app
 # test=$(get_challge yiyi6666 35f6aa491f6c695c0d77cdce56b94882)
@@ -177,8 +204,8 @@ gw_get_hotspot_group() {
 # # for web of special and guest
 # crypto_encode 'nasName=WFXY_NE40E-X8_GateWay_01&nasIp=&userIp=100.65.3.95&userMac=&ssid=&apMac=&pid=20&vlan=&sign=LFiSeFHUow0deKzCi5JxC4Ac2gVY1FVrwTtiKCOhQo1UfReGDe3pBFPrw1VFn73h3Z022q3BnOOH1y38R2buDQ%253D%253D&iv=dca6402ddedb2f56&name=20110005&password=123456' 1234567887654321 dca6402ddedb2f56
 
-# # for phone app
-# get_encrypt '184*****6072' '5447c08b53e8dac4'
+# for phone app
+# get_encrypt '184*****6072'
 
 GW_AUTH_STATE_RTE="$(gw_get_auth_state '172.21.1.4' '8060')"
 GW_AUTH_STATE_RTE_DATA="$(get_json_value $GW_AUTH_STATE_RTE 'data')"
@@ -186,12 +213,11 @@ GW_AUTH_STATE_RTE_DATA="$(get_json_value $GW_AUTH_STATE_RTE 'data')"
 GW_HOTSPOT_GROUP_RTE="$(gw_get_hotspot_group '172.21.1.4' '8060')"
 GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value $GW_HOTSPOT_GROUP_RTE 'data')"
 
-GW_HOTSPOT_GROUP_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_id')"
-
-GW_HOTSPOT_GROUP_NAME="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_name')"
+# GW_HOTSPOT_GROUP_ID="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_id')"
+# GW_HOTSPOT_GROUP_NAME="$(get_json_value $GW_HOTSPOT_GROUP_RTE_DATA 'hotspot_group_name')"
 
 echo "$GW_AUTH_STATE_RTE_DATA"
 echo "$GW_HOTSPOT_GROUP_RTE_DATA"
 
-echo "$GW_HOTSPOT_GROUP_ID"
-echo "$GW_HOTSPOT_GROUP_NAME"
+#GW_APP_PHONE_LOGIN_DATA="{"data":"{\"gwAddress\":\"4t8LHSZpJUFtJNX153a41Q==\",\"service_type\":\"i5MvUsxpruslGcDFWFWBdg==\",\"staticPassword\":\"Ntd4YVjzHnTRNcO4DS5+9Q==\",\"phone\":\"CNjEWzJjKuv/+haAPjwKeg==\",\"ip\":\"NWrK3pPleT9at4RfsqTuMQ==\",\"staType\":\"et9Lc4P9kNDLICPfuKNcSg==\",\"staModel\":\"LChrbcyYCBcTgvqpB5T7rUL1JJSRJV67lH550benImn40jlxN6h6cOIQSnPKiT5i\",\"apMac\":\"\"}","version":"2.4.1.4","mac":"8lDTxzmP6drtQHpvQewOaq4GCP0eHGQ8QHn8jEZP1F8=","gatewayId":"rzRVrRvKItu367DlF2z/yJQg3YeRZAvIvmc3/MjfWtQ=","token":"ZFWLuvEutELIKHcF5mhqnJotjLV3BkA00lyLk/j+AJo2QorZY7HpUzHmz4Rrkp6H"}"
+
