@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*-
 
-from sys import version
 import requests
 import time
 import json
 import base64
 import argparse
-from urllib.parse import urlparse, parse_qs
+from getpass import getpass
 
 CONFIG = {
-    'gateway': '172.21.1.5',
-    'username': '13000000000',
-    'password': '123456',
+    'gateway': '172.21.1.4',
+    'username': '',
+    'password': '',
     'type': 'mac',  # mac or win
     'version': '1.1.6.2',  # mac: 1.1.6.2 , win: 1.1.4.2
     'model': 'mac11.2', # Microsoft Windows 10, 64-bit
@@ -21,16 +20,15 @@ CONFIG = {
     'app_uuid': 'bad82d414cb15452938cfe605c7faf02' #18C6037C-6379-4317-8FE5-8C9B8E573CF8 (随意) 
 }
 
-SCRIPT_VERSION = "test2"
+SCRIPT_VERSION = "test5"
 
 WIN_HEADERS = {
-    'User-Agent': 'Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2',
-    'Cookie': 'PHPSESSID=00mhpv7g9vebbvpkhiqauv3ai3'
+    #'User-Agent': 'Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2',
 }
 
 MAC_HEADERS = {
     'User-Agent': 'GiWiFi/1.1.6.2 (Mac OS X Version 11.2.3 (Build 20D91))',
-    'Cookie': 'PHPSESSID=00mhpv7g9vebbvpkhiqauv3ai3'
+    #'Cookie': 'PHPSESSID=00mhpv7g9vebbvpkhiqauv3ai3'
 }
 
 PC_HEADERS = MAC_HEADERS
@@ -42,29 +40,29 @@ if CONFIG['type'] == 'win':
 PARSER = argparse.ArgumentParser(formatter_class=argparse.RawDescriptionHelpFormatter,
                                  description='giwifi-gear',
                                  epilog='(c) 2021 icepie.dev@gmail.com')
-# PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
-# PARSER.add_argument('-u', '--username', type=str, help='用户名')
-# PARSER.add_argument('-p', '--password', type=str, help='密码')
+PARSER.add_argument('-g', '--gateway', type=str, help='网关IP')
+PARSER.add_argument('-u', '--username', type=str, help='用户名')
+PARSER.add_argument('-p', '--password', type=str, help='密码')
 # PARSER.add_argument('-t', '--type', type=str, help='设备类型(win/mac)')
 PARSER.add_argument('-b', '--bind', action='store_true', help='换绑/绑定')
 PARSER.add_argument('-q', '--quit', action='store_true', help='登出')
 PARSER.add_argument('-d', '--daemon', action='store_true', help='在后台守护运行(去除共享限制)')
-# PARSER.add_argument('-i', '--info', action='store_true', help='额外输出一些技术性信息')
+PARSER.add_argument('-i', '--info', action='store_true', help='额外输出一些技术性信息')
 PARSER.add_argument('-v', '--version', action='version',
                     version='giwifi-gear {}'.format(SCRIPT_VERSION))
 
 CLI = PARSER.parse_args()
 
-# if not CONFIG['gateway']:
-#     CONFIG['gateway'] = input('请输入网关地址(%s):' %
-#                             (CLI.gateway))
+if not CONFIG['gateway']:
+    CONFIG['gateway'] = input('请输入网关地址(%s):' %
+                            (CLI.gateway))
 
-# if not CONFIG.quit:
-#     if not CONFIG.username:
-#         CONFIG.username = input('请输入上网账号:')
+if not CLI.quit:
+    if not CONFIG['username']:
+        CONFIG['username'] = input('请输入上网账号:')
 
-#     if not CONFIG.password:
-#         CONFIG.password = getpass('请输入账号密码:')
+    if not CONFIG['password']:
+        CONFIG['password'] = getpass('请输入账号密码:')
 
 
 def logcat(msg, level='I'):
@@ -156,8 +154,9 @@ def reBindMac(authState):
         'version': CONFIG['version'],
         'app_uuid': CONFIG['app_uuid'],
     }
-    
-    logcat(data)
+
+    if CLI.info:
+        logcat(data)
     
     resp = requests.post(
         'http://login.gwifi.com.cn/cmps/admin.php/ppi/reBindMac', data=data, headers=PC_HEADERS, timeout=5)
@@ -165,13 +164,14 @@ def reBindMac(authState):
 
     result = json.loads(resp.text)
 
-    logcat(result)
+    if CLI.info:
+        logcat(result)
 
 
 def login(authState):
     ai = authIdentity()
     if ai != False:
-        print(ai['challege_id'])
+        #print(ai['challege_id'])
         data = {
             'ap_mac': '',
             'app_uuid': CONFIG['app_uuid'],
@@ -189,7 +189,8 @@ def login(authState):
             'version': CONFIG['version'],
         }
 
-        logcat(data)
+        if CLI.info:
+            logcat(data)
 
         resp = requests.post(
             'http://login.gwifi.com.cn/cmps/admin.php/ppi/authChallege', data=data, headers=PC_HEADERS, timeout=5)
@@ -198,34 +199,7 @@ def login(authState):
 
         result = json.loads(resp.text)
 
-        logcat(result)
-
-        authurl = json.loads(result['data'])['redirect_url']
-
-        logcat(authurl)
-
-        requests.get(authurl)
-
-        if CLI.daemon:
-            iota = 0
-            while True:
-                time.sleep(15)
-                requests.get(authurl)
-                iota+=1
-                logcat('检测心跳 %s' % iota)
-
-
-    # resp = json.loads(requests.post(
-    #     'http://login.gwifi.com.cn/cmps/admin.php/ppi/authIdentity', params=params, timeout=5).text)
-    # print(resp)
-    #config['challege_id'] = json.loads(resp['data'])['challege_id']
-
-
-# authUrl = requests.get('http://%s:8062/redirect' %
-#                        (CONFIG['gateway']), headers=MAC_HEADERS, timeout=5).url
-
-# authParmas = {k: v[0]
-#               for k, v in parse_qs(urlparse(authUrl).query).items()}
+        return result
 
 authState = getAuthState()
 
@@ -239,4 +213,25 @@ if CLI.quit:
         logout(authState)
         exit()
 
-login(authState)
+result = login(authState)
+
+if CLI.info:
+    logcat(result)
+
+try:
+    authurl = json.loads(result['data'])['redirect_url']
+
+    if CLI.info:
+        logcat(authurl)
+
+    requests.get(authurl)
+
+    if CLI.daemon:
+        iota = 0
+        while True:
+            time.sleep(15)
+            requests.get(authurl)
+            iota+=1
+            logcat('检测心跳 %s' % iota)
+except:
+    logcat(result['resultMsg'])
