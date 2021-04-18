@@ -32,13 +32,14 @@ A cli tool for login giwifi (for special auth methods)
 
 - [x] py - [@Tribunny](https://github.com/Tribunny)实现 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
 
-- [x] sh - 不定期更新 - 额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置
+- [x] sh - 不定期更新 - ～额外需要 [giwifi-mix-crypto](https://github.com/icepie/giwifi-gear/tree/mix/crypto-tool) 进行加密, 自行配置～ 现在支持 `openssl` 即可
 
 ### 客户端接口 (App Api)
 
 #### 移动端 (phone)
 
-- [ ] py - 预期计划中, 已拿到核心算法
+- [ ] py - 预期计划中
+- [x] sh - 不定期更新
 
 #### 桌面端 (pc)
 
