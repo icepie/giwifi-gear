@@ -26,32 +26,6 @@ GW_PORT='8060'
 HEART_BEAT='10'
 
 #############################################
-## url handle
-#############################################
-
-url_encode() {
-	# urlencode <string>
-
-	local length="${#1}"
-	for i in $(seq $length); do
-		local c="${1:$((i-1)):1}"
-		case $c in
-		[a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
-		*) printf '%%%02X' "'$c" ;;
-		esac
-	done
-
-}
-
-url_decode() {
-	# urldecode <string>
-
-	local url_encoded="${1//+/ }"
-	printf '%b' "${url_encoded//%/\\x}"
-
-}
-
-#############################################
 ## string handle
 #############################################
 
@@ -141,27 +115,6 @@ get_json_value() {
 ## giwifi encrypt util
 #############################################
 
-get_challge() {
-    # get_challge <password> <token>
-
-    local make_pass="$(printf $1 | base64)"
-    local token_challge="$2"
-    local length="${#make_pass}"
-    for i in $(seq $length); do
-        printf '%s' "${make_pass:$i-1:1}${token_challge:32-$i:1}"
-    done
-
-}
-
-crypto_encode() {
-    # crypto_encode <plain> <key> <iv>
-    
-    # aes-128-cbc PKCS5Padding (Original data is ZeroPadding, but it is universal on decryption)
-    # default key: 1234567887654321
-    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt -base64 -A
-
-}
-
 get_encrypt() {
     # get_encrypt <plain>
     
@@ -242,13 +195,19 @@ gw_phone_app_rebindmac() {
 
 }
 
-gw_phone_app_auth_token() {
-    # gw_phone_app_auth_token <token>
+gw_auth_token() {
+    # gw_auth_token <token>
 
     printf '%s' "$(curl -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
 
 }
 
+gw_logout() {
+    # gw_logout <ip> <mac>
+
+    printf '%s' "$(curl -s -L "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip=$1&mac=$2")"
+
+}
 
 # # for pc app
 # test=$(get_challge yiyi6666 35f6aa491f6c695c0d77cdce56b94882)
@@ -265,6 +224,18 @@ gw_phone_app_auth_token() {
 
 GW_AUTH_STATE_RTE="$(gw_get_auth_state "$GW_GTW" "$GW_PORT")"
 GW_AUTH_STATE_RTE_DATA="$(get_json_value "$GW_AUTH_STATE_RTE" 'data')"
+GW_AUTH_STATE="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'auth_state')"
+GW_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'gw_id')"
+GW_CLIENT_IP="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_ip')"
+GW_CLIENT_MAC="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_mac')"
+GW_ORG_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'orgId')"
+GW_TS="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'timestamp')"
+
+if [ "$GW_AUTH_STATE" == '2' ]; then
+    echo "Your device is authed! ending..."
+    gw_logout "$GW_CLIENT_IP" "$GW_CLIENT_MAC"
+    exit 1
+fi
 
 GW_HOTSPOT_GROUP_RTE="$(gw_get_hotspot_group "$GW_GTW" "$GW_PORT")"
 GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value "$GW_HOTSPOT_GROUP_RTE" 'data')"
@@ -274,13 +245,6 @@ GW_HOTSPOT_GROUP_RTE_DATA="$(get_json_value "$GW_HOTSPOT_GROUP_RTE" 'data')"
 
 echo "$GW_AUTH_STATE_RTE_DATA"
 echo "$GW_HOTSPOT_GROUP_RTE_DATA"
-
-GW_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'gw_id')"
-GW_CLIENT_IP="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_ip')"
-GW_CLIENT_MAC="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'client_mac')"
-GW_ORG_ID="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'orgId')"
-GW_TS="$(get_json_value "$GW_AUTH_STATE_RTE_DATA" 'timestamp')"
-echo ''
 
 GW_PHONE_APP_GET_USER_DATA="$(printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
 "$(get_encrypt "$GW_PWD")" \
@@ -349,6 +313,7 @@ GW_PHONE_APP_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service
 
 echo "$GW_PHONE_APP_LOGIN_DATA"
 
+# use double printf to handel unicode
 GW_PHONE_APP_LOGIN_RTE="$(printf "$(printf "$(gw_phone_app_relogin "$GW_PHONE_APP_LOGIN_DATA")")")"
 GW_PHONE_APP_LOGIN_RTE_CODE="$(get_json_value "$GW_PHONE_APP_LOGIN_RTE" 'resultCode')"
 
@@ -393,5 +358,9 @@ i=1
 while :; do
     sleep $HEART_BEAT
     echo "Heartbeat: $i" && i=$((i+1))
-    AUTH_TOKEN_RTE="$(gw_phone_app_auth_token "$GW_PHONE_APP_USER_TOKEN")"
+    # use double printf to handel unicode
+    GW_AUTH_TOKEN_RTE="$(printf "$(printf "$(gw_auth_token "$GW_PHONE_APP_USER_TOKEN")")" | awk 'END {print}')"
+    GW_AUTH_TOKEN_RTE_CODE="$(get_json_value "$GW_AUTH_TOKEN_RTE" 'resultCode')"
+    GW_AUTH_TOKEN_RTE_DATA="$(get_json_value "$GW_AUTH_TOKEN_RTE" 'data')"
+    echo "$GW_AUTH_TOKEN_RTE_DATA"
 done
