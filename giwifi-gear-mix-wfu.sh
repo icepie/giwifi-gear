@@ -143,7 +143,7 @@ function crypto_encode() {
     
     # aes-128-cbc PKCS5Padding (Original data is ZeroPadding, but it is universal on decryption)
     # default key: 1234567887654321
-    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt | base64
+    printf '%s' "$1" | openssl enc -e -aes-128-cbc -K $(str2hex "$2") -iv $(str2hex "$3") -nosalt -base64 -A
 
 }
 
