@@ -59,7 +59,7 @@ get_nic_gateway() {
     local gateway
 
     if [ "$os" == 'windows' ];then
-        gateway="$(netsh interface ip show address "$1" 2> /dev/null | grep 'Default Gateway' | awk '{print $3}')"
+        gateway="$(chcp.com 437 > /dev/null && netsh interface ip show address "$1" 2> /dev/null | grep 'Default Gateway' | awk '{print $3}')"
     elif [ "$os" == 'linux' ] || [ "$os" == 'android' ] ;then
         gateway="$(ip route list match 0 table all scope global 2> /dev/null | grep 'proto' | grep "$1" | awk '{print $3}')"
     elif [ "$os" == 'darwin' ];then
@@ -80,7 +80,7 @@ get_nic_ip() {
     local ip
 
     if [ "$os" == 'windows' ];then
-        ip="$(netsh interface ipv4 show ipaddress interface="$1" 2> /dev/null | head -2 | awk '{print $2}')"
+        ip="$(chcp.com 437 > /dev/null && netsh interface ipv4 show ipaddress interface="$1" 2> /dev/null | head -2 | awk '{print $2}')"
     elif [ "$os" == 'linux' ] || [ "$os" == 'android' ] ;then
         ip="$(ip address show dev "$1" 2> /dev/null | grep 'inet ' | awk '{print $2}' | awk -F '/' '{print $1}')"
     elif [ "$os" == 'darwin' ];then
