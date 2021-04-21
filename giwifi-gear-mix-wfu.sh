@@ -201,7 +201,7 @@ nasName=$GW_NAS_NAME\
 #  "
 
 # use giwifi-mix-crypto to build the login data
-GW_LOGIN_DATA="data=$(url_encode "$(crypto_encode "$GW_LOGIN_RAW_DATA" '1234567887654321' "$GW_IV")")&iv=$GW_IV"
+GW_LOGIN_DATA="data="$(url_encode "$(crypto_encode "$GW_LOGIN_RAW_DATA" '1234567887654321' "$GW_IV")")"&iv=$GW_IV"
 
 echo $GW_LOGIN_DATA
 
