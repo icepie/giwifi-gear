@@ -8,11 +8,63 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
+AUTH_TYPE='' # pc/pad for web auth, android/ios/win/
+SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
+HEART_BEAT=9
+
 AUTH_IFACE=''       # the base interface (get auth info)
 EXTRA_IFACE_LIST=() # the extra interface list (Recommended for less than two)
 
+GW_PORT='8060'
+
 #############################################
-## Config
+## Web Auth Mode Config
+#############################################
+
+PC_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+PAD_UA='Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
+
+#############################################
+## Desktop App Auth Mode Config
+#############################################
+
+WIN_UA='Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2'
+MAC_UA='GiWiFi/1.1.6.2 (Mac OS X Version 11.2.3 (Build 20D91))'
+
+WIN_APP_VERSION='1.1.4.2'
+MAC_APP_VERSION='1.1.6.2'
+
+WIN_MODEL='mac11.2'
+MAC_MODEL='Microsoft Windows 10, 64-bit'
+
+WIN_APP_UUID='18C6037C-6379-4317-8FE5-8C9B8E573CF8'
+MAC_APP_UUID='bad82d414cb15452938cfe605c7faf02'
+
+STA_NIC_TYPE='2' # 1: Wireless 2: Ethernet
+
+#############################################
+## Mobile App Auth Mode Config
+#############################################
+
+ANDROID_UA='(GiWiFi;Android11;Xiaomi;Redmi K20 Pro Premium Edition)'
+IOS_UA='(GiWiFi;iPhone OS 14_3;Apple;iPad11,3)'
+
+ANDROID_STA_MODEL='Xiaomi,Redmi K20 Pro Premium Edition,30,11' # MANUFACTURER,MODEL,SDK,RELEASE
+IOS_STA_MODEL='Apple,iPad11,14,3'
+
+MOBILE_STA_TYPE='phone' # pad or phone
+MOBILE_IM='00000000-023e-0e94-ffff-ffffef05ac4a' # IMEI UUID
+MOBILE_IS_INSTALL_WX='1' # is installed WeChat?
+MOBILE_AUTH_MODE='1' # 1: Cloud Mode 2: Local Mode
+MOBILE_IMSI='00000000-6142-4378-a94954' # xxx-xxx-xxx-xxx
+MOBILE_UUID='b88a2e1b-6142-4378-a94954ea3287cce5' # xxx-xxx-xxx-xxx
+MOBILE_APP_ID='gi752e58b11af83d96'
+MOBILE_APP_KEY='YXJjc29mdGZhY2VyZWNvZ25pemVkZXRlY3Q'
+MOBILE_APP_ENCRYPT_KEY='5447c08b53e8dac4'
+MOBILE_APP_VERSION='2.4.1.4'
+
+#############################################
+## Tool Config
 #############################################
 
 VERSION='0.11'
@@ -142,6 +194,24 @@ str2hex() {
 
 }
 
+logcat() {
+    # logcat <string> <level>
+
+	#%Y-%m-%d
+	local time="$(date "+%H:%M:%S")"
+
+	# check the log flag
+	if [ "$2" ]; then
+		local flag=$2
+	else
+		local flag='I'
+	fi
+
+	if [ "$1" ]; then
+		echo "$time" "$flag": "$1"
+	fi
+}
+
 #############################################
 ## Special Util
 #############################################
@@ -188,6 +258,7 @@ init() {
 	}
 	hash openssl 2>/dev/null || { echo 'Error: openssl is not installed. you can only use the "web auth type (pc/pad)"' >&2; }
 
+    TOOL_PATH="$0"
 }
 
 ver() {
@@ -219,7 +290,7 @@ optional arguments:
   -v                    show the tool version and exit
 example:
   # bind your device with pad type
-  ./giwifi-gear-cloud.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -r
+  ./giwifi-gear-cloud.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
   # auth with daemon mode
   ./giwifi-gear-cloud.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
   # quit auth
@@ -229,9 +300,29 @@ example:
 }
 
 main() {
-	echo "$OS"
-	echo "$AUTH_IFACE"
-	echo "${EXTRA_IFACE_LIST[@]}"
+
+    [ $ISLOG ] && \
+	echo "TOOL_PATH:" && \
+	echo "--> $TOOL_PATH" && \
+	echo "";
+
+    # check the auth type
+    if [ -z "$AUTH_TYPE" ]; then
+        AUTH_MODE='web'
+        AUTH_TYPE="pc"
+        AUTH_UA="$PC_UA"
+    fi
+
+    logcat "You are running with "$AUTH_TYPE" "$AUTH_MODE" auth mode!"
+
+	# check the gateway
+	while [ ! $GW_GTW ]; do
+		echo -n "Plz enter gateway: "
+		read GW_GTW
+	done
+
+	#echo "$AUTH_IFACE"
+	#echo "${EXTRA_IFACE_LIST[@]}"
 }
 
 #start
@@ -239,6 +330,7 @@ main() {
 	# init setting
 	init
 
+    # paser the opts
 	while getopts "g:u:p:t:i:e:qbdlvh" option; do
 		case "$option" in
 		g)
@@ -251,19 +343,39 @@ main() {
 			GW_PWD="$OPTARG"
 			;;
 		t)
-			if [ $OPTARG = pc ]; then
-				AUTH_UA=$PC_UA
-				GW_BTYPE="pc"
-			elif [ $OPTARG = pad ]; then
-				AUTH_UA=$PAD_UA
-				GW_BTYPE="pad"
-			elif [ $OPTARG = phone ]; then
-				echo "Error: phone type is not be supported now!"
-				exit
-			else
-				echo "Error: plz use the true value(pc/pad/phone)!"
-				exit
-			fi
+            case "$OPTARG" in
+                'pc')
+                    AUTH_UA="$PC_UA"
+                    AUTH_MODE='web'
+                    ;;
+                'pad')
+                    AUTH_UA="$PAD_UA"
+                    AUTH_MODE='web'
+                    ;;
+                'win')
+                    AUTH_UA="$WIN_UA"
+                    AUTH_MODE='desktop'
+                    DESKTOP_APP_VERSION="$WIN_APP_VERSION"
+                    ;;
+                'mac')
+                    AUTH_UA="$MAC_UA"
+                    AUTH_MODE='desktop'
+                    DESKTOP_APP_VERSION="$MAC_APP_VERSION"
+                    ;;
+                'android')
+                    AUTH_UA="$ANDROID_UA"
+                    AUTH_MODE='mobile'
+                    ;;
+                'ios')
+                    AUTH_UA="$IOS_UA"
+                    AUTH_MODE='mobile'
+                    ;;
+                *)
+                    echo "Error: Do not support the "$OPTARG" type!"
+                    exit 1
+                ;;
+            esac
+            AUTH_TYPE="$OPTARG"   
 			;;
 		i)
 			AUTH_IFACE="$OPTARG"
