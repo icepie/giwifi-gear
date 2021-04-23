@@ -16,12 +16,13 @@ AUTH_IFACE=''       # the base interface (get auth info)
 EXTRA_IFACE_LIST=() # the extra interface list (Recommended for less than two)
 
 GW_PORT='8060'
-GW_REDIRECT_PORT='8062'
 
 #############################################
 ## Web Auth Mode Config
 #############################################
 
+GW_REDIRECT_PORT='8062'
+GW_REDIRECT_URL='http://www.baidu.com'
 PC_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
 PAD_UA='Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
 
@@ -97,28 +98,26 @@ check_ip() {
 
 get_os_type() {
 
-	local uname=$(uname 2>/dev/null)
-	local os
-
+	local uname="$(uname 2> /dev/null)"
 	# Mac OS X
-	if [ "$(uname)" == "Darwin" ]; then
-		os="darwin"
+	if [ "$(uname)" = "Darwin" ]; then
+		local os="darwin"
 	# GNU/Linux
-	elif [ "$(uname)" == "Linux" ]; then
+	elif [ "$(uname)" = "Linux" ]; then
 		os="linux"
 		# Android
-		if [ "$(getprop 2>/dev/null)" ]; then
-			os="android"
+		if [ "$(getprop 2> /dev/null)" ]; then
+			local os="android"
 		fi
 		# IOS (ISH)
-		if [ "$(cat /dev/clipboard 2>/dev/null)" ]; then
-			os="ish"
+		if [ "$(cat /dev/clipboard 2> /dev/null)" ]; then
+			local os="ish"
 		fi
 	# Windows
-	elif [ "$(chcp.com 2>/dev/null)" ]; then
-		os="windows"
+	elif [ "$(chcp.com 2> /dev/null)" ]; then
+		local os="windows"
 	else
-		os=$(uname)
+		local os="$(uname)"
 	fi
 	printf '%s' "$os"
 
@@ -254,7 +253,7 @@ str_str() {
 	local str
 	str="${1#*${2}}"
 	str="${str%%$3*}"
-	printf "$str"
+	printf '%s' "$str"
 
 }
 
@@ -302,7 +301,7 @@ curl_by_nic() {
 	# curl_by_nic <curl_param>
 
 	if [ -z "$AUTH_IFACE" ]; then
-		printf '%s' "$(curl $*)"
+		printf '%s' "$(curl $@)"
 	else
 		printf '%s' "$(curl --interface "$AUTH_IFACE" $*)"
 	fi
@@ -330,34 +329,50 @@ curl_by_nics() {
 ## GiWiFi API
 #############################################
 
-# discard
-# gw_web_get_gtw_auth() {
-# 	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
-# }
-
 gw_get_gateway() {
-	local nettest="$(echo "$(curl_by_nic -s 'http://nettest.gwifi.com.cn')" | grep 'delayURL')"
+	local nettest="$(curl $CURL_OPT -s 'http://nettest.gwifi.com.cn' | grep 'delayURL')"
 	local delayurl="$(str_str "$nettest" 'delayURL("' '")')"
-	local gateway="$(str_str "$delayurl" 'http://' ":"$GW_REDIRECT_PORT"/redirect")"
-	printf '%s' "$gateway"
+	printf '%s' "$(str_str "$delayurl" 'http://' ":"$GW_REDIRECT_PORT"/redirect")"
 }
 
 gw_get_hotspot_group() {
-	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_hotspot_group")"
+	printf '%s' "$(curl $CURL_OPT -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_hotspot_group")"
 }
 
 gw_get_auth_state() {
-	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_auth_state")"
+	printf '%s' "$(curl $CURL_OPT -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_auth_state")"
+}
+
+# for web
+gw_web_get_login_page() {
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_REDIRECT_PORT/redirect?oriUrl="$GW_REDIRECT_URL"&account_type=1" | grep 'name')"
+}
+
+gw_web_loginaction() {
+	# create random three-digit numbers
+	local str="$(date +%S%M)"
+	local rannum="${str:1:3}"
+
+	printf '%s' "$(curl $CURL_OPT -s \
+		-A "$AUTH_UA" \
+		-X POST \
+		-d "$1" \
+		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum")"
 }
 
 # discard
+# gw_web_get_gtw_auth() {
+# 	printf '%s' "$(curl_by_nic -s -A "\'$AUTH_UA\'" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
+# }
+#
 # gw_web_logout() {
 # 	printf '%s' "$(curl_by_nic -s "http://"$GW_GTW"/getApp.htm?action=logout")"
-# }
+# 
 
 gw_logout() {
-	printf '%s' "$(curl -s -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_ID"&mac="$(url_encode "$ClIENT_MAC")"")"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_ID"&mac="$(url_encode "$ClIENT_MAC")"")"
 }
+
 
 #############################################
 ## CLI Related
@@ -373,12 +388,12 @@ init() {
 	}
 	hash openssl 2>/dev/null || { echo 'Error: openssl is not installed. you can only use the "web auth type (pc/pad)"' >&2; }
 
-	TOOL_PATH="$0"
 }
 
 detect_gateway() {
 
 	if [ "$AUTH_IFACE" ]; then
+		CURL_OPT=--interface $AUTH_IFACE
 		logcat "Will use the interface $AUTH_IFACE to auth..."
 		if [ ! "$GW_GTW" ]; then
 			logcat "Try to get the gateway from interface $AUTH_IFACE..."
@@ -432,10 +447,10 @@ example:
 
 main() {
 
-	[ $ISLOG ] && echo "" && \
+	[ $ISLOG ] && echo '' && \
 	echo "TOOL_PATH:" && \
-	echo "--> $TOOL_PATH" && \
-	echo ""
+	echo "--> $0" && \
+	echo ''
 
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
@@ -455,10 +470,10 @@ main() {
 		AUTH_UA="$PC_UA"
 	fi
 
-	[ $ISLOG ] && echo "" && \
+	[ $ISLOG ] && echo '' && \
 	echo "AUTH_UA:" && \
 	echo "--> "$AUTH_UA"" && \
-	echo ""
+	echo ''
 
 	logcat "You are running with "$AUTH_TYPE" "$AUTH_MODE" auth mode!"
 
@@ -470,44 +485,53 @@ main() {
 		read GW_GTW
 	fi
 
-	[ $ISLOG ] && echo "" && \
+	[ $ISLOG ] && echo '' && \
 	echo "GW_HOTSPOT_GROUP:" && \
 	echo "--> "$(gw_get_hotspot_group)"" && \
-	echo ""
+	echo ''
 
 	AUTH_STATE_RTE="$(gw_get_auth_state)"
 	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
 
 	[ ! "$AUTH_STATE_RTE" ] && \
-	logcat "Error: fail to get the auth state! (visit https://blog.icepie.net/giwifi-gear for more info)" "E" && \
+	logcat "Fail to get the auth state! (visit https://blog.icepie.net/giwifi-gear for more info)" "E" && \
 	exit 1
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_STATE_RTE:" && \
+	echo "--> "$AUTH_STATE_RTE"" && \
+	echo ''
 
 	# Deserialization auth_state json data
 	AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
 	AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
 	GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
-	# ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
+	ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
 	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
 	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
 	ClIENT_ID="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
 	ClIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
+	ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
+	LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
+	CONTACT_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'contact_phone')"
+	SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
+	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
+	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
+	
 
 	if [ $AUTH_STATE -eq 2 ]; then
-		logcat "You are authed!"
+		logcat "Good! You are authed!"
 		if [ $ISQUIT ]; then
 			LOGOUT_RTE="$(gw_logout)"
 			LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
 			([ $LOGOUT_RTE_CODE -eq 0 ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
 			exit 0
 		fi
+		[ ! $ISDAEMON ] &&  logcat "exit" && exit 0
 	fi
 
-	[ $ISQUIT ] && logcat "Not authed, cannot logout" "E" && exit 1
+	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 1
 
-	[ $ISLOG ] && echo "" && \
-	echo "AUTH_STATE:" && \
-	echo "--> "$AUTH_STATE_RTE"" && \
-	echo ""
 
 	if [ ! "$GW_USER" ]; then
 		printf '%s' "Plz enter username: "
@@ -517,9 +541,71 @@ main() {
 	if [ ! "$GW_PWD" ]; then
 		printf '%s' "Plz enter password: "
 		read -s -t 20 GW_PWD
+		echo ''
 	fi
 
-	echo $(url_encode "$ClIENT_MAC")
+	# login and get token...
+	case "$AUTH_MODE" in
+	'web')
+		echo "test web"
+		# login to get the auth token
+		LOGIN_PAGE="$(gw_web_get_login_page)"
+		# get some values from login page
+		PAGE_SIGN=$(str_str "$LOGIN_PAGE" 'name="sign" value="' '"')
+		PAGE_TIME=$(str_str "$LOGIN_PAGE" 'name="page_time" value="' '"')
+
+		[ $ISLOG ] && echo '' && \
+		echo "PAGE_SIGN:" && \
+		echo "--> "$PAGE_SIGN"" && \
+		echo ''
+
+		[ $ISLOG ] && echo '' && \
+		echo "PAGE_TIME:" && \
+		echo "--> "$PAGE_TIME"" && \
+		echo ''
+
+		# login to get the auth token
+		WEB_LOGIN_DATA="""\
+account_type=1\
+&access_type="$ACCESS_TYPE"\
+&acsign="$SIGN"\
+&btype="$AUTH_TYPE"\
+&client_mac="$(url_encode $ClIENT_MAC)"\
+&contact_phone="$CONTACT_PHONE"\
+&devicemode=""\
+&gw_address="$GW_GTW"\
+&gw_id="$GW_ID"\
+&gw_port="$GW_PORT"\
+&lastaccessurl=""\
+&logout_reason="$LOGOUT_REASON"\
+&mac="$(url_encode $ClIENT_MAC)"\
+&name="$GW_USER"\
+&online_time="$ONLINE_TIME"\
+&page_time="$PAGE_TIME"\
+&password="$GW_PWD"\
+&sign="$(url_encode $PAGE_SIGN)"\
+&station_cloud="$STATION_CLOUD"\
+&station_sn="$STATION_SN"\
+&suggest_phone="$SUGGEST_PHONE"\
+&url="$(url_encode $GW_REDIRECT_URL)"\
+&user_agent=""\
+&link_data=""\
+"""
+		echo "$WEB_LOGIN_DATA"
+
+		echo "$(gw_web_loginaction "$WEB_LOGIN_DATA")"
+
+		;;
+	'desktop')
+		echo "test desktop"
+		;;
+	'mobile')
+		echo "test mobile"
+		;;
+	esac
+
+
+	#echo $(url_encode "$ClIENT_MAC")
 
 	#echo "$AUTH_IFACE"
 	#echo "${EXTRA_IFACE_LIST[@]}"
