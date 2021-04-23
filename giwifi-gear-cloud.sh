@@ -8,7 +8,7 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
-AUTH_TYPE='' # pc/pad for web auth, android/ios/win/mac for app auth
+AUTH_TYPE=''     # pc/pad for web auth, android/ios/win/mac for app auth
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 HEART_BEAT=9
 
@@ -53,11 +53,11 @@ IOS_UA='(GiWiFi;iPhone OS 14_3;Apple;iPad11,3)'
 ANDROID_STA_MODEL='Xiaomi,Redmi K20 Pro Premium Edition,30,11' # MANUFACTURER,MODEL,SDK,RELEASE
 IOS_STA_MODEL='Apple,iPad11,14,3'
 
-MOBILE_STA_TYPE='phone' # pad or phone
-MOBILE_IM='00000000-023e-0e94-ffff-ffffef05ac4a' # IMEI UUID
-MOBILE_IS_INSTALL_WX='1' # is installed WeChat?
-MOBILE_AUTH_MODE='1' # 1: Cloud Mode 2: Local Mode
-MOBILE_IMSI='00000000-6142-4378-a94954' # xxx-xxx-xxx-xxx
+MOBILE_STA_TYPE='phone'                           # pad or phone
+MOBILE_IM='00000000-023e-0e94-ffff-ffffef05ac4a'  # IMEI UUID
+MOBILE_IS_INSTALL_WX='1'                          # is installed WeChat?
+MOBILE_AUTH_MODE='1'                              # 1: Cloud Mode 2: Local Mode
+MOBILE_IMSI='00000000-6142-4378-a94954'           # xxx-xxx-xxx-xxx
 MOBILE_UUID='b88a2e1b-6142-4378-a94954ea3287cce5' # xxx-xxx-xxx-xxx
 MOBILE_APP_ID='gi752e58b11af83d96'
 MOBILE_APP_KEY='YXJjc29mdGZhY2VyZWNvZ25pemVkZXRlY3Q'
@@ -75,7 +75,7 @@ VERSION='0.11'
 #############################################
 
 check_ip() {
-    # check_ip <string>
+	# check_ip <string>
 
 	printf '%s' $1 | grep "^[0-9]\{1,3\}\.\([0-9]\{1,3\}\.\)\{2\}[0-9]\{1,3\}$" >/dev/null
 	if [ $? -ne 0 ]; then
@@ -165,6 +165,86 @@ get_nic_ip() {
 }
 
 #############################################
+## Json Handle
+#############################################
+
+cat_json_value() {
+	awk -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
+        foundKeyCount = 0
+        while (length(json) > 0) {
+            pos = match(json, "\""key"\"[ \\t]*?:[ \\t]*");
+            if (pos == 0) {if (foundKeyCount == 0) {print defaultValue;} exit 0;}
+            ++foundKeyCount;
+            start = 0; stop = 0; layer = 0;
+            for (i = pos + length(key) + 1; i <= length(json); ++i) {
+                lastChar = substr(json, i - 1, 1)
+                currChar = substr(json, i, 1)
+                if (start <= 0) {
+                    if (lastChar == ":") {
+                        start = currChar == " " ? i + 1: i;
+                        if (currChar == "{" || currChar == "[") {
+                            layer = 1;
+                        }
+                    }
+                } else {
+                    if (currChar == "{" || currChar == "[") {
+                        ++layer;
+                    }
+                    if (currChar == "}" || currChar == "]") {
+                        --layer;
+                    }
+                    if ((currChar == "," || currChar == "}" || currChar == "]") && layer <= 0) {
+                        stop = currChar == "," ? i : i + 1 + layer;
+                        break;
+                    }
+                }
+            }
+            if (start <= 0 || stop <= 0 || start > length(json) || stop > length(json) || start >= stop) {
+                if (foundKeyCount == 0) {print defaultValue;} exit 0;
+            } else {
+                print substr(json, start, stop - start);
+            }
+            json = substr(json, stop + 1, length(json) - stop)
+        }
+    }'
+}
+
+get_json_value() {
+	# get_json_value <json> <key>
+
+	local value="$(cat_json_value "$1" "$2")"
+	local temp="${value%\"}"
+	printf '%s' "${temp#\"}"
+
+}
+
+#############################################
+## url handle
+#############################################
+
+url_encode() {
+	# urlencode <string>
+
+	local length="${#1}"
+	for i in $(seq $length); do
+		local c="${1:$((i - 1)):1}"
+		case $c in
+		[a-zA-Z0-9.~_-]) printf '%s' "$c" ;;
+		*) printf '%%%02X' "'$c" ;;
+		esac
+	done
+
+}
+
+url_decode() {
+	# urldecode <string>
+
+	local url_encoded="${1//+/ }"
+	printf '%b' "${url_encoded//%/\\x}"
+
+}
+
+#############################################
 ## String Handle
 #############################################
 
@@ -197,7 +277,7 @@ str2hex() {
 }
 
 logcat() {
-    # logcat <string> <level>
+	# logcat <string> <level>
 
 	#%Y-%m-%d
 	local time="$(date "+%H:%M:%S")"
@@ -251,7 +331,7 @@ curl_by_nics() {
 #############################################
 
 # discard
-# web_get_gtw_auth() {
+# gw_web_get_gtw_auth() {
 # 	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
 # }
 
@@ -267,7 +347,16 @@ gw_get_hotspot_group() {
 }
 
 gw_get_auth_state() {
-	printf '%s' "$(curl_by_nic -s "http://"$GW_GTW":"$GW_PORT"/wifidog/get_auth_state")"
+	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_auth_state")"
+}
+
+# discard
+# gw_web_logout() {
+# 	printf '%s' "$(curl_by_nic -s "http://"$GW_GTW"/getApp.htm?action=logout")"
+# }
+
+gw_logout() {
+	printf '%s' "$(curl -s -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_ID"&mac="$(url_encode "$ClIENT_MAC")"")"
 }
 
 #############################################
@@ -284,23 +373,23 @@ init() {
 	}
 	hash openssl 2>/dev/null || { echo 'Error: openssl is not installed. you can only use the "web auth type (pc/pad)"' >&2; }
 
-    TOOL_PATH="$0"
+	TOOL_PATH="$0"
 }
 
 detect_gateway() {
 
-    if [ "$AUTH_IFACE" ]; then
-        logcat "Will use the interface $AUTH_IFACE to auth..."
-        if [ ! "$GW_GTW" ]; then
-            logcat "Try to get the gateway from interface $AUTH_IFACE..."
-            GW_GTW="$(get_nic_gateway $AUTH_IFACE)"
-        fi
-    fi
+	if [ "$AUTH_IFACE" ]; then
+		logcat "Will use the interface $AUTH_IFACE to auth..."
+		if [ ! "$GW_GTW" ]; then
+			logcat "Try to get the gateway from interface $AUTH_IFACE..."
+			GW_GTW="$(get_nic_gateway $AUTH_IFACE)"
+		fi
+	fi
 
-	[ ! "$GW_GTW" ] &&  logcat "Try to get the gateway from redirect url..." && GW_GTW="$(gw_get_gateway)" 
+	[ ! "$GW_GTW" ] && logcat "Try to get the gateway from redirect url..." && GW_GTW="$(gw_get_gateway)"
 
 	[ "$GW_GTW" ] && logcat "Gateway detected as "$GW_GTW""
-	
+
 }
 
 ver() {
@@ -343,35 +432,35 @@ example:
 
 main() {
 
-    [ $ISLOG ] && echo "" && \
+	[ $ISLOG ] && echo "" && \
 	echo "TOOL_PATH:" && \
 	echo "--> $TOOL_PATH" && \
-	echo "";
+	echo ""
 
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
 		echo "Error: don't use bind, quit or daemon at same time!"
-		exit 1;
+		exit 1
 	fi
 
-	if [ ${#EXTRA_IFACE_LIST[@]} -gt 0 ] && [ ! "$AUTH_IFACE" ] ; then
+	if [ ${#EXTRA_IFACE_LIST[@]} -gt 0 ] && [ ! "$AUTH_IFACE" ]; then
 		echo "Error: if you want to use the extra interfaces, plz set the auth interface!"
-		exit 1;
+		exit 1
 	fi
 
-    # check the auth type
-    if [ ! "$AUTH_TYPE" ]; then
-        AUTH_MODE='web'
-        AUTH_TYPE="pc"
-        AUTH_UA="$PC_UA"
-    fi
+	# check the auth type
+	if [ ! "$AUTH_TYPE" ]; then
+		AUTH_MODE='web'
+		AUTH_TYPE="pc"
+		AUTH_UA="$PC_UA"
+	fi
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_UA:" && \
 	echo "--> "$AUTH_UA"" && \
-	echo "";
+	echo ""
 
-    logcat "You are running with "$AUTH_TYPE" "$AUTH_MODE" auth mode!"
+	logcat "You are running with "$AUTH_TYPE" "$AUTH_MODE" auth mode!"
 
 	# get the gateway
 	detect_gateway
@@ -384,26 +473,53 @@ main() {
 	[ $ISLOG ] && echo "" && \
 	echo "GW_HOTSPOT_GROUP:" && \
 	echo "--> "$(gw_get_hotspot_group)"" && \
-	echo "";
+	echo ""
 
-	AUTH_STATE="$(gw_get_auth_state)"
+	AUTH_STATE_RTE="$(gw_get_auth_state)"
 	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
+
+	[ ! "$AUTH_STATE_RTE" ] && \
+	logcat "Error: fail to get the auth state! (visit https://blog.icepie.net/giwifi-gear for more info)" "E" && \
+	exit 1
+
+	# Deserialization auth_state json data
+	AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
+	AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
+	GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
+	# ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
+	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
+	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
+	ClIENT_ID="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
+	ClIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
+
+	if [ $AUTH_STATE -eq 2 ]; then
+		logcat "You are authed!"
+		if [ $ISQUIT ]; then
+			LOGOUT_RTE="$(gw_logout)"
+			LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
+			([ $LOGOUT_RTE_CODE -eq 0 ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
+			exit 0
+		fi
+	fi
+
+	[ $ISQUIT ] && logcat "Not authed, cannot logout" "E" && exit 1
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_STATE:" && \
-	echo "--> "$AUTH_STATE"" && \
-	echo "";
+	echo "--> "$AUTH_STATE_RTE"" && \
+	echo ""
 
 	if [ ! "$GW_USER" ]; then
 		printf '%s' "Plz enter username: "
 		read GW_USER
 	fi
 
-
 	if [ ! "$GW_PWD" ]; then
 		printf '%s' "Plz enter password: "
 		read -s -t 20 GW_PWD
 	fi
+
+	echo $(url_encode "$ClIENT_MAC")
 
 	#echo "$AUTH_IFACE"
 	#echo "${EXTRA_IFACE_LIST[@]}"
@@ -414,7 +530,7 @@ main() {
 	# init setting
 	init
 
-    # paser the opts
+	# paser the opts
 	while getopts "g:u:p:t:i:e:qbdlvh" option; do
 		case "$option" in
 		g)
@@ -427,39 +543,39 @@ main() {
 			GW_PWD="$OPTARG"
 			;;
 		t)
-            case "$OPTARG" in
-                'pc')
-                    AUTH_UA="$PC_UA"
-                    AUTH_MODE='web'
-                    ;;
-                'pad')
-                    AUTH_UA="$PAD_UA"
-                    AUTH_MODE='web'
-                    ;;
-                'win')
-                    AUTH_UA="$WIN_UA"
-                    AUTH_MODE='desktop'
-                    DESKTOP_APP_VERSION="$WIN_APP_VERSION"
-                    ;;
-                'mac')
-                    AUTH_UA="$MAC_UA"
-                    AUTH_MODE='desktop'
-                    DESKTOP_APP_VERSION="$MAC_APP_VERSION"
-                    ;;
-                'android')
-                    AUTH_UA="$ANDROID_UA"
-                    AUTH_MODE='mobile'
-                    ;;
-                'ios')
-                    AUTH_UA="$IOS_UA"
-                    AUTH_MODE='mobile'
-                    ;;
-                *)
-                    echo "Error: Do not support the "$OPTARG" type!"
-                    exit 1
-                ;;
-            esac
-            AUTH_TYPE="$OPTARG"   
+			case "$OPTARG" in
+			'pc')
+				AUTH_UA="$PC_UA"
+				AUTH_MODE='web'
+				;;
+			'pad')
+				AUTH_UA="$PAD_UA"
+				AUTH_MODE='web'
+				;;
+			'win')
+				AUTH_UA="$WIN_UA"
+				AUTH_MODE='desktop'
+				DESKTOP_APP_VERSION="$WIN_APP_VERSION"
+				;;
+			'mac')
+				AUTH_UA="$MAC_UA"
+				AUTH_MODE='desktop'
+				DESKTOP_APP_VERSION="$MAC_APP_VERSION"
+				;;
+			'android')
+				AUTH_UA="$ANDROID_UA"
+				AUTH_MODE='mobile'
+				;;
+			'ios')
+				AUTH_UA="$IOS_UA"
+				AUTH_MODE='mobile'
+				;;
+			*)
+				echo "Error: Do not support the "$OPTARG" type!"
+				exit 1
+				;;
+			esac
+			AUTH_TYPE="$OPTARG"
 			;;
 		i)
 			AUTH_IFACE="$OPTARG"
