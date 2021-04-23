@@ -8,7 +8,7 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
-AUTH_TYPE='' # pc/pad for web auth, android/ios/win/
+AUTH_TYPE='' # pc/pad for web auth, android/ios/win/mac for app auth
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 HEART_BEAT=9
 
@@ -16,6 +16,7 @@ AUTH_IFACE=''       # the base interface (get auth info)
 EXTRA_IFACE_LIST=() # the extra interface list (Recommended for less than two)
 
 GW_PORT='8060'
+GW_REDIRECT_PORT='8062'
 
 #############################################
 ## Web Auth Mode Config
@@ -74,6 +75,7 @@ VERSION='0.11'
 #############################################
 
 check_ip() {
+    # check_ip <string>
 
 	printf '%s' $1 | grep "^[0-9]\{1,3\}\.\([0-9]\{1,3\}\.\)\{2\}[0-9]\{1,3\}$" >/dev/null
 	if [ $? -ne 0 ]; then
@@ -245,6 +247,30 @@ curl_by_nics() {
 }
 
 #############################################
+## GiWiFi API
+#############################################
+
+# discard
+# web_get_gtw_auth() {
+# 	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
+# }
+
+gw_get_gateway() {
+	local nettest="$(echo "$(curl_by_nic -s 'http://nettest.gwifi.com.cn')" | grep 'delayURL')"
+	local delayurl="$(str_str "$nettest" 'delayURL("' '")')"
+	local gateway="$(str_str "$delayurl" 'http://' ":"$GW_REDIRECT_PORT"/redirect")"
+	printf '%s' "$gateway"
+}
+
+gw_get_hotspot_group() {
+	printf '%s' "$(curl_by_nic -s -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/get_hotspot_group")"
+}
+
+gw_get_auth_state() {
+	printf '%s' "$(curl_by_nic -s "http://"$GW_GTW":"$GW_PORT"/wifidog/get_auth_state")"
+}
+
+#############################################
 ## CLI Related
 #############################################
 
@@ -259,6 +285,22 @@ init() {
 	hash openssl 2>/dev/null || { echo 'Error: openssl is not installed. you can only use the "web auth type (pc/pad)"' >&2; }
 
     TOOL_PATH="$0"
+}
+
+detect_gateway() {
+
+    if [ "$AUTH_IFACE" ]; then
+        logcat "Will use the interface $AUTH_IFACE to auth..."
+        if [ ! "$GW_GTW" ]; then
+            logcat "Try to get the gateway from interface $AUTH_IFACE..."
+            GW_GTW="$(get_nic_gateway $AUTH_IFACE)"
+        fi
+    fi
+
+	[ ! "$GW_GTW" ] &&  logcat "Try to get the gateway from redirect url..." && GW_GTW="$(gw_get_gateway)" 
+
+	[ "$GW_GTW" ] && logcat "Gateway detected as "$GW_GTW""
+	
 }
 
 ver() {
@@ -282,7 +324,7 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type(pc/pad for web auth, android/ios/win/mac app auth (default value is pc)
+  -t <TYPE>             auth type(pc/pad for web auth, android/ios/win/mac for app auth (default value is pc)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
@@ -301,25 +343,67 @@ example:
 
 main() {
 
-    [ $ISLOG ] && \
+    [ $ISLOG ] && echo "" && \
 	echo "TOOL_PATH:" && \
 	echo "--> $TOOL_PATH" && \
 	echo "";
 
+	# check the conflicting parameters
+	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
+		echo "Error: don't use bind, quit or daemon at same time!"
+		exit 1;
+	fi
+
+	if [ ${#EXTRA_IFACE_LIST[@]} -gt 0 ] && [ ! "$AUTH_IFACE" ] ; then
+		echo "Error: if you want to use the extra interfaces, plz set the auth interface!"
+		exit 1;
+	fi
+
     # check the auth type
-    if [ -z "$AUTH_TYPE" ]; then
+    if [ ! "$AUTH_TYPE" ]; then
         AUTH_MODE='web'
         AUTH_TYPE="pc"
         AUTH_UA="$PC_UA"
     fi
 
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_UA:" && \
+	echo "--> "$AUTH_UA"" && \
+	echo "";
+
     logcat "You are running with "$AUTH_TYPE" "$AUTH_MODE" auth mode!"
 
-	# check the gateway
-	while [ ! $GW_GTW ]; do
-		echo -n "Plz enter gateway: "
+	# get the gateway
+	detect_gateway
+
+	if [ ! "$GW_GTW" ]; then
+		printf '%s' "Plz enter gateway: "
 		read GW_GTW
-	done
+	fi
+
+	[ $ISLOG ] && echo "" && \
+	echo "GW_HOTSPOT_GROUP:" && \
+	echo "--> "$(gw_get_hotspot_group)"" && \
+	echo "";
+
+	AUTH_STATE="$(gw_get_auth_state)"
+	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_STATE:" && \
+	echo "--> "$AUTH_STATE"" && \
+	echo "";
+
+	if [ ! "$GW_USER" ]; then
+		printf '%s' "Plz enter username: "
+		read GW_USER
+	fi
+
+
+	if [ ! "$GW_PWD" ]; then
+		printf '%s' "Plz enter password: "
+		read -s -t 20 GW_PWD
+	fi
 
 	#echo "$AUTH_IFACE"
 	#echo "${EXTRA_IFACE_LIST[@]}"
