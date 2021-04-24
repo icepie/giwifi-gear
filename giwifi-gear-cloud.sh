@@ -10,7 +10,9 @@ GW_PWD=''
 
 AUTH_TYPE=''     # pc/pad for web auth, android/ios/win/mac for app auth
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
+
 HEART_BEAT=9
+HEART_BROKEN_TIME=30
 
 AUTH_IFACE=''       # the base interface (get auth info)
 EXTRA_IFACE_LIST=() # the extra interface list (Recommended for less than two)
@@ -98,7 +100,7 @@ check_ip() {
 
 get_os_type() {
 
-	local uname="$(uname 2> /dev/null)"
+	local uname="$(uname 2>/dev/null)"
 	# Mac OS X
 	if [ "$(uname)" = "Darwin" ]; then
 		local os="darwin"
@@ -106,15 +108,15 @@ get_os_type() {
 	elif [ "$(uname)" = "Linux" ]; then
 		os="linux"
 		# Android
-		if [ "$(getprop 2> /dev/null)" ]; then
+		if [ "$(getprop 2>/dev/null)" ]; then
 			local os="android"
 		fi
 		# IOS (ISH)
-		if [ "$(cat /dev/clipboard 2> /dev/null)" ]; then
+		if [ "$(cat /dev/clipboard 2>/dev/null)" ]; then
 			local os="ish"
 		fi
 	# Windows
-	elif [ "$(chcp.com 2> /dev/null)" ]; then
+	elif [ "$(chcp.com 2>/dev/null)" ]; then
 		local os="windows"
 	else
 		local os="$(uname)"
@@ -294,38 +296,6 @@ logcat() {
 }
 
 #############################################
-## Special Util
-#############################################
-
-curl_by_nic() {
-	# curl_by_nic <curl_param>
-
-	if [ -z "$AUTH_IFACE" ]; then
-		printf '%s' "$(curl $@)"
-	else
-		printf '%s' "$(curl --interface "$AUTH_IFACE" $*)"
-	fi
-
-}
-
-curl_by_nics() {
-	# curl_by_nic <curl_param>
-
-	if [ -z "$AUTH_IFACE" ]; then
-		printf '%s' "$(curl $*)"
-	else
-		printf '%s' "$(curl --interface "$AUTH_IFACE" $*)"
-	fi
-
-	local extra_count=${#EXTRA_IFACE_LIST[*]}
-
-	for i in $(seq $extra_count); do
-		printf '%s' "$(curl --interface "${EXTRA_IFACE_LIST[$(($i - 1))]}" $*)"
-	done
-
-}
-
-#############################################
 ## GiWiFi API
 #############################################
 
@@ -345,7 +315,8 @@ gw_get_auth_state() {
 
 # for web
 gw_web_get_login_page() {
-	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_REDIRECT_PORT/redirect?oriUrl="$GW_REDIRECT_URL"&account_type=1" | grep 'name')"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_REDIRECT_PORT/redirect?oriUrl="$GW_REDIRECT_URL"" | grep 'name')"
+	# &account_type= 1: 教职工 2: 特殊终端 3: 校外访客
 }
 
 gw_web_loginaction() {
@@ -353,11 +324,27 @@ gw_web_loginaction() {
 	local str="$(date +%S%M)"
 	local rannum="${str:1:3}"
 
-	printf '%s' "$(curl $CURL_OPT -s \
+	printf '%s' "$(
+		curl $CURL_OPT -s \
 		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
-		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum")"
+		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum"
+	)"
+}
+
+gw_web_rebindmac() {
+	# create random three-digit numbers
+	local str="$(date +%S%M)"
+	local rannum="${str:1:3}"
+
+	printf '%s' "$(
+		curl $CURL_OPT -s \
+		-A "$AUTH_UA" \
+		-X POST \
+		-d "$1" \
+		"http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum"
+	)"
 }
 
 # discard
@@ -367,12 +354,24 @@ gw_web_loginaction() {
 #
 # gw_web_logout() {
 # 	printf '%s' "$(curl_by_nic -s "http://"$GW_GTW"/getApp.htm?action=logout")"
-# 
+#
 
 gw_logout() {
 	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_ID"&mac="$(url_encode "$ClIENT_MAC")"")"
 }
 
+gw_auth_token() {
+	# gw_auth_token <token>
+
+	printf '%s' "$(curl $CURL_OPT -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
+
+	local extra_count=${#EXTRA_IFACE_LIST[*]}
+
+	for i in $(seq $extra_count); do
+		printf '%s' "$(curl --interface "${EXTRA_IFACE_LIST[$(($i - 1))]}" $*)"
+	done
+
+}
 
 #############################################
 ## CLI Related
@@ -428,7 +427,7 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type(pc/pad for web auth, android/ios/win/mac for app auth (default value is pc)
+  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/win/mac/apad/ipad for app auth (default value is pc)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
@@ -517,7 +516,6 @@ main() {
 	SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
 	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
 	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
-	
 
 	if [ $AUTH_STATE -eq 2 ]; then
 		logcat "Good! You are authed!"
@@ -527,11 +525,10 @@ main() {
 			([ $LOGOUT_RTE_CODE -eq 0 ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
 			exit 0
 		fi
-		[ ! $ISDAEMON ] &&  logcat "exit" && exit 0
+		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 	fi
 
 	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 1
-
 
 	if [ ! "$GW_USER" ]; then
 		printf '%s' "Plz enter username: "
@@ -566,8 +563,7 @@ main() {
 
 		# login to get the auth token
 		WEB_LOGIN_DATA="""\
-account_type=1\
-&access_type="$ACCESS_TYPE"\
+access_type="$ACCESS_TYPE"\
 &acsign="$SIGN"\
 &btype="$AUTH_TYPE"\
 &client_mac="$(url_encode $ClIENT_MAC)"\
@@ -591,11 +587,78 @@ account_type=1\
 &user_agent=""\
 &link_data=""\
 """
-		echo "$WEB_LOGIN_DATA"
+		[ "$AUTH_TYPE" = 'staff' ] && WEB_LOGIN_DATA="account_type=1&"$WEB_LOGIN_DATA""
 
-		echo "$(gw_web_loginaction "$WEB_LOGIN_DATA")"
+		[ $ISLOG ] && echo "" && \
+		echo "WEB_LOGIN_DATA:" && \
+		echo "--> "$WEB_LOGIN_DATA"" && \
+		echo ''
+
+		if [ $ISBIND ]; then
+			WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+			[ $ISLOG ] && echo "" && \
+			echo "WEB_REBINDMAC_RTE:" && \
+			echo "--> "$WEB_REBINDMAC_RTE"" && \
+			echo ''
+
+			WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
+			echo "$WEB_REBINDMAC_RTE"
+			([ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" && exit 1) || (logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 0)
+
+		fi
+
+		WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "WEB_LOGIN_RTE:" && \
+		echo "--> "$WEB_LOGIN_RTE"" && \
+		echo ''
+
+		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
+		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
+		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
+		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
+
+		if [ $WEB_LOGIN_RTE_STATUS -eq 0 ]; then
+			logcat "$WEB_LOGIN_RTE_INFO" 'E'
+			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
+				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
+				case $input in
+				[yY][eE][sS] | [yY])
+					WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+					[ $ISLOG ] && echo "" && \
+					echo "WEB_REBINDMAC_RTE:" && \
+					echo "--> "$WEB_REBINDMAC_RTE"" && \
+					echo ''
+
+					WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
+					echo "$WEB_REBINDMAC_RTE"
+					([ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO") || (logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1)
+					;;
+
+				[nN][oO] | [nN])
+					echo "Ok, is ending..."
+					;;
+
+				*)
+					echo "Invalid input..."
+					;;
+				esac
+			fi
+			logcat 'exit'
+			exit 1
+		fi
+
+		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
+
+		([ "$AUTH_TOKEN" ] && logcat "Successfully get the token!") || (logcat "Fail to get the token!" 'E' && exit 1)
 
 		;;
+
 	'desktop')
 		echo "test desktop"
 		;;
@@ -604,11 +667,27 @@ account_type=1\
 		;;
 	esac
 
+	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 
-	#echo $(url_encode "$ClIENT_MAC")
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_TOKEN_RTE:" && \
+	echo "--> "$AUTH_TOKEN_RTE"" && \
+	echo ''
 
-	#echo "$AUTH_IFACE"
-	#echo "${EXTRA_IFACE_LIST[@]}"
+	([ "$AUTH_TOKEN_RTE" ] && logcat "OK!") || (logcat "Fail to auth by the token!" 'E' && exit 1)
+
+	if [ $ISDAEMON ]; then
+		local iota=1
+		local fail_iota=0
+		while [ 1 ]; do
+			sleep $HEART_BEAT
+			logcat "Heartbeat: $iota" && iota=$((iota + 1))
+			# use double printf to handel unicode
+			AUTH_TOKEN_RTE=$(gw_auth_token "$AUTH_TOKEN")
+			[ "$AUTH_TOKEN_RTE" ] || (logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)))
+			[ $fail_iota -gt $HEART_BROKEN_TIME ] || (logcat "My heart is broken!" 'E' && exit 1)
+		done
+	fi
 }
 
 #start
@@ -630,6 +709,10 @@ account_type=1\
 			;;
 		t)
 			case "$OPTARG" in
+			'staff')
+				AUTH_UA="$PC_UA"
+				AUTH_MODE='web'
+				;;
 			'pc')
 				AUTH_UA="$PC_UA"
 				AUTH_MODE='web'
@@ -652,7 +735,15 @@ account_type=1\
 				AUTH_UA="$ANDROID_UA"
 				AUTH_MODE='mobile'
 				;;
+			'apad')
+				AUTH_UA="$ANDROID_UA"
+				AUTH_MODE='mobile'
+				;;
 			'ios')
+				AUTH_UA="$IOS_UA"
+				AUTH_MODE='mobile'
+				;;
+			'ipad')
 				AUTH_UA="$IOS_UA"
 				AUTH_MODE='mobile'
 				;;
