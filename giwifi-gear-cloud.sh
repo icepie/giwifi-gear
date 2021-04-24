@@ -357,7 +357,7 @@ gw_web_rebindmac() {
 #
 
 gw_logout() {
-	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_ID"&mac="$(url_encode "$ClIENT_MAC")"")"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_IP"&mac="$(url_encode "$ClIENT_MAC")"")"
 }
 
 gw_auth_token() {
@@ -508,7 +508,7 @@ main() {
 	ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
 	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
 	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
-	ClIENT_ID="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
+	ClIENT_IP="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
 	ClIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
 	ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
 	LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
@@ -676,6 +676,22 @@ access_type="$ACCESS_TYPE"\
 
 	([ "$AUTH_TOKEN_RTE" ] && logcat "OK!") || (logcat "Fail to auth by the token!" 'E' && exit 1)
 
+	# clear screen
+	[ ! $ISLOG ] && \
+	cls || clear;
+
+	echo """\
+--------------------------------------------
+SSID:             "$GW_ID"
+GateWay:          "$GW_GTW"
+Type:             "$AUTH_TYPE"
+IP:               "$ClIENT_IP"
+MAC:              "$ClIENT_MAC"
+Station SN:       "$STATION_SN"
+Logged:           yes
+--------------------------------------------\
+"""
+
 	if [ $ISDAEMON ]; then
 		local iota=1
 		local fail_iota=0
@@ -683,7 +699,7 @@ access_type="$ACCESS_TYPE"\
 			sleep $HEART_BEAT
 			logcat "Heartbeat: $iota" && iota=$((iota + 1))
 			# use double printf to handel unicode
-			AUTH_TOKEN_RTE=$(gw_auth_token "$AUTH_TOKEN")
+			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			[ "$AUTH_TOKEN_RTE" ] || (logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)))
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] || (logcat "My heart is broken!" 'E' && exit 1)
 		done
