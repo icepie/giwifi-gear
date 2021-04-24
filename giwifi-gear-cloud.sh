@@ -392,7 +392,7 @@ init() {
 detect_gateway() {
 
 	if [ "$AUTH_IFACE" ]; then
-		CURL_OPT=--interface $AUTH_IFACE
+		CURL_OPT="--interface $AUTH_IFACE"
 		logcat "Will use the interface $AUTH_IFACE to auth..."
 		if [ ! "$GW_GTW" ]; then
 			logcat "Try to get the gateway from interface $AUTH_IFACE..."
@@ -654,9 +654,6 @@ access_type="$ACCESS_TYPE"\
 		fi
 
 		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
-
-		([ "$AUTH_TOKEN" ] && logcat "Successfully get the token!") || (logcat "Fail to get the token!" 'E' && exit 1)
-
 		;;
 
 	'desktop')
@@ -666,6 +663,8 @@ access_type="$ACCESS_TYPE"\
 		echo "test mobile"
 		;;
 	esac
+
+	([ "$AUTH_TOKEN" ] && logcat "Successfully get the token!") || (logcat "Fail to get the token!" 'E' && exit 1)
 
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 
@@ -701,7 +700,7 @@ Logged:           yes
 			# use double printf to handel unicode
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			[ "$AUTH_TOKEN_RTE" ] || (logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)))
-			[ $fail_iota -gt $HEART_BROKEN_TIME ] || (logcat "My heart is broken!" 'E' && exit 1)
+			[ $fail_iota -gt $HEART_BROKEN_TIME ] && (logcat "My heart is broken!" 'E' && exit 1)
 		done
 	fi
 }
