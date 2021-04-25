@@ -780,6 +780,10 @@ Logged:           yes
 """
 
 	if [ $ISDAEMON ]; then
+
+		[ "$OS" = 'android' ] && { termux-wake-lock 2> /dev/null &; }
+		[ "$OS" = 'ish' ] && { cat /dev/location 2> /dev/null &; }
+
 		local iota=1
 		local fail_iota=1
 		while [ 1 ]; do
