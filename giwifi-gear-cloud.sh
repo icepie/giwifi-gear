@@ -692,7 +692,7 @@ access_type="$ACCESS_TYPE"\
 
 	'desktop')
 
-		AUTH_IDENTITY_RTE="$(gw_desktop_auth_identity)"
+		AUTH_IDENTITY_RTE="$(printf "$(gw_desktop_auth_identity)" | sed "s@\\\\@@g")"
 
 		[ $ISLOG ] && echo "" && \
 		echo "AUTH_IDENTITY_RTE:" && \
@@ -728,7 +728,23 @@ ap_mac="$AP_MAC"\
 		echo "--> "$DESKTOP_LOGIN_DATA"" && \
 		echo ''
 
-		DESKTOP_LOGIN_RTE="$(gw_desktop_auth_challege "$DESKTOP_LOGIN_DATA")"
+		if [ $ISBIND ]; then
+			DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+			[ $ISLOG ] && echo "" && \
+			echo "DESKTOP_REBINDMAC_RTE:" && \
+			echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
+			echo ''
+
+			DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
+			DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
+
+			[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+			logcat "exit"
+			exit
+		fi
+
+		DESKTOP_LOGIN_RTE="$(printf "$(gw_desktop_auth_challege "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
 
 		[ $ISLOG ] && echo "" && \
 		echo "DESKTOP_LOGIN_RTE:" && \
@@ -736,12 +752,37 @@ ap_mac="$AP_MAC"\
 		echo ''
 
 		DESKTOP_LOGIN_RTE_CODE="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultCode')"
-		DESKTOP_LOGIN_RTE_MSG=$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultMsg')""
-		DESKTOP_LOGIN_RTE_DATA=$(get_json_value "$DESKTOP_LOGIN_RTE" 'data')""
+		DESKTOP_LOGIN_RTE_MSG="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultMsg')"
+		DESKTOP_LOGIN_RTE_DATA="$(get_json_value "$DESKTOP_LOGIN_RTE" 'data')"
 
 		if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
 			logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
+			if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
+				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
+				case $input in
+				[yY][eE][sS] | [yY])
+					DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
 
+					[ $ISLOG ] && echo "" && \
+					echo "DESKTOP_REBINDMAC_RTE:" && \
+					echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
+					echo ''
+
+					DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
+					DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
+
+					[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+					;;
+
+				[nN][oO] | [nN])
+					logcat "Ok, is ending..."
+					;;
+
+				*)
+					logcat "Invalid input..."
+					;;
+				esac
+			fi
 			logcat "exit"
 			exit
 		fi
