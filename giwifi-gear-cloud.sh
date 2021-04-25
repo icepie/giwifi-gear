@@ -114,7 +114,7 @@ get_os_type() {
 			local os="android"
 		fi
 		# IOS (ISH)
-		if [ "$(cat /dev/clipboard 2>/dev/null)" ]; then
+		if [ "$(ls /dev/clipboard 2>/dev/null)" ]; then
 			local os="ish"
 		fi
 	# Windows
