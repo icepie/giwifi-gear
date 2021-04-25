@@ -839,7 +839,7 @@ Logged:           yes
 			logcat "Heartbeat: $iota" && iota=$((iota + 1))
 			# use double printf to handel unicode
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
-			[ "$AUTH_TOKEN_RTE" ] || (logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)))
+			[ "$AUTH_TOKEN_RTE" ] || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && (logcat "My heart is broken!" 'E' && exit 1)
 		done
 	fi
