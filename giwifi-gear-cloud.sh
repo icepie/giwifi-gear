@@ -607,8 +607,7 @@ access_type="$ACCESS_TYPE"\
 
 			WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
 			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-			echo "$WEB_REBINDMAC_RTE"
-			([ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" && exit 1) || (logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 0)
+			[ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
 
 		fi
 
@@ -639,21 +638,20 @@ access_type="$ACCESS_TYPE"\
 
 					WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
 					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-					echo "$WEB_REBINDMAC_RTE"
-					([ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO") || (logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1)
+					[ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
 					;;
 
 				[nN][oO] | [nN])
-					echo "Ok, is ending..."
+					logcat "Ok, is ending..."
 					;;
 
 				*)
-					echo "Invalid input..."
+					logcat "Invalid input..."
 					;;
 				esac
 			fi
 			logcat 'exit'
-			exit 1
+			exit 0
 		fi
 
 		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
@@ -661,6 +659,7 @@ access_type="$ACCESS_TYPE"\
 
 	'desktop')
 		echo "test desktop"
+		echo "$(gw_desktop_auth_identity)"
 
 		;;
 	'mobile')
@@ -668,7 +667,7 @@ access_type="$ACCESS_TYPE"\
 		;;
 	esac
 
-	([ "$AUTH_TOKEN" ] && logcat "Successfully get the token!") || (logcat "Fail to get the token!" 'E' && exit 1)
+	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token!" || { logcat "Fail to get the token!" 'E' && exit 1; }
 
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 
@@ -677,11 +676,10 @@ access_type="$ACCESS_TYPE"\
 	echo "--> "$AUTH_TOKEN_RTE"" && \
 	echo ''
 
-	([ "$AUTH_TOKEN_RTE" ] && logcat "OK!") || (logcat "Fail to auth by the token!" 'E' && exit 1)
+	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to auth by the token!" 'E' && exit; }
 
 	# clear screen
-	[ ! $ISLOG ] && \
-	cls || clear;
+	[ ! $ISLOG ] && { clear || cls; }
 
 	echo """\
 --------------------------------------------
@@ -697,7 +695,7 @@ Logged:           yes
 
 	if [ $ISDAEMON ]; then
 		local iota=1
-		local fail_iota=0
+		local fail_iota=1
 		while [ 1 ]; do
 			sleep $HEART_BEAT
 			logcat "Heartbeat: $iota" && iota=$((iota + 1))
