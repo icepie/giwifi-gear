@@ -73,7 +73,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 ## Tool Config
 #############################################
 
-VERSION='0.11'
+VERSION='0.88'
 
 #############################################
 ## Network Util
@@ -397,10 +397,8 @@ gw_auth_token() {
 	# gw_auth_token <token>
 
 	printf '%s' "$(curl $CURL_OPT -s -L "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
-
 	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
 		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
-		echo ${EXTRA_IFACE};
 	done
 
 }
@@ -417,8 +415,7 @@ init() {
 		echo 'Error: curl is not installed.' >&2
 		exit 1
 	}
-	hash openssl 2>/dev/null || { echo 'Error: openssl is not installed. you can only use the "web auth type (pc/pad)"' >&2; }
-
+	hash openssl 2>/dev/null || { ISNOSSL=1; }
 }
 
 detect_gateway() {
@@ -483,14 +480,19 @@ main() {
 	echo "--> $0" && \
 	echo ''
 
+	if [ $ISNOSSL ] && [ ! $AUTH_MODE = 'web' ]; then
+		logcat 'openssl is not installed. you can only use the "web auth type (staff/pc/pad)!' 'E'
+		exit 1
+	fi
+
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
-		echo "Error: don't use bind, quit or daemon at same time!"
+		logcat "Don't use bind, quit or daemon at same time!" 'E'
 		exit 1
 	fi
 
 	if [ "$EXTRA_IFACE_LIST" ] && [ ! "$AUTH_IFACE" ]; then
-		echo "Error: if you want to use the extra interfaces, plz set the auth interface!"
+		logcat "If you want to use the extra interfaces, plz set the auth interface!" 'E'
 		exit 1
 	fi
 
