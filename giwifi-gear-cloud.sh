@@ -15,7 +15,7 @@ HEART_BEAT=9
 HEART_BROKEN_TIME=30
 
 AUTH_IFACE=''       # the base interface (get auth info)
-EXTRA_IFACE_LIST=() # the extra interface list (Recommended for less than two)
+EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended for less than two)
 
 GW_PORT='8060'
 
@@ -347,6 +347,11 @@ gw_web_rebindmac() {
 	)"
 }
 
+
+gw_desktop_auth_identity() {
+	printf '%s' "$(curl $CURL_OPT -s -A "$AUTH_UA" "http://login.gwifi.com.cn/cmps/admin.php/ppi/authIdentity?name="$GW_USER"&version="$DESKTOP_APP_VERSION"")"
+}
+
 # discard
 # gw_web_get_gtw_auth() {
 # 	printf '%s' "$(curl_by_nic -s -A "\'$AUTH_UA\'" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
@@ -365,10 +370,9 @@ gw_auth_token() {
 
 	printf '%s' "$(curl $CURL_OPT -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
 
-	local extra_count=${#EXTRA_IFACE_LIST[*]}
-
-	for i in $(seq $extra_count); do
-		printf '%s' "$(curl --interface "${EXTRA_IFACE_LIST[$(($i - 1))]}" $*)"
+	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
+		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
+		echo ${EXTRA_IFACE};
 	done
 
 }
@@ -457,7 +461,7 @@ main() {
 		exit 1
 	fi
 
-	if [ ${#EXTRA_IFACE_LIST[@]} -gt 0 ] && [ ! "$AUTH_IFACE" ]; then
+	if [ "$EXTRA_IFACE_LIST" ] && [ ! "$AUTH_IFACE" ]; then
 		echo "Error: if you want to use the extra interfaces, plz set the auth interface!"
 		exit 1
 	fi
@@ -544,7 +548,6 @@ main() {
 	# login and get token...
 	case "$AUTH_MODE" in
 	'web')
-		echo "test web"
 		# login to get the auth token
 		LOGIN_PAGE="$(gw_web_get_login_page)"
 		# get some values from login page
@@ -658,6 +661,7 @@ access_type="$ACCESS_TYPE"\
 
 	'desktop')
 		echo "test desktop"
+
 		;;
 	'mobile')
 		echo "test mobile"
@@ -740,11 +744,15 @@ Logged:           yes
 				AUTH_UA="$WIN_UA"
 				AUTH_MODE='desktop'
 				DESKTOP_APP_VERSION="$WIN_APP_VERSION"
+				DESKTOP_MODEL="$WIN_MODEL"
+				DESKTOP_APP_UUID="$WIN_APP_UUID"
 				;;
 			'mac')
 				AUTH_UA="$MAC_UA"
 				AUTH_MODE='desktop'
 				DESKTOP_APP_VERSION="$MAC_APP_VERSION"
+				DESKTOP_MODEL="$MAC_MODEL"
+				DESKTOP_APP_UUID="$MAC_APP_UUID"
 				;;
 			'android')
 				AUTH_UA="$ANDROID_UA"
@@ -773,7 +781,7 @@ Logged:           yes
 			AUTH_IFACE="$OPTARG"
 			;;
 		e)
-			EXTRA_IFACE_LIST+=("$OPTARG")
+			[ "$EXTRA_IFACE_LIST" ] && EXTRA_IFACE_LIST=""${EXTRA_IFACE_LIST}" "$OPTARG"" || EXTRA_IFACE_LIST="$OPTARG"
 			;;
 		q)
 			ISQUIT=1
