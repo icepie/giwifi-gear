@@ -481,7 +481,7 @@ main() {
 	echo ''
 
 	if [ $ISNOSSL ] && [ ! $AUTH_MODE = 'web' ]; then
-		logcat 'openssl is not installed. you can only use the "web auth type (staff/pc/pad)!' 'E'
+		logcat 'openssl is not installed. you can only use the web auth type (staff/pc/pad)!' 'E'
 		exit 1
 	fi
 
