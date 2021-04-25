@@ -19,6 +19,8 @@ EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended 
 
 GW_PORT='8060'
 
+AP_MAC=''
+
 #############################################
 ## Web Auth Mode Config
 #############################################
@@ -38,8 +40,8 @@ MAC_UA='GiWiFi/1.1.6.2 (Mac OS X Version 11.2.3 (Build 20D91))'
 WIN_APP_VERSION='1.1.4.2'
 MAC_APP_VERSION='1.1.6.2'
 
-WIN_MODEL='mac11.2'
-MAC_MODEL='Microsoft Windows 10, 64-bit'
+WIN_MODEL='Microsoft Windows 10, 64-bit'
+MAC_MODEL='mac11.2'
 
 WIN_APP_UUID='18C6037C-6379-4317-8FE5-8C9B8E573CF8'
 MAC_APP_UUID='bad82d414cb15452938cfe605c7faf02'
@@ -259,14 +261,6 @@ str_str() {
 
 }
 
-is_str_c_str() {
-	# is_str_c_str <string> <string>
-
-	[ "${1#*$2*}" = "$1" ] && return 1
-	return 0
-
-}
-
 str2hex() {
 	# is_str_c_str <string>
 
@@ -315,7 +309,7 @@ gw_get_auth_state() {
 
 # for web
 gw_web_get_login_page() {
-	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_REDIRECT_PORT/redirect?oriUrl="$GW_REDIRECT_URL"" | grep 'name')"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_REDIRECT_PORT"/redirect?oriUrl="$GW_REDIRECT_URL"" | grep 'name')"
 	# &account_type= 1: 教职工 2: 特殊终端 3: 校外访客
 }
 
@@ -329,7 +323,7 @@ gw_web_loginaction() {
 		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
-		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round=$rannum"
+		"http://login.gwifi.com.cn/cmps/admin.php/api/loginaction?round="$rannum""
 	)"
 }
 
@@ -343,7 +337,7 @@ gw_web_rebindmac() {
 		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
-		"http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round=$rannum"
+		"http://login.gwifi.com.cn/cmps/admin.php/api/reBindMac?round="$rannum""
 	)"
 }
 
@@ -351,6 +345,40 @@ gw_web_rebindmac() {
 gw_desktop_auth_identity() {
 	printf '%s' "$(curl $CURL_OPT -s -A "$AUTH_UA" "http://login.gwifi.com.cn/cmps/admin.php/ppi/authIdentity?name="$GW_USER"&version="$DESKTOP_APP_VERSION"")"
 }
+
+
+get_challge() {
+    #get_challge <password> <token>
+
+    local make_pass="$(printf $1 | openssl base64)"
+    local token_challge="$2"
+    local length="${#make_pass}"
+    for i in $(seq $length); do
+        printf "${make_pass:$i-1:1}${token_challge:32-$i:1}"
+    done
+
+}
+
+gw_desktop_auth_challege() {
+	printf '%s' "$(
+		curl $CURL_OPT -s \
+		-A "$AUTH_UA" \
+		-X POST \
+		-d "$1" \
+		'http://login.gwifi.com.cn/cmps/admin.php/ppi/authChallege'
+	)"
+}
+
+gw_desktop_rebindmac() {
+	printf '%s' "$(
+		curl $CURL_OPT -s \
+		-A "$AUTH_UA" \
+		-X POST \
+		-d "$1" \
+		'http://login.gwifi.com.cn/cmps/admin.php/ppi/reBindMac'
+	)"
+}
+
 
 # discard
 # gw_web_get_gtw_auth() {
@@ -362,16 +390,16 @@ gw_desktop_auth_identity() {
 #
 
 gw_logout() {
-	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://$GW_GTW:$GW_PORT/wifidog/userlogout?ip="$ClIENT_IP"&mac="$(url_encode "$ClIENT_MAC")"")"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/userlogout?ip="$ClIENT_IP"&mac="$(url_encode "$ClIENT_MAC")"")"
 }
 
 gw_auth_token() {
 	# gw_auth_token <token>
 
-	printf '%s' "$(curl $CURL_OPT -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
+	printf '%s' "$(curl $CURL_OPT -s -L "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
 
 	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
-		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L "http://$GW_GTW:$GW_PORT/wifidog/auth?token=$1&info=")"
+		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
 		echo ${EXTRA_IFACE};
 	done
 
@@ -521,12 +549,12 @@ main() {
 	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
 	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
 
-	if [ $AUTH_STATE -eq 2 ]; then
+	if [ "$AUTH_STATE" = '2' ]; then
 		logcat "Good! You are authed!"
 		if [ $ISQUIT ]; then
 			LOGOUT_RTE="$(gw_logout)"
 			LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
-			([ $LOGOUT_RTE_CODE -eq 0 ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
+			([ "$LOGOUT_RTE_CODE" = '0' ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
 			exit 0
 		fi
 		[ ! $ISDAEMON ] && logcat "exit" && exit 0
@@ -598,6 +626,8 @@ access_type="$ACCESS_TYPE"\
 		echo ''
 
 		if [ $ISBIND ]; then
+
+			WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
 			WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
 
 			[ $ISLOG ] && echo "" && \
@@ -607,7 +637,7 @@ access_type="$ACCESS_TYPE"\
 
 			WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
 			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-			[ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
+			[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
 
 		fi
 
@@ -623,12 +653,13 @@ access_type="$ACCESS_TYPE"\
 		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
 		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
 
-		if [ $WEB_LOGIN_RTE_STATUS -eq 0 ]; then
+		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
 			logcat "$WEB_LOGIN_RTE_INFO" 'E'
 			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
 				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
 				case $input in
 				[yY][eE][sS] | [yY])
+					WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
 					WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
 
 					[ $ISLOG ] && echo "" && \
@@ -638,7 +669,7 @@ access_type="$ACCESS_TYPE"\
 
 					WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
 					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-					[ $WEB_REBINDMAC_RTE_STATUS -eq 1 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
+					[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
 					;;
 
 				[nN][oO] | [nN])
@@ -658,8 +689,63 @@ access_type="$ACCESS_TYPE"\
 		;;
 
 	'desktop')
-		echo "test desktop"
-		echo "$(gw_desktop_auth_identity)"
+
+		AUTH_IDENTITY_RTE="$(gw_desktop_auth_identity)"
+
+		[ $ISLOG ] && echo "" && \
+		echo "AUTH_IDENTITY_RTE:" && \
+		echo "--> "$AUTH_IDENTITY_RTE"" && \
+		echo ''		
+
+		AUTH_IDENTITY_RTE_CODE="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultCode')"
+		AUTH_IDENTITY_RTE_MSG="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultMsg')"
+
+		[ ! "$AUTH_IDENTITY_RTE_CODE" = "0" ] && { logcat "$AUTH_IDENTITY_RTE_MSG" "E" && exit 1; }
+
+		AUTH_IDENTITY_RTE_DATA="$(get_json_value "$AUTH_IDENTITY_RTE" 'data')"
+		CHALLEGE_ID="$(get_json_value "$AUTH_IDENTITY_RTE_DATA" 'challege_id')"
+
+		DESKTOP_LOGIN_DATA="""\
+ap_mac="$AP_MAC"\
+&app_uuid="$(url_encode "$DESKTOP_APP_UUID")"\
+&challege="$(url_encode "$(get_challge "$GW_PWD" "$CHALLEGE_ID")")"\
+&gw_address="$GW_GTW"\
+&gw_id="$GW_ID"\
+&ip="$ClIENT_IP"\
+&mac="$(url_encode "$ClIENT_MAC")"\
+&name="$GW_USER"\
+&service_type="$SERVICE_TYPE"\
+&sta_model="$(url_encode "$DESKTOP_MODEL")"\
+&sta_nic_type="$STA_NIC_TYPE"\
+&sta_type="pc"\
+&version="$DESKTOP_APP_VERSION"\
+"""
+
+		[ $ISLOG ] && echo "" && \
+		echo "DESKTOP_LOGIN_DATA:" && \
+		echo "--> "$DESKTOP_LOGIN_DATA"" && \
+		echo ''
+
+		DESKTOP_LOGIN_RTE="$(gw_desktop_auth_challege "$DESKTOP_LOGIN_DATA")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "DESKTOP_LOGIN_RTE:" && \
+		echo "--> "$DESKTOP_LOGIN_RTE"" && \
+		echo ''
+
+		DESKTOP_LOGIN_RTE_CODE="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultCode')"
+		DESKTOP_LOGIN_RTE_MSG=$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultMsg')""
+		DESKTOP_LOGIN_RTE_DATA=$(get_json_value "$DESKTOP_LOGIN_RTE" 'data')""
+
+		if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
+			logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
+
+			logcat "exit"
+			exit
+		fi
+
+		AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
+		AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
 
 		;;
 	'mobile')
@@ -669,7 +755,7 @@ access_type="$ACCESS_TYPE"\
 
 	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token!" || { logcat "Fail to get the token!" 'E' && exit 1; }
 
-	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
+	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_TOKEN_RTE:" && \
@@ -685,7 +771,7 @@ access_type="$ACCESS_TYPE"\
 --------------------------------------------
 SSID:             "$GW_ID"
 GateWay:          "$GW_GTW"
-Type:             "$AUTH_TYPE"
+Type:             "$AUTH_MODE"-"$AUTH_TYPE"
 IP:               "$ClIENT_IP"
 MAC:              "$ClIENT_MAC"
 Station SN:       "$STATION_SN"
@@ -738,7 +824,7 @@ Logged:           yes
 				AUTH_UA="$PAD_UA"
 				AUTH_MODE='web'
 				;;
-			'win')
+			'windows')
 				AUTH_UA="$WIN_UA"
 				AUTH_MODE='desktop'
 				DESKTOP_APP_VERSION="$WIN_APP_VERSION"
