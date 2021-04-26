@@ -156,26 +156,6 @@ get_nic_gateway() {
 
 }
 
-get_nic_ip() {
-	# get_nic_ip <nic_name>
-
-	local os="$(get_os_type)"
-	local ip
-
-	if [ "$os" == 'windows' ]; then
-		ip="$(chcp.com 437 >/dev/null && netsh interface ipv4 show ipaddress interface="$1" 2>/dev/null | head -2 | awk '{print $2}')"
-	elif [ "$os" == 'linux' ] || [ "$os" == 'android' ]; then
-		ip="$(ip address show dev "$1" 2>/dev/null | grep 'inet ' | awk '{print $2}' | awk -F '/' '{print $1}')"
-	elif [ "$os" == 'darwin' ]; then
-		ip="$(ifconfig "$1" 2>/dev/null | grep "inet " | grep -v 127.0.0.1 | cut -d\  -f2 | awk '{print $1}')"
-	fi
-
-	if $(check_ip "$ip"); then
-		printf '%s' "$ip"
-	fi
-
-}
-
 #############################################
 ## Json Handle
 #############################################
@@ -525,7 +505,7 @@ usage() {
 giwifi-gear-cloud (bash)
   A cli tool for login giwifi by cloud auth mode (multi-platform, fast, small)
 usage:
-  giwifi-gear-cloud.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-i] [-q] [-b] [-d] [-v]
+  giwifi-gear-cloud.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
 optional arguments:
   -h                    show this help message and exit
   -g <GATEWAY>          set the gateway
