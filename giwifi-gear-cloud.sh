@@ -1065,7 +1065,7 @@ ap_mac="$AP_MAC"\
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
 	[ "$AUTH_MODE" = 'mobile' ] && {
-		for i in 1 2; do
+		for i in $(seq 3); do
 			[ "$AUTH_TOKEN_RTE" ] && break
 			sleep 2
 			AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | awk 'END {print}')"
@@ -1113,7 +1113,7 @@ Logged:           yes
 
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			[ "$AUTH_MODE" = 'mobile' ] && {
-				for i in 1 2; do
+				for i in $(seq 5); do
 					sleep 2
 					AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | awk 'END {print}')"
 				done
