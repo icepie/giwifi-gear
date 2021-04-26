@@ -8,7 +8,7 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
-AUTH_TYPE=''     # pc/pad for web auth, android/ios/win/mac for app auth
+AUTH_TYPE=''     # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
 HEART_BEAT=9
@@ -532,7 +532,7 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/win/mac/apad/ipad for app auth (default value is pc)
+  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth (default value is pc)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
@@ -573,11 +573,68 @@ main() {
 	fi
 
 	# check the auth type
-	if [ ! "$AUTH_TYPE" ]; then
-		AUTH_MODE='web'
-		AUTH_TYPE="pc"
+	[ ! "$AUTH_TYPE" ] && AUTH_TYPE="pc"
+
+	case "$AUTH_TYPE" in
+	'staff')
 		AUTH_UA="$PC_UA"
-	fi
+		AUTH_MODE='web'
+		;;
+	'pc')
+		AUTH_UA="$PC_UA"
+		AUTH_MODE='web'
+		;;
+	'pad')
+		AUTH_UA="$PAD_UA"
+		AUTH_MODE='web'
+		;;
+	'windows')
+		AUTH_UA="$WIN_UA"
+		AUTH_MODE='desktop'
+		DESKTOP_APP_VERSION="$WIN_APP_VERSION"
+		DESKTOP_MODEL="$WIN_MODEL"
+		DESKTOP_APP_UUID="$WIN_APP_UUID"
+		;;
+	'mac')
+		AUTH_UA="$MAC_UA"
+		AUTH_MODE='desktop'
+		DESKTOP_APP_VERSION="$MAC_APP_VERSION"
+		DESKTOP_MODEL="$MAC_MODEL"
+		DESKTOP_APP_UUID="$MAC_APP_UUID"
+		;;
+	'android')
+		AUTH_UA="$ANDROID_UA"
+		AUTH_MODE='mobile'
+		MOBILE_BTYPE="$PHONE_BTYPE"
+		MOBILE_STA_TYPE="$PHONE_STA_TYPE"
+		MOBILE_STA_MODEL="$ANDROID_STA_MODEL"
+		;;
+	'apad')
+		AUTH_UA="$ANDROID_UA"
+		AUTH_MODE='mobile'
+		MOBILE_BTYPE="$PAD_BTYPE"
+		MOBILE_STA_TYPE="$PAD_STA_TYPE"
+		MOBILE_STA_MODEL="$ANDROID_STA_MODEL"
+		;;
+	'ios')
+		AUTH_UA="$IOS_UA"
+		AUTH_MODE='mobile'
+		MOBILE_BTYPE="$PHONE_BTYPE"
+		MOBILE_STA_TYPE="$PHONE_STA_TYPE"
+		MOBILE_STA_MODEL="$IOS_STA_MODEL"
+		;;
+	'ipad')
+		AUTH_UA="$IOS_UA"
+		AUTH_MODE='mobile'
+		MOBILE_BTYPE="$PAD_BTYPE"
+		MOBILE_STA_TYPE="$PAD_STA_TYPE"
+		MOBILE_STA_MODEL="$IOS_STA_MODEL"
+		;;
+	*)
+		echo "Error: Do not support the "$OPTARG" type!"
+		exit 1
+		;;
+	esac
 
 	[ $ISLOG ] && echo '' && \
 	echo "AUTH_UA:" && \
@@ -1086,66 +1143,6 @@ Logged:           yes
 			GW_PWD="$OPTARG"
 			;;
 		t)
-			case "$OPTARG" in
-			'staff')
-				AUTH_UA="$PC_UA"
-				AUTH_MODE='web'
-				;;
-			'pc')
-				AUTH_UA="$PC_UA"
-				AUTH_MODE='web'
-				;;
-			'pad')
-				AUTH_UA="$PAD_UA"
-				AUTH_MODE='web'
-				;;
-			'windows')
-				AUTH_UA="$WIN_UA"
-				AUTH_MODE='desktop'
-				DESKTOP_APP_VERSION="$WIN_APP_VERSION"
-				DESKTOP_MODEL="$WIN_MODEL"
-				DESKTOP_APP_UUID="$WIN_APP_UUID"
-				;;
-			'mac')
-				AUTH_UA="$MAC_UA"
-				AUTH_MODE='desktop'
-				DESKTOP_APP_VERSION="$MAC_APP_VERSION"
-				DESKTOP_MODEL="$MAC_MODEL"
-				DESKTOP_APP_UUID="$MAC_APP_UUID"
-				;;
-			'android')
-				AUTH_UA="$ANDROID_UA"
-				AUTH_MODE='mobile'
-				MOBILE_BTYPE="$PHONE_BTYPE"
-				MOBILE_STA_TYPE="$PHONE_STA_TYPE"
-				MOBILE_STA_MODEL="$ANDROID_STA_MODEL"
-				;;
-			'apad')
-				AUTH_UA="$ANDROID_UA"
-				AUTH_MODE='mobile'
-				MOBILE_BTYPE="$PAD_BTYPE"
-				MOBILE_STA_TYPE="$PAD_STA_TYPE"
-				MOBILE_STA_MODEL="$ANDROID_STA_MODEL"
-				;;
-			'ios')
-				AUTH_UA="$IOS_UA"
-				AUTH_MODE='mobile'
-				MOBILE_BTYPE="$PHONE_BTYPE"
-				MOBILE_STA_TYPE="$PHONE_STA_TYPE"
-				MOBILE_STA_MODEL="$IOS_STA_MODEL"
-				;;
-			'ipad')
-				AUTH_UA="$IOS_UA"
-				AUTH_MODE='mobile'
-				MOBILE_BTYPE="$PAD_BTYPE"
-				MOBILE_STA_TYPE="$PAD_STA_TYPE"
-				MOBILE_STA_MODEL="$IOS_STA_MODEL"
-				;;
-			*)
-				echo "Error: Do not support the "$OPTARG" type!"
-				exit 1
-				;;
-			esac
 			AUTH_TYPE="$OPTARG"
 			;;
 		i)
