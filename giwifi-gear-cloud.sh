@@ -925,7 +925,7 @@ ap_mac="$AP_MAC"\
 			"$(get_encrypt "$CLIENT_IP")" \
 			"$(get_encrypt "$MOBILE_STA_TYPE")" \
 			"$(get_encrypt "$MOBILE_IS_INSTALL_WX")" \
-			"$(get_encrypt '$MOBILE_BTYPE')" \
+			"$(get_encrypt "$MOBILE_BTYPE")" \
 			"$(get_encrypt "$MOBILE_STA_MODEL")" \
 			"$(get_encrypt "$MOBILE_AUTH_MODE")" \
 			"$(get_encrypt "$MOBILE_IMSI")" \
@@ -1115,7 +1115,7 @@ Logged:           yes
 			'android')
 				AUTH_UA="$ANDROID_UA"
 				AUTH_MODE='mobile'
-				MOBILE_BTYPE="PHONE_BTYPE"
+				MOBILE_BTYPE="$PHONE_BTYPE"
 				MOBILE_STA_TYPE="$PHONE_STA_TYPE"
 				MOBILE_STA_MODEL="$ANDROID_STA_MODEL"
 				;;
