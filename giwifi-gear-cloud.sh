@@ -8,7 +8,8 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
-AUTH_TYPE=''     # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth
+AUTH_TYPE=''     # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
+AUTH_TOKEN=''
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
 HEART_BEAT=9
@@ -532,7 +533,8 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth (default value is pc)
+  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token  (default value is pc)
+  -T <TOKEN>			set the token(need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
@@ -630,6 +632,10 @@ main() {
 		MOBILE_STA_TYPE="$PAD_STA_TYPE"
 		MOBILE_STA_MODEL="$IOS_STA_MODEL"
 		;;
+	'token')
+		AUTH_MODE="f**k"
+		[ ! "$AUTH_TOKEN" ] && { logcat "Plz use -T <TOKEN>" 'E' && exit 1; }
+		;;
 	*)
 		echo "Error: Do not support the "$OPTARG" type!"
 		exit 1
@@ -646,10 +652,10 @@ main() {
 	# get the gateway
 	detect_gateway
 
-	if [ ! "$GW_GTW" ]; then
+	[ ! "$GW_GTW" ] && {
 		printf '%s' "Plz enter gateway: "
 		read GW_GTW
-	fi
+	}
 
 	[ $ISLOG ] && echo '' && \
 	echo "GW_HOTSPOT_GROUP:" && \
@@ -699,15 +705,17 @@ main() {
 
 	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 1
 
-	if [ ! "$GW_USER" ]; then
-		printf '%s' "Plz enter username: "
-		read GW_USER
-	fi
+	if [ ! "$AUTH_TYPE" = 'token' ]; then
+		[ ! "$GW_USER" ] && {
+			printf '%s' "Plz enter username: "
+			read GW_USER
+		}
 
-	if [ ! "$GW_PWD" ]; then
-		printf '%s' "Plz enter password: "
-		read -s -t 20 GW_PWD
-		echo ''
+		[ ! "$GW_PWD" ] && {
+			printf '%s' "Plz enter password: "
+			read -s -t 20 GW_PWD
+			echo ''
+		}
 	fi
 
 	# login and get token...
@@ -1131,7 +1139,7 @@ Logged:           yes
 	init
 
 	# paser the opts
-	while getopts "g:u:p:t:i:e:qbdlvh" option; do
+	while getopts "g:u:p:t:T:i:e:qbdlvh" option; do
 		case "$option" in
 		g)
 			GW_GTW="$OPTARG"
@@ -1144,6 +1152,10 @@ Logged:           yes
 			;;
 		t)
 			AUTH_TYPE="$OPTARG"
+			;;
+		T)
+			AUTH_TOKEN="$OPTARG"
+			AUTH_TYPE='token'
 			;;
 		i)
 			AUTH_IFACE="$OPTARG"
