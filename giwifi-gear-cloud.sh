@@ -270,7 +270,7 @@ str_str() {
 }
 
 str2hex() {
-	# is_str_c_str <string>
+	# str2hex <string>
 
 	local length="${#1}"
 	for i in $(seq $length); do
@@ -297,30 +297,29 @@ logcat() {
 	fi
 }
 
-
 #############################################
 ## GiWiFi Encrypt Util
 #############################################
 
 get_encrypt() {
-    # get_encrypt <plain>
-    
-    # aes-128-ecb PKCS5Padding
-    # default key: 5447c08b53e8dac4
-    # don't need iv
-    printf '%s' "$1" | openssl enc -e -aes-128-ecb -K $(str2hex "$MOBILE_APP_ENCRYPT_KEY") -nosalt -base64 -A
+	# get_encrypt <plain>
+
+	# aes-128-ecb PKCS5Padding
+	# default key: 5447c08b53e8dac4
+	# don't need iv
+	printf '%s' "$1" | openssl enc -e -aes-128-ecb -K $(str2hex "$MOBILE_APP_ENCRYPT_KEY") -nosalt -base64 -A
 
 }
 
 get_challge() {
-    #get_challge <password> <token>
+	#get_challge <password> <token>
 
-    local make_pass="$(printf $1 | openssl base64)"
-    local token_challge="$2"
-    local length="${#make_pass}"
-    for i in $(seq $length); do
-        printf "${make_pass:$i-1:1}${token_challge:32-$i:1}"
-    done
+	local make_pass="$(printf $1 | openssl base64)"
+	local token_challge="$2"
+	local length="${#make_pass}"
+	for i in $(seq $length); do
+		printf "${make_pass:$i-1:1}${token_challge:32-$i:1}"
+	done
 
 }
 
@@ -376,11 +375,9 @@ gw_web_rebindmac() {
 	)"
 }
 
-
 gw_desktop_auth_identity() {
 	printf '%s' "$(curl $CURL_OPT -s -A "$AUTH_UA" "http://login.gwifi.com.cn/cmps/admin.php/ppi/authIdentity?name="$GW_USER"&version="$DESKTOP_APP_VERSION"")"
 }
-
 
 gw_desktop_auth_challege() {
 	printf '%s' "$(
@@ -402,7 +399,6 @@ gw_desktop_rebindmac() {
 	)"
 }
 
-
 # discard
 # gw_web_get_gtw_auth() {
 # 	printf '%s' "$(curl_by_nic -s -A "\'$AUTH_UA\'" "http://"$GW_GTW"/getApp.htm?action=getAuthState&os=mac")"
@@ -413,9 +409,10 @@ gw_desktop_rebindmac() {
 #
 
 gw_mobile_get_user() {
-    # gw_phone_app_login <gw_mobile_app_login_data>
+	# gw_phone_app_login <gw_mobile_app_login_data>
 
-    printf '%s' "$(curl $CURL_OPT -s \
+	printf '%s' "$(
+		curl $CURL_OPT -s \
 		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
@@ -438,14 +435,15 @@ gw_mobile_get_user() {
 
 gw_mobile_get_token() {
 	#<project_id> <timestamp> <user_id>
-    local sign="$(printf '%s' "app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&timestamp="$TIMESTAMP"&user_id="$1"&key="$MOBILE_APP_KEY"" | openssl md5 | awk '{print $2}')"
-    printf '%s' "$(curl $CURL_OPT -s "http://login.gwifi.com.cn/shop/app/getToken?app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&sign="$sign"&timestamp="$TIMESTAMP"&user_id=$1")"
+	local sign="$(printf '%s' "app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&timestamp="$TIMESTAMP"&user_id="$1"&key="$MOBILE_APP_KEY"" | openssl md5 | awk '{print $2}')"
+	printf '%s' "$(curl $CURL_OPT -s "http://login.gwifi.com.cn/shop/app/getToken?app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&sign="$sign"&timestamp="$TIMESTAMP"&user_id=$1")"
 }
 
 gw_mobile_relogin() {
-    # gw_mobile_relogin <gw_mobile_login_data>
+	# gw_mobile_relogin <gw_mobile_login_data>
 
-    printf '%s' "$(curl $CURL_OPT -s -L \
+	printf '%s' "$(
+		curl $CURL_OPT -s -L \
 		-A "$GW_PHONE_UA" \
 		-X POST \
 		-d "$1" \
@@ -455,9 +453,10 @@ gw_mobile_relogin() {
 }
 
 gw_mobile_rebindmac() {
-    # gw_mobile_app_rebindmac <gw_mobile_app_login_data>
+	# gw_mobile_app_rebindmac <gw_mobile_app_login_data>
 
-    printf '%s' "$(curl $CURL_OPT -s \
+	printf '%s' "$(
+		curl $CURL_OPT -s \
 		-A "$GW_PHONE_UA" \
 		-X POST \
 		-d "$1" \
@@ -777,7 +776,7 @@ access_type="$ACCESS_TYPE"\
 		[ $ISLOG ] && echo "" && \
 		echo "AUTH_IDENTITY_RTE:" && \
 		echo "--> "$AUTH_IDENTITY_RTE"" && \
-		echo ''		
+		echo ''
 
 		AUTH_IDENTITY_RTE_CODE="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultCode')"
 		AUTH_IDENTITY_RTE_MSG="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultMsg')"
@@ -873,13 +872,15 @@ ap_mac="$AP_MAC"\
 
 		;;
 	'mobile')
-		MOBILE_GET_USER_DATA="$(printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
-"$(get_encrypt "$GW_PWD")" \
-"$(get_encrypt "$GW_USER")" \
-"$MOBILE_APP_VERSION" \
-"$(get_encrypt "$CLIENT_MAC")" \
-"$(get_encrypt "$GW_ID")" \
-"$(get_encrypt '')")"
+		MOBILE_GET_USER_DATA="$(
+			printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+			"$(get_encrypt "$GW_PWD")" \
+			"$(get_encrypt "$GW_USER")" \
+			"$MOBILE_APP_VERSION" \
+			"$(get_encrypt "$CLIENT_MAC")" \
+			"$(get_encrypt "$GW_ID")" \
+			"$(get_encrypt '')"
+		)"
 
 		[ $ISLOG ] && echo "" && \
 		echo "MOBILE_GET_USER_DATA:" && \
@@ -913,26 +914,28 @@ ap_mac="$AP_MAC"\
 		MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
 		ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
 
-		MOBILE_LOGIN_DATA="$(printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
-"$(get_encrypt "$GW_GTW")" \
-"$(get_encrypt "$SERVICE_TYPE")" \
-"$(get_encrypt "$GW_PWD")" \
-"$(get_encrypt "$MOBILE_IM")" \
-"$(get_encrypt "$MOBILE_UUID")" \
-"$(get_encrypt "$GW_USER")" \
-"$(get_encrypt "$CLIENT_IP")" \
-"$(get_encrypt "$MOBILE_STA_TYPE")" \
-"$(get_encrypt "$MOBILE_IS_INSTALL_WX")" \
-"$(get_encrypt '$MOBILE_BTYPE')" \
-"$(get_encrypt "$MOBILE_STA_MODEL")" \
-"$(get_encrypt "$MOBILE_AUTH_MODE")" \
-"$(get_encrypt "$MOBILE_IMSI")" \
-"$(get_encrypt "$GW_ID")" \
-"$(get_encrypt '')" \
-"$MOBILE_APP_VERSION" \
-"$(get_encrypt "$CLIENT_MAC")" \
-"$(get_encrypt "$GW_ID")" \
-"$(get_encrypt $ACCESS_TOKEN)")"
+		MOBILE_LOGIN_DATA="$(
+			printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+			"$(get_encrypt "$GW_GTW")" \
+			"$(get_encrypt "$SERVICE_TYPE")" \
+			"$(get_encrypt "$GW_PWD")" \
+			"$(get_encrypt "$MOBILE_IM")" \
+			"$(get_encrypt "$MOBILE_UUID")" \
+			"$(get_encrypt "$GW_USER")" \
+			"$(get_encrypt "$CLIENT_IP")" \
+			"$(get_encrypt "$MOBILE_STA_TYPE")" \
+			"$(get_encrypt "$MOBILE_IS_INSTALL_WX")" \
+			"$(get_encrypt '$MOBILE_BTYPE')" \
+			"$(get_encrypt "$MOBILE_STA_MODEL")" \
+			"$(get_encrypt "$MOBILE_AUTH_MODE")" \
+			"$(get_encrypt "$MOBILE_IMSI")" \
+			"$(get_encrypt "$GW_ID")" \
+			"$(get_encrypt '')" \
+			"$MOBILE_APP_VERSION" \
+			"$(get_encrypt "$CLIENT_MAC")" \
+			"$(get_encrypt "$GW_ID")" \
+			"$(get_encrypt $ACCESS_TOKEN)"
+		)"
 
 		[ $ISLOG ] && echo "" && \
 		echo "MOBILE_LOGIN_DATA:" && \
@@ -954,8 +957,8 @@ ap_mac="$AP_MAC"\
 		fi
 
 		MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
-		MOBILE_LOGIN_RTE_CODE="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultCode')"	
-		MOBILE_LOGIN_RTE_MSG="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultMsg')"	
+		MOBILE_LOGIN_RTE_CODE="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultCode')"
+		MOBILE_LOGIN_RTE_MSG="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultMsg')"
 
 		[ $ISLOG ] && echo "" && \
 		echo "MOBILE_LOGIN_RTE:" && \
@@ -1006,7 +1009,7 @@ ap_mac="$AP_MAC"\
 
 	[ "$AUTH_MODE" = 'mobile' ] && {
 		for i in 1 2; do
-			[ "$AUTH_TOKEN_RTE" ] && break 
+			[ "$AUTH_TOKEN_RTE" ] && break
 			sleep 2
 			AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | awk 'END {print}')"
 		done
@@ -1036,12 +1039,12 @@ Logged:           yes
 
 	if [ $ISDAEMON ]; then
 
-		[ "$OS" = 'android' ] && { 
-			termux-wake-lock > /dev/null &
+		[ "$OS" = 'android' ] && {
+			termux-wake-lock >/dev/null &
 		}
 
-		[ "$OS" = 'ish' ] && { 
-			cat /dev/location > /dev/null & 
+		[ "$OS" = 'ish' ] && {
+			cat /dev/location >/dev/null &
 		}
 
 		local iota=1
