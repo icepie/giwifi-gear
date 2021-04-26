@@ -1033,6 +1033,7 @@ Type:             "$AUTH_MODE"-"$AUTH_TYPE"
 IP:               "$CLIENT_IP"
 MAC:              "$CLIENT_MAC"
 Station SN:       "$STATION_SN"
+Token:		  "$AUTH_TOKEN"
 Logged:           yes
 --------------------------------------------\
 """
