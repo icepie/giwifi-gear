@@ -36,16 +36,8 @@ A cli tool for login giwifi (for special auth methods)
 
 ### 客户端接口 (App Api)
 
-#### 移动端 (phone)
+- [X] sh - done
 
-- [ ] py - 预期计划中
-- [x] sh - 不定期更新
-
-#### 桌面端 (pc)
-
-- [x] py - 已经支持 `win` 和 `mac` 的客户端认证方式, 有空完善 - 不支持客户端接口 `pc` 和 `phone` 走同一个的接口认证方式(那玩意以后单独拿出来鞭尸...)
-
-- [ ] sh - 有空补上去
 
 ## 其他
 
