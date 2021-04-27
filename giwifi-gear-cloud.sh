@@ -1078,7 +1078,8 @@ Type:             "$AUTH_MODE"-"$AUTH_TYPE"
 IP:               "$CLIENT_IP"
 MAC:              "$CLIENT_MAC"
 Station SN:       "$STATION_SN"
-Token:		  "$AUTH_TOKEN"
+Token:            "$AUTH_TOKEN"
+Info:             "$( [ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
 --------------------------------------------\
 """
@@ -1108,7 +1109,13 @@ Logged:           yes
 			}
 
 			[ "$AUTH_TOKEN_RTE" ] || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
-			[ $fail_iota -gt $HEART_BROKEN_TIME ] && (logcat "My heart is broken!" 'E' && exit 1)
+			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
+				logcat "My heart is broken!" 'E'
+				sleep 5
+				logcat "Will try to restart..." 'I'
+				GW_GTW=''
+				main
+			}
 		done
 	fi
 }
