@@ -1,7 +1,7 @@
 <div align="center">
   <img src="https://raw.githubusercontent.com/icepie/giwifi-gear/main/img/logo.png" alt="">
   <h1>giwifi-gear</h1>
-  <blockquote>A cli tool for login giwifi, and it just a client tool:) </blockquote>
+  <blockquote>A cli tool for login giwifi, and it just a client tool! :) </blockquote>
 </div>
 
 ## feature
@@ -27,6 +27,10 @@
 
 [wiki](https://github.com/icepie/giwifi-gear/wiki)
 
+## license
+
+[AGPLv3](https://github.com/icepie/giwifi-gear/blob/main/LICENSE)
+
 ## other
 
 [Telegram Group](https://t.me/giwifi)
@@ -34,7 +38,3 @@
 [luci-app-giwifi-gear](https://github.com/icepie/luci-app-giwifi-gear)
 
 [使用macvlan驱动将GiWiFi网速成倍提升](https://blog.icepie.net/2020/12/26/giwifi-macvlan)
-
-## license
-
-[AGPLv3](https://github.com/icepie/giwifi-gear/blob/main/LICENSE)
