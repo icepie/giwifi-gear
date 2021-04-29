@@ -514,7 +514,7 @@ optional arguments:
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
   -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token  (default value is pc)
-  -T <TOKEN>			set the token(need to use -t token)
+  -T <TOKEN>            set the token(need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
