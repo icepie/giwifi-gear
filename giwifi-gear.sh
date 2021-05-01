@@ -22,6 +22,8 @@ GW_PORT='8060'
 
 AP_MAC=''
 
+BANNED_WAIT_TIME=20
+
 #############################################
 ## Web Auth Mode Config
 #############################################
@@ -806,6 +808,15 @@ access_type="$ACCESS_TYPE"\
 					logcat "Invalid input..."
 					;;
 				esac
+			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
+				[ ISDAEMON ] && {
+					logcat "The state of the user is being banned..."
+					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+					sleep $BANNED_WAIT_TIME
+					# restart main
+					logcat "restart..."
+					main
+				}
 			fi
 			logcat 'exit'
 			exit 0
@@ -907,6 +918,15 @@ ap_mac="$AP_MAC"\
 					logcat "Invalid input..."
 					;;
 				esac
+			elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
+				[ ISDAEMON ] && {
+					logcat "The state of the user is being banned..."
+					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+					sleep $BANNED_WAIT_TIME
+					# restart main
+					logcat "restart..."
+					main
+				}
 			fi
 			logcat "exit"
 			exit
@@ -1038,6 +1058,15 @@ ap_mac="$AP_MAC"\
 					logcat "Invalid input..."
 					;;
 				esac
+			elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
+				[ ISDAEMON ] && {
+					logcat "The state of the user is being banned..."
+					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+					sleep $BANNED_WAIT_TIME
+					# restart main
+					logcat "restart..."
+					main
+				}
 			fi
 			logcat 'exit'
 			exit 1
@@ -1111,9 +1140,10 @@ Logged:           yes
 			[ "$AUTH_TOKEN_RTE" ] || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
-				sleep 5
-				logcat "Will try to restart..." 'I'
-				GW_GTW=''
+				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+				sleep $BANNED_WAIT_TIME
+				logcat "restart..."
+				#GW_GTW=''
 				main
 			}
 		done

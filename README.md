@@ -1,15 +1,18 @@
 # giwifi-gear (sh ver)
+
 A unix shell cli tool for login giwifi
 
-# env
+## env
+
 Any OS with `unix builtin command` (bash or busybox, etc)
 
-# dep
-- curl
+## dep
 
-if you runing in the sh or ash, plase try to use the **giwifi-gear-min.sh**, maybe you need to handly edit the file.
+- curl
+- openssl (optional)
 
 # usage
+
 ```
 $ ./giwifi-gear.sh -h
 giwifi-gear.sh
@@ -24,7 +27,7 @@ optional arguments:
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
   -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token  (default value is pc)
-  -T <TOKEN>			set the token(need to use -t token)
+  -T <TOKEN>            set the token(need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
   -d                    running in the daemon mode (remove sharing restrictions)
