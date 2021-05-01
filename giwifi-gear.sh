@@ -455,7 +455,7 @@ gw_logout() {
 gw_auth_token() {
 	# gw_auth_token <token>
 
-	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
+	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=$2")"
 	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
 		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=$2")"
 	done
@@ -615,7 +615,7 @@ main() {
 		MOBILE_STA_MODEL="$IOS_STA_MODEL"
 		;;
 	'token')
-		AUTH_MODE="f**k"
+		AUTH_MODE="fxxk"
 		[ ! "$AUTH_TOKEN" ] && { logcat "Plz use -T <TOKEN>" 'E' && exit 1; }
 		;;
 	*)
