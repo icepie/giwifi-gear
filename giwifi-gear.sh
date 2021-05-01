@@ -457,7 +457,7 @@ gw_auth_token() {
 
 	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
 	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
-		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=")"
+		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/auth?token=$1&info=$2")"
 	done
 
 }
