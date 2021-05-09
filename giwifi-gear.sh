@@ -762,9 +762,12 @@ access_type="$ACCESS_TYPE"\
 			echo "--> "$WEB_REBINDMAC_RTE"" && \
 			echo ''
 
-			WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
-			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-			[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
+			#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+			WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
+			WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
+			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
+
+			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && { logcat "$WEB_REBINDMAC_RTE_INFO" && exit 0; } || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
 
 		fi
 
@@ -775,12 +778,12 @@ access_type="$ACCESS_TYPE"\
 		echo "--> "$WEB_LOGIN_RTE"" && \
 		echo ''
 
-		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
+		#WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
 		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
 		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
 		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
 
-		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
+		if [ ! "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ]; then
 			logcat "$WEB_LOGIN_RTE_INFO" 'E'
 			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
 				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
@@ -795,9 +798,12 @@ access_type="$ACCESS_TYPE"\
 					echo "--> "$WEB_REBINDMAC_RTE"" && \
 					echo ''
 
-					WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
-					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-					[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" "E" && exit 1; }
+					WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
+					WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
+					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
+
+					[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+
 					;;
 
 				[nN][oO] | [nN])
