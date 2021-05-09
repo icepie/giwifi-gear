@@ -767,8 +767,9 @@ access_type="$ACCESS_TYPE"\
 			WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
 			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
 
-			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && { logcat "$WEB_REBINDMAC_RTE_INFO" && exit 0; } || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
-
+			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+			logcat "exit"
+			exit
 		fi
 
 		WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
@@ -1025,6 +1026,8 @@ ap_mac="$AP_MAC"\
 			MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
 
 			[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
+			logcat "exit"
+			exit
 		fi
 
 		MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
