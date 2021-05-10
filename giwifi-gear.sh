@@ -1130,7 +1130,7 @@ Logged:           yes
 
 	# CONTENT="================\ntoken pusblish task\nby giwifi-gear@icepie\n================\nType: "${AUTH_MODE}"-"${AUTH_TYPE}" \nToken: "${AUTH_TOKEN}" \nLink: $AUTH_LINK \nInfo: "${AUTH_INFO}" \nTime: "${TIME}""
 
-	CONTENT="\nToken pub task\n-------------------------\nType: "${AUTH_MODE}"-"${AUTH_TYPE}"\nToken: "$AUTH_TOKEN"\nInfo: "$AUTH_INFO"\nTime: "$TIME"\nSys: "$(uname -a)"\n-------------------------\nby giwifi-gear@icepie"
+	CONTENT="\nToken pub task\n-------------------------\nID: "${GW_ID}"\nType: "${AUTH_MODE}"-"${AUTH_TYPE}"\nToken: "$AUTH_TOKEN"\nInfo: "${AUTH_INFO}"\nOS: "${OS}"\nSYS: "$(uname -a)"\nTime: "${TIME}"\n-------------------------\nby giwifi-gear@icepie"
 
 	RTS_DATA="$(
 		printf '{"ToUserName":"%s","Content":"%s","MsgType":1,"AtUsers":""}' \
