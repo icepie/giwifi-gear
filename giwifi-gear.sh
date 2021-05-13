@@ -24,6 +24,8 @@ AP_MAC=''
 
 BANNED_WAIT_TIME=20
 
+ISDAEMON=0
+
 #############################################
 ## Web Auth Mode Config
 #############################################
@@ -497,7 +499,7 @@ detect_gateway() {
 ver() {
 
 	echo "\
-giwifi-gear-cloud.sh version $VERSION ($OS) \
+giwifi-gear.sh version $VERSION ($OS) \
 "
 
 }
@@ -507,7 +509,7 @@ usage() {
 giwifi-gear.sh
   A cli tool for login giwifi by cloud auth mode (multi-platform, fast, small)
 usage:
-  giwifi-gear-cloud.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
+  giwifi-gear.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
 optional arguments:
   -h                    show this help message and exit
   -g <GATEWAY>          set the gateway
@@ -619,7 +621,7 @@ main() {
 		[ ! "$AUTH_TOKEN" ] && { logcat "Plz use -T <TOKEN>" 'E' && exit 1; }
 		;;
 	*)
-		echo "Error: Do not support the "$OPTARG" type!"
+		echo "Error: Do not support the "$AUTH_TYPE" type!"
 		exit 1
 		;;
 	esac
