@@ -170,7 +170,7 @@ get_nic_gateway() {
 #############################################
 
 cat_json_value() {
-	$AWK_TOOL -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
+	${AWK_TOOL} -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
         foundKeyCount = 0
         while (length(json) > 0) {
             pos = match(json, "\""key"\"[ \\t]*?:[ \\t]*");
@@ -524,7 +524,7 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token  (default value is pc)
+  -t <TYPE>             auth type(pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token (default value is pc)
   -T <TOKEN>            set the token(need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
