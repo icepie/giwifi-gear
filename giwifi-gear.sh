@@ -24,7 +24,11 @@ AP_MAC=''
 
 BANNED_WAIT_TIME=20
 
-ISDAEMON=0
+#ISDAEMON=1
+#ISQUIT=1
+#ISBIND=1
+
+#ISLOG=1
 
 #############################################
 ## Web Auth Mode Config
@@ -86,7 +90,8 @@ MOBILE_APP_VERSION='2.4.1.4'
 ## Tool Config
 #############################################
 
-VERSION='0.88'
+AWK_TOOL='awk' # it will be upgrade to gawk, when you has gawk...
+VERSION='0.91'
 
 #############################################
 ## Network Util
@@ -165,7 +170,7 @@ get_nic_gateway() {
 #############################################
 
 cat_json_value() {
-	awk -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
+	$AWK_TOOL -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
         foundKeyCount = 0
         while (length(json) > 0) {
             pos = match(json, "\""key"\"[ \\t]*?:[ \\t]*");
@@ -477,6 +482,8 @@ init() {
 		exit 1
 	}
 	hash openssl 2>/dev/null || { ISNOSSL=1; }
+	hash gawk 2>/dev/null && { AWK_TOOL='gawk'; }
+
 }
 
 detect_gateway() {

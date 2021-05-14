@@ -9,7 +9,10 @@ Any OS with `unix builtin command` (bash or busybox, etc)
 ## dep
 
 - curl
+
 - openssl (optional)
+
+- gawk (optional, for windows user)
 
 # usage
 
