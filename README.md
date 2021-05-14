@@ -1,6 +1,6 @@
 # giwifi-gear (sh ver)
 
-A unix shell command line interpreter tool for login giwifi
+A UNIX shell command line interpreter tool for login giwifi
 
 ## env
 
@@ -14,7 +14,7 @@ Any OS with `UNIX command interpreter` (GNU bash, zsh, other shells)
 
 - [gawk](https://www.gnu.org/software/gawk/) (optional, for windows and mac user)
 
-# usage
+## usage
 
 ```
 $ ./giwifi-gear.sh -h
@@ -38,10 +38,10 @@ optional arguments:
   -v                    show the tool version and exit
 example:
   # bind your device with pad type
-  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
+  giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t pad -b
   # auth with daemon mode
-  ./giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
+  giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -d
   # quit auth
-  ./giwifi-gear.sh -g 172.21.1.1 -q
+  giwifi-gear.sh -g 172.21.1.1 -q
 (c) 2021 icepie.dev@gmail.com
 ```
