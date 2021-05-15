@@ -24,14 +24,17 @@ jobs:
         run: |
           chmod +x ./giwifi-gear.sh
           ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-          sleep 2
+          sleep 10
           ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
-          sleep 2
+          sleep 10
           ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-          sleep 2
-          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q mac
-          sleep 2
+          sleep 10
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t mac -l
+          sleep 10
           ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-          sleep 2
-          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q ipad
-        
+          sleep 10
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t ipad -l
+          sleep 10
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          sleep 10
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t android -l
