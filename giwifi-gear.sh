@@ -694,7 +694,7 @@ main() {
 		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 	fi
 
-	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 1
+	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 0
 
 	if [ ! "$AUTH_TYPE" = 'token' ]; then
 		[ ! "$GW_USER" ] && {
