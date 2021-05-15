@@ -5,6 +5,8 @@ on:
       - sh
       - py
       - go
+  watch:
+    types: started
       
 jobs:
   test:
