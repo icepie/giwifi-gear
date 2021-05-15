@@ -12,25 +12,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - with:
-          ref: sh
-  
-    - name: ci for sh ver
-      env:
-        GW_GTW: ${{ secrets.GW_GTW }}
-        GW_USERNAME: ${{ secrets.GW_USERNAME }}
-        GW_PASSWORD: ${{ secrets.GW_PASSWORD }}
-      run: |
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-        sleep 2
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
-        sleep 2
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-        sleep 2
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q mac
-        sleep 2
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
-        sleep 2
-        bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q ipad
+      - uses: actions/checkout@v2
+      - with:
+            ref: sh
+
+      - name: ci for sh ver
+        env:
+          GW_GTW: ${{ secrets.GW_GTW }}
+          GW_USERNAME: ${{ secrets.GW_USERNAME }}
+          GW_PASSWORD: ${{ secrets.GW_PASSWORD }}
+        run: |
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          sleep 2
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
+          sleep 2
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          sleep 2
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q mac
+          sleep 2
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          sleep 2
+          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q ipad
         
