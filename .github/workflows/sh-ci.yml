@@ -3,8 +3,7 @@ on:
   push:
     branches:    
       - sh
-      - py
-      - go
+
   watch:
     types: started
       
@@ -14,14 +13,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-      
+    - with:
+          ref: sh
+  
     - name: ci for sh ver
       env:
         GW_GTW: ${{ secrets.GW_GTW }}
         GW_USERNAME: ${{ secrets.GW_USERNAME }}
         GW_PASSWORD: ${{ secrets.GW_PASSWORD }}
       run: |
-        git checkout sh
         bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
         sleep 2
         bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
