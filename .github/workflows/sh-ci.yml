@@ -22,15 +22,16 @@ jobs:
           GW_USERNAME: ${{ secrets.GW_USERNAME }}
           GW_PASSWORD: ${{ secrets.GW_PASSWORD }}
         run: |
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          chmod +x ./giwifi-gear.sh
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
           sleep 2
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -t pc -l
           sleep 2
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
           sleep 2
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q mac
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q mac
           sleep 2
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q -l
           sleep 2
-          bash giwifi-gear-sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q ipad
+          ./giwifi-gear.sh -g ${GW_GTW} -u ${GW_USERNAME} -p ${GW_PASSWORD} -q ipad
         
