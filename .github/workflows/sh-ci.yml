@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - with:
+        with:
             ref: sh
 
       - name: ci for sh ver
