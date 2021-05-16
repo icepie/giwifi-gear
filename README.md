@@ -41,25 +41,25 @@ optional arguments:
 
 ## example
 
-### bind your device with the default pc type
+bind your device with the default pc type
 
 ```bash
 $ giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -b # -t pc
 ```
 
-### auth with mac auth type and daemon mode
+auth with mac auth type and daemon mode
 
 ```bash
 $ giwifi-gear.sh -g 172.21.1.1 -u 13000000001 -p mypassword -t mac -d
 ```
 
-### auth with ipad auth type and specified interface
+auth with ipad auth type and specified interface
 
 ```bash
 $ giwifi-gear.sh -u 13000000001 -p mypassword  -t ipad -i wlan0 # will automatically detect the gateway
 ```
 
-### quit auth
+quit auth
 
 ```bash
 $ giwifi-gear.sh -g 172.21.1.1 -q
