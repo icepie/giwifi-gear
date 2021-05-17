@@ -105,10 +105,10 @@ check_ip() {
 		return 1
 	fi
 	local ipaddr=$1
-	local a="$(echo $ipaddr | awk -F . '{print $1}')"
-	local b="$(echo $ipaddr | awk -F . '{print $2}')"
-	local c="$(echo $ipaddr | awk -F . '{print $3}')"
-	local d="$(echo $ipaddr | awk -F . '{print $4}')"
+	local a="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $1}')"
+	local b="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $2}')"
+	local c="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $3}')"
+	local d="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $4}')"
 	for num in $a $b $c $d; do
 		if [ $num -gt 255 ] || [ $num -lt 0 ]; then
 			return 1
@@ -152,11 +152,11 @@ get_nic_gateway() {
 	local gateway
 
 	if [ "$os" == 'windows' ]; then
-		gateway="$(chcp.com 437 >/dev/null && netsh interface ip show address "$1" 2>/dev/null | grep 'Default Gateway' | awk '{print $3}')"
+		gateway="$(chcp.com 437 >/dev/null && netsh interface ip show address "$1" 2>/dev/null | grep 'Default Gateway' | ${AWK_TOOL} '{print $3}')"
 	elif [ "$os" == 'linux' ] || [ "$os" == 'android' ]; then
-		gateway="$(ip route list match 0 table all scope global 2>/dev/null | grep 'proto' | grep "$1" | awk '{print $3}')"
+		gateway="$(ip route list match 0 table all scope global 2>/dev/null | grep 'proto' | grep "$1" | ${AWK_TOOL} '{print $3}')"
 	elif [ "$os" == 'darwin' ]; then
-		gateway="$(netstat -rn 2>/dev/null | grep 'default' | grep "$1" | awk '{print $2}')"
+		gateway="$(netstat -rn 2>/dev/null | grep 'default' | grep "$1" | ${AWK_TOOL} '{print $2}')"
 	fi
 
 	if $(check_ip "$gateway"); then
@@ -168,6 +168,7 @@ get_nic_gateway() {
 #############################################
 ## Json Handle
 #############################################
+
 
 cat_json_value() {
 	${AWK_TOOL} -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
@@ -425,7 +426,8 @@ gw_mobile_get_user() {
 
 gw_mobile_get_token() {
 	#<project_id> <timestamp> <user_id>
-	local sign="$(printf '%s' "app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&timestamp="$TIMESTAMP"&user_id="$1"&key="$MOBILE_APP_KEY"" | openssl md5 | awk '{print $2}')"
+	local sign="$(printf '%s' "app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&timestamp="$TIMESTAMP"&user_id="$1"&key="$MOBILE_APP_KEY"" | openssl md5)"
+	sign=${sign#*= }
 	printf '%s' "$(curl $CURL_OPT -s "http://login.gwifi.com.cn/shop/app/getToken?app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&sign="$sign"&timestamp="$TIMESTAMP"&user_id=$1")"
 }
 
@@ -626,7 +628,7 @@ main() {
 		;;
 	esac
 
-	[ $ISLOG ] && echo '' && \
+	[ $ISLOG ] && \
 	echo "AUTH_UA:" && \
 	echo "--> "$AUTH_UA"" && \
 	echo ''
@@ -789,7 +791,7 @@ access_type="$ACCESS_TYPE"\
 		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
 			logcat "$WEB_LOGIN_RTE_INFO" 'E'
 			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
-				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
+				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
 				echo ''
 				case $input in
 				[yY][eE][sS] | [yY])
@@ -818,7 +820,7 @@ access_type="$ACCESS_TYPE"\
 					;;
 				esac
 			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
-				[ ISDAEMON ] && {
+				[ $ISDAEMON ] && {
 					logcat "The state of the user is being banned..."
 					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 					sleep $BANNED_WAIT_TIME
@@ -902,7 +904,7 @@ ap_mac="$AP_MAC"\
 		if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
 			logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
 			if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
-				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
+				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
 				echo ''
 				case $input in
 				[yY][eE][sS] | [yY])
@@ -928,7 +930,7 @@ ap_mac="$AP_MAC"\
 					;;
 				esac
 			elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
-				[ ISDAEMON ] && {
+				[ $ISDAEMON ] && {
 					logcat "The state of the user is being banned..."
 					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 					sleep $BANNED_WAIT_TIME
@@ -1044,7 +1046,7 @@ ap_mac="$AP_MAC"\
 		if [ ! "$MOBILE_LOGIN_RTE_CODE" = '0' ]; then
 			logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
 			if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
-				read -t 20 -r -p "Are you sure to rebind your device? [Y/n] " input
+				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
 				echo ''
 				case $input in
 				[yY][eE][sS] | [yY])
@@ -1070,7 +1072,7 @@ ap_mac="$AP_MAC"\
 					;;
 				esac
 			elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
-				[ ISDAEMON ] && {
+				[ $ISDAEMON ] && {
 					logcat "The state of the user is being banned..."
 					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 					sleep $BANNED_WAIT_TIME
@@ -1096,7 +1098,7 @@ ap_mac="$AP_MAC"\
 		for i in $(seq 3); do
 			[ "$AUTH_TOKEN_RTE" ] && break
 			sleep 2
-			AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | awk 'END {print}')"
+			AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | ${AWK_TOOL} 'END {print}')"
 		done
 	}
 
@@ -1144,7 +1146,7 @@ Logged:           yes
 			[ "$AUTH_MODE" = 'mobile' ] && {
 				for i in $(seq 5); do
 					sleep 2
-					AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | awk 'END {print}')"
+					AUTH_TOKEN_RTE+="$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | ${AWK_TOOL} 'END {print}')"
 				done
 			}
 
