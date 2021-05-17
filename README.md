@@ -21,7 +21,7 @@ $ ./giwifi-gear.sh -h
 giwifi-gear.sh
   A cli tool for login giwifi by cloud auth mode (multi-platform, fast, small)
 usage:
-  giwifi-gear-cloud.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
+  giwifi-gear.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
 optional arguments:
   -h                    show this help message and exit
   -g <GATEWAY>          set the gateway
