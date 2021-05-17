@@ -791,8 +791,8 @@ access_type="$ACCESS_TYPE"\
 		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
 			logcat "$WEB_LOGIN_RTE_INFO" 'E'
 			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
-				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
-				echo ''
+				printf '%s' 'Are you sure to rebind your device? [Y/n] '
+				read input
 				case $input in
 				[yY][eE][sS] | [yY])
 					WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
@@ -904,8 +904,8 @@ ap_mac="$AP_MAC"\
 		if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
 			logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
 			if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
-				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
-				echo ''
+				printf '%s' 'Are you sure to rebind your device? [Y/n] '
+				read input
 				case $input in
 				[yY][eE][sS] | [yY])
 					DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
@@ -1046,8 +1046,8 @@ ap_mac="$AP_MAC"\
 		if [ ! "$MOBILE_LOGIN_RTE_CODE" = '0' ]; then
 			logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
 			if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
-				read -t 20 -r "Are you sure to rebind your device? [Y/n] " input
-				echo ''
+				printf '%s' 'Are you sure to rebind your device? [Y/n] '
+				read input
 				case $input in
 				[yY][eE][sS] | [yY])
 					MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
