@@ -400,7 +400,7 @@ gw_desktop_rebindmac() {
 #
 
 gw_mobile_get_user() {
-	# gw_phone_app_login <gw_mobile_app_login_data>
+	# gw_phone_get_user <gw_mobile_app_login_data>
 
 	printf '%s' "$(
 		curl $CURL_OPT -s \
@@ -425,7 +425,7 @@ gw_mobile_get_user() {
 # }
 
 gw_mobile_get_token() {
-	#<project_id> <timestamp> <user_id>
+	# gw_mobile_get_token <project_id> <timestamp> <user_id>
 	local sign="$(printf '%s' "app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&timestamp="$TIMESTAMP"&user_id="$1"&key="$MOBILE_APP_KEY"" | openssl md5)"
 	sign=${sign#*= }
 	printf '%s' "$(curl $CURL_OPT -s "http://login.gwifi.com.cn/shop/app/getToken?app_id="$MOBILE_APP_ID"&project_id="$ORG_ID"&sign="$sign"&timestamp="$TIMESTAMP"&user_id=$1")"
