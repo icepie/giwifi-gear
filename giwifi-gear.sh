@@ -91,7 +91,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you has gawk...
-VERSION='0.91'
+VERSION='0.92'
 
 #############################################
 ## Network Util
@@ -459,6 +459,9 @@ gw_mobile_rebindmac() {
 
 gw_logout() {
 	printf '%s' "$(curl $CURL_OPT -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/userlogout?ip="$CLIENT_IP"&mac="$(url_encode "$CLIENT_MAC")"")"
+	for EXTRA_IFACE in ${EXTRA_IFACE_LIST}; do
+		printf '%s' "$(curl --interface "${EXTRA_IFACE}" -s -L -A "$AUTH_UA" "http://"$GW_GTW":"$GW_PORT"/wifidog/userlogout?ip="$CLIENT_IP"&mac="$(url_encode "$CLIENT_MAC")"")"
+	done
 }
 
 gw_auth_token() {
@@ -526,7 +529,7 @@ optional arguments:
   -p <PASSWORD>         set the password
   -i <IFACE>            set the interface by name or ip
   -e <EXTRA_IFACE>      set the extra interface (-e vwan1 -e vwan2)
-  -t <TYPE>             auth type (pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token (default value is pc)
+  -t <TYPE>             auth type (pc/pad/staff for web auth, android/ios/windows/mac/apad/ipad for app auth, token for directly auth by token, and default value is pc)
   -T <TOKEN>            set the token (need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
