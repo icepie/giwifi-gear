@@ -1153,7 +1153,7 @@ Logged:           yes
 				done
 			}
 
-			[ "$AUTH_TOKEN_RTE" ] || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
+			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
