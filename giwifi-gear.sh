@@ -951,47 +951,49 @@ ap_mac="$AP_MAC"\
 
 		;;
 	'mobile')
-		MOBILE_GET_USER_DATA="$(
-			printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
-			"$(get_encrypt "$GW_PWD")" \
-			"$(get_encrypt "$GW_USER")" \
-			"$MOBILE_APP_VERSION" \
-			"$(get_encrypt "$CLIENT_MAC")" \
-			"$(get_encrypt "$GW_ID")" \
-			"$(get_encrypt '')"
-		)"
+		# MOBILE_GET_USER_DATA="$(
+		# 	printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+		# 	"$(get_encrypt "$GW_PWD")" \
+		# 	"$(get_encrypt "$GW_USER")" \
+		# 	"$MOBILE_APP_VERSION" \
+		# 	"$(get_encrypt "$CLIENT_MAC")" \
+		# 	"$(get_encrypt "$GW_ID")" \
+		# 	"$(get_encrypt '')"
+		# )"
 
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_GET_USER_DATA:" && \
-		echo "--> "$MOBILE_GET_USER_DATA"" && \
-		echo ''
+		# [ $ISLOG ] && echo "" && \
+		# echo "MOBILE_GET_USER_DATA:" && \
+		# echo "--> "$MOBILE_GET_USER_DATA"" && \
+		# echo ''
 
-		MOBILE_USER_RTE="$(printf "$(printf "$(gw_mobile_get_user "$MOBILE_GET_USER_DATA")")" | sed "s@\\\\@@g")"
-		MOBILE_USER_RTE_CODE="$(get_json_value "$MOBILE_USER_RTE" 'resultCode')"
+		# MOBILE_USER_RTE="$(printf "$(printf "$(gw_mobile_get_user "$MOBILE_GET_USER_DATA")")" | sed "s@\\\\@@g")"
+		# MOBILE_USER_RTE_CODE="$(get_json_value "$MOBILE_USER_RTE" 'resultCode')"
 
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_USER_RTE:" && \
-		echo "--> "$MOBILE_USER_RTE"" && \
-		echo ''
+		# [ $ISLOG ] && echo "" && \
+		# echo "MOBILE_USER_RTE:" && \
+		# echo "--> "$MOBILE_USER_RTE"" && \
+		# echo ''
 
-		[ "$MOBILE_USER_RTE_CODE" != '0' ] && { MOBILE_USER_RTE_MSG="$(get_json_value "$MOBILE_USER_RTE" 'resultMsg')" && logcat "$MOBILE_USER_RTE_MSG" 'E' && exit 1; }
+		# [ "$MOBILE_USER_RTE_CODE" != '0' ] && { MOBILE_USER_RTE_MSG="$(get_json_value "$MOBILE_USER_RTE" 'resultMsg')" && logcat "$MOBILE_USER_RTE_MSG" 'E' && exit 1; }
 
-		MOBILE_USER_RTE_DATA="$(get_json_value "$MOBILE_USER_RTE" 'data')"
-		GW_USER_UID="$(get_json_value "$MOBILE_USER_RTE" 'uid')"
+		# MOBILE_USER_RTE_DATA="$(get_json_value "$MOBILE_USER_RTE" 'data')"
+		# GW_USER_UID="$(get_json_value "$MOBILE_USER_RTE" 'uid')"
 
-		MOBILE_TOKEN_RTE="$(printf "$(printf "$(gw_mobile_get_token "$GW_USER_UID")")" | sed "s@\\\\@@g")"
+		# MOBILE_TOKEN_RTE="$(printf "$(printf "$(gw_mobile_get_token "$GW_USER_UID")")" | sed "s@\\\\@@g")"
 
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_TOKEN_RTE:" && \
-		echo "--> "$MOBILE_TOKEN_RTE"" && \
-		echo ''
+		# [ $ISLOG ] && echo "" && \
+		# echo "MOBILE_TOKEN_RTE:" && \
+		# echo "--> "$MOBILE_TOKEN_RTE"" && \
+		# echo ''
 
-		MOBILE_TOKEN_RTE_CODE="$(get_json_value "$MOBILE_TOKEN_RTE" 'errcode')"
+		# MOBILE_TOKEN_RTE_CODE="$(get_json_value "$MOBILE_TOKEN_RTE" 'errcode')"
 
-		[ "$MOBILE_TOKEN_RTE_CODE" != '0' ] && { MOBILE_TOKEN_RTE_MSG="$(get_json_value "$MOBILE_TOKEN_RTE" 'resultMsg')" && logcat "$MOBILE_TOKEN_RTE_MSG" 'E' && exit 1; }
+		# [ "$MOBILE_TOKEN_RTE_CODE" != '0' ] && { MOBILE_TOKEN_RTE_MSG="$(get_json_value "$MOBILE_TOKEN_RTE" 'resultMsg')" && logcat "$MOBILE_TOKEN_RTE_MSG" 'E' && exit 1; }
 
-		MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
-		ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
+		# MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
+		# ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
+
+		ACCESS_TOKEN=''
 
 		MOBILE_LOGIN_DATA="$(
 			printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
