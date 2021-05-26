@@ -1121,10 +1121,11 @@ ap_mac="$AP_MAC"\
 --------------------------------------------
 SSID:             "$GW_ID"
 GateWay:          "$GW_GTW"
-Type:             "$AUTH_MODE"-"$AUTH_TYPE"
+Interface:        "$([ "$ACCESS_TYPE" = '1' ] && echo 'wireless' || echo 'ethernet')" # 1: wireless 2: ethernet
 IP:               "$CLIENT_IP"
 MAC:              "$CLIENT_MAC"
 Station SN:       "$STATION_SN"
+Type:             "$AUTH_MODE"-"$AUTH_TYPE"
 Token:            "$AUTH_TOKEN"
 Info:             "$([ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
