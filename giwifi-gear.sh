@@ -1121,7 +1121,7 @@ ap_mac="$AP_MAC"\
 --------------------------------------------
 SSID:             "$GW_ID"
 GateWay:          "$GW_GTW"
-Interface:        "$([ "$ACCESS_TYPE" = '1' ] && echo 'wireless' || echo 'ethernet')" # 1: wireless 2: ethernet
+Interface:        "$([ "$ACCESS_TYPE" = '1' ] && echo 'wireless' || echo 'ethernet')"
 IP:               "$CLIENT_IP"
 MAC:              "$CLIENT_MAC"
 Station SN:       "$STATION_SN"
