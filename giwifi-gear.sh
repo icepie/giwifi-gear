@@ -1178,11 +1178,11 @@ Logged:           yes
 				;;
 			esac
 
-			logcat "Token: $AUTH_TOKEN"
-
-			logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
-
-			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
+			[ "$AUTH_TOKEN" ] && {
+				logcat "Token: $AUTH_TOKEN"
+				logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
+				AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
+			}
 
 			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
 
