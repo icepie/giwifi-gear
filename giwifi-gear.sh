@@ -12,7 +12,7 @@ AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, andr
 AUTH_TOKEN=''
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
-HEART_BEAT=9
+HEART_BEAT=4
 HEART_BROKEN_TIME=30
 
 AUTH_IFACE=''       # the base interface (get auth info)
@@ -475,6 +475,220 @@ gw_auth_token() {
 }
 
 #############################################
+## Parts
+#############################################
+
+web_get_token() {
+		# login to get the auth token
+		WEB_LOGIN_DATA="""\
+access_type="$ACCESS_TYPE"\
+&acsign="$SIGN"\
+&btype="$AUTH_TYPE"\
+&client_mac="$(url_encode $CLIENT_MAC)"\
+&contact_phone="$CONTACT_PHONE"\
+&devicemode=""\
+&gw_address="$GW_GTW"\
+&gw_id="$GW_ID"\
+&gw_port="$GW_PORT"\
+&lastaccessurl=""\
+&logout_reason="$LOGOUT_REASON"\
+&mac="$(url_encode $CLIENT_MAC)"\
+&name="$GW_USER"\
+&online_time="$ONLINE_TIME"\
+&page_time="$PAGE_TIME"\
+&password="$GW_PWD"\
+&sign="$(url_encode $PAGE_SIGN)"\
+&station_cloud="$STATION_CLOUD"\
+&station_sn="$STATION_SN"\
+&suggest_phone="$SUGGEST_PHONE"\
+&url="$(url_encode $GW_REDIRECT_URL)"\
+&user_agent=""\
+&link_data=""\
+"""
+		[ "$AUTH_TYPE" = 'staff' ] && WEB_LOGIN_DATA="account_type=1&"$WEB_LOGIN_DATA""
+
+		[ $ISLOG ] && echo "" && \
+		echo "WEB_LOGIN_DATA:" && \
+		echo "--> "$WEB_LOGIN_DATA"" && \
+		echo ''
+
+		if [ $ISBIND ]; then
+
+			WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
+			WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+			[ $ISLOG ] && echo "" && \
+			echo "WEB_REBINDMAC_RTE:" && \
+			echo "--> "$WEB_REBINDMAC_RTE"" && \
+			echo ''
+
+			#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+			WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
+			WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
+			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
+
+			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+			logcat "exit"
+			exit
+		fi
+
+		WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "WEB_LOGIN_RTE:" && \
+		echo "--> "$WEB_LOGIN_RTE"" && \
+		echo ''
+
+		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
+		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
+		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
+		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
+
+		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
+			logcat "$WEB_LOGIN_RTE_INFO" 'E'
+			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
+				printf '%s' 'Are you sure to rebind your device? [Y/n] '
+				read input
+				case $input in
+				[yY][eE][sS] | [yY])
+					WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
+					WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+					[ $ISLOG ] && echo "" && \
+					echo "WEB_REBINDMAC_RTE:" && \
+					echo "--> "$WEB_REBINDMAC_RTE"" && \
+					echo ''
+
+					WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
+					WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
+					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
+
+					[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+
+					;;
+
+				[nN][oO] | [nN])
+					logcat "Ok, is ending..."
+					;;
+
+				*)
+					logcat "Invalid input..."
+					;;
+				esac
+			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
+				[ $ISDAEMON ] && {
+					logcat "The state of the user is being banned..."
+					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+					sleep $BANNED_WAIT_TIME
+					# restart main
+					logcat "restart..."
+					main
+				}
+			fi
+			logcat 'exit'
+			exit 0
+		fi
+
+		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
+
+}
+
+desktop_get_token() {
+	DESKTOP_LOGIN_DATA="""\
+ap_mac="$AP_MAC"\
+&app_uuid="$(url_encode "$DESKTOP_APP_UUID")"\
+&challege="$(url_encode "$(get_challge "$GW_PWD" "$CHALLEGE_ID")")"\
+&gw_address="$GW_GTW"\
+&gw_id="$GW_ID"\
+&ip="$CLIENT_IP"\
+&mac="$(url_encode "$CLIENT_MAC")"\
+&name="$GW_USER"\
+&service_type="$SERVICE_TYPE"\
+&sta_model="$(url_encode "$DESKTOP_MODEL")"\
+&sta_nic_type="$STA_NIC_TYPE"\
+&sta_type="pc"\
+&version="$DESKTOP_APP_VERSION"\
+"""
+
+	[ $ISLOG ] && echo "" && \
+	echo "DESKTOP_LOGIN_DATA:" && \
+	echo "--> "$DESKTOP_LOGIN_DATA"" && \
+	echo ''
+
+	if [ $ISBIND ]; then
+		DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "DESKTOP_REBINDMAC_RTE:" && \
+		echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
+		echo ''
+
+		DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
+		DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
+
+		[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+		logcat "exit"
+		exit
+	fi
+
+	DESKTOP_LOGIN_RTE="$(printf "$(gw_desktop_auth_challege "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "DESKTOP_LOGIN_RTE:" && \
+	echo "--> "$DESKTOP_LOGIN_RTE"" && \
+	echo ''
+
+	DESKTOP_LOGIN_RTE_CODE="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultCode')"
+	DESKTOP_LOGIN_RTE_MSG="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultMsg')"
+	DESKTOP_LOGIN_RTE_DATA="$(get_json_value "$DESKTOP_LOGIN_RTE" 'data')"
+
+	if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
+		logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
+		if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
+			printf '%s' 'Are you sure to rebind your device? [Y/n] '
+			read input
+			case $input in
+			[yY][eE][sS] | [yY])
+				DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+				[ $ISLOG ] && echo "" && \
+				echo "DESKTOP_REBINDMAC_RTE:" && \
+				echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
+				echo ''
+
+				DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
+				DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
+
+				[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+				;;
+
+			[nN][oO] | [nN])
+				logcat "Ok, is ending..."
+				;;
+
+			*)
+				logcat "Invalid input..."
+				;;
+			esac
+		elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
+			[ $ISDAEMON ] && {
+				logcat "The state of the user is being banned..."
+				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+				sleep $BANNED_WAIT_TIME
+				# restart main
+				logcat "restart..."
+				main
+			}
+		fi
+		logcat "exit"
+		exit
+	fi
+
+	AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
+	AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
+}
+
+#############################################
 ## CLI Related
 #############################################
 
@@ -506,6 +720,108 @@ detect_gateway() {
 
 	[ "$GW_GTW" ] && logcat "Gateway detected as "$GW_GTW""
 
+}
+
+mobile_get_token() {
+	ACCESS_TOKEN=''
+
+	MOBILE_LOGIN_DATA="$(
+		printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+		"$(get_encrypt "$GW_GTW")" \
+		"$(get_encrypt "$SERVICE_TYPE")" \
+		"$(get_encrypt "$GW_PWD")" \
+		"$(get_encrypt "$MOBILE_IM")" \
+		"$(get_encrypt "$MOBILE_UUID")" \
+		"$(get_encrypt "$GW_USER")" \
+		"$(get_encrypt "$CLIENT_IP")" \
+		"$(get_encrypt "$MOBILE_STA_TYPE")" \
+		"$(get_encrypt "$MOBILE_IS_INSTALL_WX")" \
+		"$(get_encrypt "$MOBILE_BTYPE")" \
+		"$(get_encrypt "$MOBILE_STA_MODEL")" \
+		"$(get_encrypt "$MOBILE_AUTH_MODE")" \
+		"$(get_encrypt "$MOBILE_IMSI")" \
+		"$(get_encrypt "$GW_ID")" \
+		"$(get_encrypt '')" \
+		"$MOBILE_APP_VERSION" \
+		"$(get_encrypt "$CLIENT_MAC")" \
+		"$(get_encrypt "$GW_ID")" \
+		"$(get_encrypt $ACCESS_TOKEN)"
+	)"
+
+	[ $ISLOG ] && echo "" && \
+	echo "MOBILE_LOGIN_DATA:" && \
+	echo "--> "$MOBILE_LOGIN_DATA"" && \
+	echo ''
+
+	if [ $ISBIND ]; then
+		MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "MOBILE_REBINDMAC_RTE:" && \
+		echo "--> "$MOBILE_REBINDMAC_RTE"" && \
+		echo ''
+
+		MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
+		MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
+
+		[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
+		logcat "exit"
+		exit
+	fi
+
+	MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
+	MOBILE_LOGIN_RTE_CODE="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultCode')"
+	MOBILE_LOGIN_RTE_MSG="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultMsg')"
+
+	[ $ISLOG ] && echo "" && \
+	echo "MOBILE_LOGIN_RTE:" && \
+	echo "--> "$MOBILE_LOGIN_RTE"" && \
+	echo ''
+
+	if [ ! "$MOBILE_LOGIN_RTE_CODE" = '0' ]; then
+		logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
+		if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
+			printf '%s' 'Are you sure to rebind your device? [Y/n] '
+			read input
+			case $input in
+			[yY][eE][sS] | [yY])
+				MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+				[ $ISLOG ] && echo "" && \
+				echo "MOBILE_REBINDMAC_RTE:" && \
+				echo "--> "$MOBILE_REBINDMAC_RTE"" && \
+				echo ''
+
+				MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
+				MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
+
+				[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
+				;;
+
+			[nN][oO] | [nN])
+				logcat "Ok, is ending..."
+				;;
+
+			*)
+				logcat "Invalid input..."
+				;;
+			esac
+		elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
+			[ $ISDAEMON ] && {
+				logcat "The state of the user is being banned..."
+				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+				sleep $BANNED_WAIT_TIME
+				# restart main
+				logcat "restart..."
+				main
+			}
+		fi
+		logcat 'exit'
+		exit 1
+	fi
+
+	MOBILE_LOGIN_RTE_DATA="$(get_json_value "$MOBILE_LOGIN_RTE" 'data')"
+	AUTH_TOKEN="$(get_json_value "$MOBILE_LOGIN_RTE_DATA" 'userToken')"
 }
 
 ver() {
@@ -726,119 +1042,9 @@ main() {
 		echo "--> "$PAGE_TIME"" && \
 		echo ''
 
-		# login to get the auth token
-		WEB_LOGIN_DATA="""\
-access_type="$ACCESS_TYPE"\
-&acsign="$SIGN"\
-&btype="$AUTH_TYPE"\
-&client_mac="$(url_encode $CLIENT_MAC)"\
-&contact_phone="$CONTACT_PHONE"\
-&devicemode=""\
-&gw_address="$GW_GTW"\
-&gw_id="$GW_ID"\
-&gw_port="$GW_PORT"\
-&lastaccessurl=""\
-&logout_reason="$LOGOUT_REASON"\
-&mac="$(url_encode $CLIENT_MAC)"\
-&name="$GW_USER"\
-&online_time="$ONLINE_TIME"\
-&page_time="$PAGE_TIME"\
-&password="$GW_PWD"\
-&sign="$(url_encode $PAGE_SIGN)"\
-&station_cloud="$STATION_CLOUD"\
-&station_sn="$STATION_SN"\
-&suggest_phone="$SUGGEST_PHONE"\
-&url="$(url_encode $GW_REDIRECT_URL)"\
-&user_agent=""\
-&link_data=""\
-"""
-		[ "$AUTH_TYPE" = 'staff' ] && WEB_LOGIN_DATA="account_type=1&"$WEB_LOGIN_DATA""
+		web_get_token
 
-		[ $ISLOG ] && echo "" && \
-		echo "WEB_LOGIN_DATA:" && \
-		echo "--> "$WEB_LOGIN_DATA"" && \
-		echo ''
-
-		if [ $ISBIND ]; then
-
-			WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
-			WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-			[ $ISLOG ] && echo "" && \
-			echo "WEB_REBINDMAC_RTE:" && \
-			echo "--> "$WEB_REBINDMAC_RTE"" && \
-			echo ''
-
-			#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
-			WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
-			WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
-			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
-
-			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
-			logcat "exit"
-			exit
-		fi
-
-		WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-		[ $ISLOG ] && echo "" && \
-		echo "WEB_LOGIN_RTE:" && \
-		echo "--> "$WEB_LOGIN_RTE"" && \
-		echo ''
-
-		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
-		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
-		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
-
-		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
-			logcat "$WEB_LOGIN_RTE_INFO" 'E'
-			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
-				printf '%s' 'Are you sure to rebind your device? [Y/n] '
-				read input
-				case $input in
-				[yY][eE][sS] | [yY])
-					WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
-					WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-					[ $ISLOG ] && echo "" && \
-					echo "WEB_REBINDMAC_RTE:" && \
-					echo "--> "$WEB_REBINDMAC_RTE"" && \
-					echo ''
-
-					WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
-					WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
-					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
-
-					[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
-
-					;;
-
-				[nN][oO] | [nN])
-					logcat "Ok, is ending..."
-					;;
-
-				*)
-					logcat "Invalid input..."
-					;;
-				esac
-			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
-				[ $ISDAEMON ] && {
-					logcat "The state of the user is being banned..."
-					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
-					sleep $BANNED_WAIT_TIME
-					# restart main
-					logcat "restart..."
-					main
-				}
-			fi
-			logcat 'exit'
-			exit 0
-		fi
-
-		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
 		;;
-
 	'desktop')
 
 		AUTH_IDENTITY_RTE="$(printf "$(gw_desktop_auth_identity)" | sed "s@\\\\@@g")"
@@ -856,98 +1062,7 @@ access_type="$ACCESS_TYPE"\
 		AUTH_IDENTITY_RTE_DATA="$(get_json_value "$AUTH_IDENTITY_RTE" 'data')"
 		CHALLEGE_ID="$(get_json_value "$AUTH_IDENTITY_RTE_DATA" 'challege_id')"
 
-		DESKTOP_LOGIN_DATA="""\
-ap_mac="$AP_MAC"\
-&app_uuid="$(url_encode "$DESKTOP_APP_UUID")"\
-&challege="$(url_encode "$(get_challge "$GW_PWD" "$CHALLEGE_ID")")"\
-&gw_address="$GW_GTW"\
-&gw_id="$GW_ID"\
-&ip="$CLIENT_IP"\
-&mac="$(url_encode "$CLIENT_MAC")"\
-&name="$GW_USER"\
-&service_type="$SERVICE_TYPE"\
-&sta_model="$(url_encode "$DESKTOP_MODEL")"\
-&sta_nic_type="$STA_NIC_TYPE"\
-&sta_type="pc"\
-&version="$DESKTOP_APP_VERSION"\
-"""
-
-		[ $ISLOG ] && echo "" && \
-		echo "DESKTOP_LOGIN_DATA:" && \
-		echo "--> "$DESKTOP_LOGIN_DATA"" && \
-		echo ''
-
-		if [ $ISBIND ]; then
-			DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-			[ $ISLOG ] && echo "" && \
-			echo "DESKTOP_REBINDMAC_RTE:" && \
-			echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
-			echo ''
-
-			DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
-			DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
-
-			[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
-			logcat "exit"
-			exit
-		fi
-
-		DESKTOP_LOGIN_RTE="$(printf "$(gw_desktop_auth_challege "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-		[ $ISLOG ] && echo "" && \
-		echo "DESKTOP_LOGIN_RTE:" && \
-		echo "--> "$DESKTOP_LOGIN_RTE"" && \
-		echo ''
-
-		DESKTOP_LOGIN_RTE_CODE="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultCode')"
-		DESKTOP_LOGIN_RTE_MSG="$(get_json_value "$DESKTOP_LOGIN_RTE" 'resultMsg')"
-		DESKTOP_LOGIN_RTE_DATA="$(get_json_value "$DESKTOP_LOGIN_RTE" 'data')"
-
-		if [ ! "$DESKTOP_LOGIN_RTE_CODE" = '0' ]; then
-			logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
-			if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
-				printf '%s' 'Are you sure to rebind your device? [Y/n] '
-				read input
-				case $input in
-				[yY][eE][sS] | [yY])
-					DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-					[ $ISLOG ] && echo "" && \
-					echo "DESKTOP_REBINDMAC_RTE:" && \
-					echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
-					echo ''
-
-					DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
-					DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
-
-					[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
-					;;
-
-				[nN][oO] | [nN])
-					logcat "Ok, is ending..."
-					;;
-
-				*)
-					logcat "Invalid input..."
-					;;
-				esac
-			elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
-				[ $ISDAEMON ] && {
-					logcat "The state of the user is being banned..."
-					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
-					sleep $BANNED_WAIT_TIME
-					# restart main
-					logcat "restart..."
-					main
-				}
-			fi
-			logcat "exit"
-			exit
-		fi
-
-		AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
-		AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
+		desktop_get_token
 
 		;;
 	'mobile')
@@ -993,105 +1108,8 @@ ap_mac="$AP_MAC"\
 		# MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
 		# ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
 
-		ACCESS_TOKEN=''
+		mobile_get_token
 
-		MOBILE_LOGIN_DATA="$(
-			printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
-			"$(get_encrypt "$GW_GTW")" \
-			"$(get_encrypt "$SERVICE_TYPE")" \
-			"$(get_encrypt "$GW_PWD")" \
-			"$(get_encrypt "$MOBILE_IM")" \
-			"$(get_encrypt "$MOBILE_UUID")" \
-			"$(get_encrypt "$GW_USER")" \
-			"$(get_encrypt "$CLIENT_IP")" \
-			"$(get_encrypt "$MOBILE_STA_TYPE")" \
-			"$(get_encrypt "$MOBILE_IS_INSTALL_WX")" \
-			"$(get_encrypt "$MOBILE_BTYPE")" \
-			"$(get_encrypt "$MOBILE_STA_MODEL")" \
-			"$(get_encrypt "$MOBILE_AUTH_MODE")" \
-			"$(get_encrypt "$MOBILE_IMSI")" \
-			"$(get_encrypt "$GW_ID")" \
-			"$(get_encrypt '')" \
-			"$MOBILE_APP_VERSION" \
-			"$(get_encrypt "$CLIENT_MAC")" \
-			"$(get_encrypt "$GW_ID")" \
-			"$(get_encrypt $ACCESS_TOKEN)"
-		)"
-
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_LOGIN_DATA:" && \
-		echo "--> "$MOBILE_LOGIN_DATA"" && \
-		echo ''
-
-		if [ $ISBIND ]; then
-			MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-			[ $ISLOG ] && echo "" && \
-			echo "MOBILE_REBINDMAC_RTE:" && \
-			echo "--> "$MOBILE_REBINDMAC_RTE"" && \
-			echo ''
-
-			MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
-			MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
-
-			[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
-			logcat "exit"
-			exit
-		fi
-
-		MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
-		MOBILE_LOGIN_RTE_CODE="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultCode')"
-		MOBILE_LOGIN_RTE_MSG="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultMsg')"
-
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_LOGIN_RTE:" && \
-		echo "--> "$MOBILE_LOGIN_RTE"" && \
-		echo ''
-
-		if [ ! "$MOBILE_LOGIN_RTE_CODE" = '0' ]; then
-			logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
-			if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
-				printf '%s' 'Are you sure to rebind your device? [Y/n] '
-				read input
-				case $input in
-				[yY][eE][sS] | [yY])
-					MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-					[ $ISLOG ] && echo "" && \
-					echo "MOBILE_REBINDMAC_RTE:" && \
-					echo "--> "$MOBILE_REBINDMAC_RTE"" && \
-					echo ''
-
-					MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
-					MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
-
-					[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
-					;;
-
-				[nN][oO] | [nN])
-					logcat "Ok, is ending..."
-					;;
-
-				*)
-					logcat "Invalid input..."
-					;;
-				esac
-			elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
-				[ $ISDAEMON ] && {
-					logcat "The state of the user is being banned..."
-					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
-					sleep $BANNED_WAIT_TIME
-					# restart main
-					logcat "restart..."
-					main
-				}
-			fi
-			logcat 'exit'
-			exit 1
-		fi
-
-		MOBILE_LOGIN_RTE_DATA="$(get_json_value "$MOBILE_LOGIN_RTE" 'data')"
-		AUTH_TOKEN="$(get_json_value "$MOBILE_LOGIN_RTE_DATA" 'userToken')"
 		;;
 	esac
 
@@ -1146,6 +1164,21 @@ Logged:           yes
 		local fail_iota=1
 		while [ 1 ]; do
 			sleep $HEART_BEAT
+
+			case "$AUTH_MODE" in
+			'web')
+				web_get_token
+				;;
+			'desktop')
+				desktop_get_token
+				;;
+			'mobile')
+				mobile_get_token
+				;;
+			esac
+
+			logcat "Token: $AUTH_TOKEN"
+
 			logcat "Heartbeat: $iota" && iota=$((iota + 1))
 
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
