@@ -435,7 +435,7 @@ gw_mobile_relogin() {
 	# gw_mobile_relogin <gw_mobile_login_data>
 
 	printf '%s' "$(
-		curl $CURL_OPT -s -L \
+		curl $CURL_OPT -s -i \
 		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
@@ -770,40 +770,6 @@ ap_mac="$AP_MAC"\
 	AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
 }
 
-#############################################
-## CLI Related
-#############################################
-
-init() {
-
-	OS="$(get_os_type)"
-	# check dep
-	hash curl 2>/dev/null || {
-		echo 'Error: curl is not installed.' >&2
-		exit 1
-	}
-	hash openssl 2>/dev/null || { ISNOSSL=1; }
-	hash gawk 2>/dev/null && { AWK_TOOL='gawk'; }
-
-}
-
-detect_gateway() {
-
-	if [ "$AUTH_IFACE" ]; then
-		CURL_OPT="--interface $AUTH_IFACE"
-		logcat "Will use the interface $AUTH_IFACE to auth..."
-		if [ ! "$GW_GTW" ]; then
-			logcat "Try to get the gateway from interface $AUTH_IFACE..."
-			GW_GTW="$(get_nic_gateway $AUTH_IFACE)"
-		fi
-	fi
-
-	[ ! "$GW_GTW" ] && logcat "Try to get the gateway from redirect url..." && GW_GTW="$(gw_get_gateway)"
-
-	[ "$GW_GTW" ] && logcat "Gateway detected as "$GW_GTW""
-
-}
-
 mobile_get_token() {
 	MOBILE_LOGIN_DATA="$(
 		printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
@@ -846,10 +812,11 @@ mobile_get_token() {
 
 		[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
 
-		[ ! $ISDAEMON ] && logcat "exit" && exit 0
+		logcat "exit"
+		exit
 	fi
 
-	MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
+	MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA)")" | sed "s@\\\\@@g")"
 	MOBILE_LOGIN_RTE_CODE="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultCode')"
 	MOBILE_LOGIN_RTE_MSG="$(get_json_value "$MOBILE_LOGIN_RTE" 'resultMsg')"
 
@@ -858,7 +825,7 @@ mobile_get_token() {
 	echo "--> "$MOBILE_LOGIN_RTE"" && \
 	echo ''
 
-	if [ ! "$MOBILE_LOGIN_RTE_CODE" = '0' ]; then
+	if [ $MOBILE_LOGIN_RTE_CODE ]; then
 		logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
 		if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
 			printf '%s' 'Are you sure to rebind your device? [Y/n] '
@@ -899,8 +866,44 @@ mobile_get_token() {
 		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 	fi
 
-	MOBILE_LOGIN_RTE_DATA="$(get_json_value "$MOBILE_LOGIN_RTE" 'data')"
-	AUTH_TOKEN="$(get_json_value "$MOBILE_LOGIN_RTE_DATA" 'userToken')"
+	MOBILE_LOGIN_RTE="$(echo $MOBILE_LOGIN_RTE | grep 'Location')"
+
+	AUTH_TOKEN="$(str_str "$MOBILE_LOGIN_RTE" 'token=' '&')"
+	AUTH_INFO="$(str_str "$MOBILE_LOGIN_RTE" 'info=' 'D')"
+}
+
+#############################################
+## CLI Related
+#############################################
+
+init() {
+
+	OS="$(get_os_type)"
+	# check dep
+	hash curl 2>/dev/null || {
+		echo 'Error: curl is not installed.' >&2
+		exit 1
+	}
+	hash openssl 2>/dev/null || { ISNOSSL=1; }
+	hash gawk 2>/dev/null && { AWK_TOOL='gawk'; }
+
+}
+
+detect_gateway() {
+
+	if [ "$AUTH_IFACE" ]; then
+		CURL_OPT="--interface $AUTH_IFACE"
+		logcat "Will use the interface $AUTH_IFACE to auth..."
+		if [ ! "$GW_GTW" ]; then
+			logcat "Try to get the gateway from interface $AUTH_IFACE..."
+			GW_GTW="$(get_nic_gateway $AUTH_IFACE)"
+		fi
+	fi
+
+	[ ! "$GW_GTW" ] && logcat "Try to get the gateway from redirect url..." && GW_GTW="$(gw_get_gateway)"
+
+	[ "$GW_GTW" ] && logcat "Gateway detected as "$GW_GTW""
+
 }
 
 ver() {
@@ -1122,14 +1125,6 @@ main() {
 
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
-	[ "$AUTH_MODE" = 'mobile' ] && {
-		for i in $(seq 3); do
-			[ "$AUTH_TOKEN_RTE" ] && break
-			sleep 2
-			AUTH_TOKEN_RTE=""$AUTH_TOKEN_RTE" "$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | ${AWK_TOOL} 'END {print}')""
-		done
-	}
-
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_TOKEN_RTE:" && \
 	echo "--> "$AUTH_TOKEN_RTE"" && \
@@ -1189,12 +1184,6 @@ Logged:           yes
 			logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
 
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
-			[ "$AUTH_MODE" = 'mobile' ] && {
-				for i in $(seq 3); do
-					sleep 2
-					AUTH_TOKEN_RTE=""$AUTH_TOKEN_RTE" "$(printf "$(printf "$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")")" | ${AWK_TOOL} 'END {print}')""
-				done
-			}
 
 			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
 
