@@ -436,7 +436,7 @@ gw_mobile_relogin() {
 
 	printf '%s' "$(
 		curl $CURL_OPT -s -L \
-		-A "$GW_PHONE_UA" \
+		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
 		'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/reLogin.bin'
@@ -449,7 +449,7 @@ gw_mobile_rebindmac() {
 
 	printf '%s' "$(
 		curl $CURL_OPT -s \
-		-A "$GW_PHONE_UA" \
+		-A "$AUTH_UA" \
 		-X POST \
 		-d "$1" \
 		'http://login.gwifi.com.cn:8080/wocloud_v2/appUser/reBindMac.bin'
