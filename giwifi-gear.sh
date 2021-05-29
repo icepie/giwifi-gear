@@ -478,6 +478,87 @@ gw_auth_token() {
 ## Parts
 #############################################
 
+web_build_data() {
+	# login to get the auth token
+	LOGIN_PAGE="$(gw_web_get_login_page)"
+	# get some values from login page
+	PAGE_SIGN=$(str_str "$LOGIN_PAGE" 'name="sign" value="' '"')
+	PAGE_TIME=$(str_str "$LOGIN_PAGE" 'name="page_time" value="' '"')
+
+	[ $ISLOG ] && echo '' && \
+	echo "PAGE_SIGN:" && \
+	echo "--> "$PAGE_SIGN"" && \
+	echo ''
+
+	[ $ISLOG ] && echo '' && \
+	echo "PAGE_TIME:" && \
+	echo "--> "$PAGE_TIME"" && \
+	echo ''
+}
+
+desktop_build_data() {
+	AUTH_IDENTITY_RTE="$(printf "$(gw_desktop_auth_identity)" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_IDENTITY_RTE:" && \
+	echo "--> "$AUTH_IDENTITY_RTE"" && \
+	echo ''
+
+	AUTH_IDENTITY_RTE_CODE="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultCode')"
+	AUTH_IDENTITY_RTE_MSG="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultMsg')"
+
+	[ ! "$AUTH_IDENTITY_RTE_CODE" = "0" ] && { logcat "$AUTH_IDENTITY_RTE_MSG" "E" && exit 1; }
+
+	AUTH_IDENTITY_RTE_DATA="$(get_json_value "$AUTH_IDENTITY_RTE" 'data')"
+	CHALLEGE_ID="$(get_json_value "$AUTH_IDENTITY_RTE_DATA" 'challege_id')"
+}
+
+mobile_build_data() {
+	# MOBILE_GET_USER_DATA="$(
+	# 	printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
+	# 	"$(get_encrypt "$GW_PWD")" \
+	# 	"$(get_encrypt "$GW_USER")" \
+	# 	"$MOBILE_APP_VERSION" \
+	# 	"$(get_encrypt "$CLIENT_MAC")" \
+	# 	"$(get_encrypt "$GW_ID")" \
+	# 	"$(get_encrypt '')"
+	# )"
+
+	# [ $ISLOG ] && echo "" && \
+	# echo "MOBILE_GET_USER_DATA:" && \
+	# echo "--> "$MOBILE_GET_USER_DATA"" && \
+	# echo ''
+
+	# MOBILE_USER_RTE="$(printf "$(printf "$(gw_mobile_get_user "$MOBILE_GET_USER_DATA")")" | sed "s@\\\\@@g")"
+	# MOBILE_USER_RTE_CODE="$(get_json_value "$MOBILE_USER_RTE" 'resultCode')"
+
+	# [ $ISLOG ] && echo "" && \
+	# echo "MOBILE_USER_RTE:" && \
+	# echo "--> "$MOBILE_USER_RTE"" && \
+	# echo ''
+
+	# [ "$MOBILE_USER_RTE_CODE" != '0' ] && { MOBILE_USER_RTE_MSG="$(get_json_value "$MOBILE_USER_RTE" 'resultMsg')" && logcat "$MOBILE_USER_RTE_MSG" 'E' && exit 1; }
+
+	# MOBILE_USER_RTE_DATA="$(get_json_value "$MOBILE_USER_RTE" 'data')"
+	# GW_USER_UID="$(get_json_value "$MOBILE_USER_RTE" 'uid')"
+
+	# MOBILE_TOKEN_RTE="$(printf "$(printf "$(gw_mobile_get_token "$GW_USER_UID")")" | sed "s@\\\\@@g")"
+
+	# [ $ISLOG ] && echo "" && \
+	# echo "MOBILE_TOKEN_RTE:" && \
+	# echo "--> "$MOBILE_TOKEN_RTE"" && \
+	# echo ''
+
+	# MOBILE_TOKEN_RTE_CODE="$(get_json_value "$MOBILE_TOKEN_RTE" 'errcode')"
+
+	# [ "$MOBILE_TOKEN_RTE_CODE" != '0' ] && { MOBILE_TOKEN_RTE_MSG="$(get_json_value "$MOBILE_TOKEN_RTE" 'resultMsg')" && logcat "$MOBILE_TOKEN_RTE_MSG" 'E' && exit 1; }
+
+	# MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
+	# ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
+	ACCESS_TOKEN=''
+
+}
+
 web_get_token() {
 		# login to get the auth token
 		WEB_LOGIN_DATA="""\
@@ -680,8 +761,9 @@ ap_mac="$AP_MAC"\
 				main
 			}
 		fi
-		logcat "exit"
-		exit
+	
+		[ ! $ISDAEMON ] && logcat "exit" && exit 0
+
 	fi
 
 	AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
@@ -723,8 +805,6 @@ detect_gateway() {
 }
 
 mobile_get_token() {
-	ACCESS_TOKEN=''
-
 	MOBILE_LOGIN_DATA="$(
 		printf '{"data":"{\\"gwAddress\\":\\"%s\\",\\"service_type\\":\\"%s\\",\\"staticPassword\\":\\"%s\\",\\"im\\":\\"%s\\",\\"app_uuid\\":\\"%s\\",\\"phone\\":\\"%s\\",\\"ip\\":\\"%s\\",\\"staType\\":\\"%s\\",\\"installWX\\":\\"%s\\",\\"btype\\":\\"%s\\",\\"staModel\\":\\"%s\\",\\"apMac\\":\\"\\",\\"auth_mode\\":\\"%s\\",\\"imsi\\":\\"%s\\",\\"ssid\\":\\"%s\\",\\"filter_id\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
 		"$(get_encrypt "$GW_GTW")" \
@@ -765,8 +845,8 @@ mobile_get_token() {
 		MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
 
 		[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
-		logcat "exit"
-		exit
+
+		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 	fi
 
 	MOBILE_LOGIN_RTE="$(printf "$(printf "$(gw_mobile_relogin $MOBILE_LOGIN_DATA))")" | sed "s@\\\\@@g")"
@@ -816,8 +896,7 @@ mobile_get_token() {
 				main
 			}
 		fi
-		logcat 'exit'
-		exit 1
+		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 	fi
 
 	MOBILE_LOGIN_RTE_DATA="$(get_json_value "$MOBILE_LOGIN_RTE" 'data')"
@@ -1026,90 +1105,16 @@ main() {
 	# login and get token...
 	case "$AUTH_MODE" in
 	'web')
-		# login to get the auth token
-		LOGIN_PAGE="$(gw_web_get_login_page)"
-		# get some values from login page
-		PAGE_SIGN=$(str_str "$LOGIN_PAGE" 'name="sign" value="' '"')
-		PAGE_TIME=$(str_str "$LOGIN_PAGE" 'name="page_time" value="' '"')
-
-		[ $ISLOG ] && echo '' && \
-		echo "PAGE_SIGN:" && \
-		echo "--> "$PAGE_SIGN"" && \
-		echo ''
-
-		[ $ISLOG ] && echo '' && \
-		echo "PAGE_TIME:" && \
-		echo "--> "$PAGE_TIME"" && \
-		echo ''
-
+		web_build_data 
 		web_get_token
-
 		;;
 	'desktop')
-
-		AUTH_IDENTITY_RTE="$(printf "$(gw_desktop_auth_identity)" | sed "s@\\\\@@g")"
-
-		[ $ISLOG ] && echo "" && \
-		echo "AUTH_IDENTITY_RTE:" && \
-		echo "--> "$AUTH_IDENTITY_RTE"" && \
-		echo ''
-
-		AUTH_IDENTITY_RTE_CODE="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultCode')"
-		AUTH_IDENTITY_RTE_MSG="$(get_json_value "$AUTH_IDENTITY_RTE" 'resultMsg')"
-
-		[ ! "$AUTH_IDENTITY_RTE_CODE" = "0" ] && { logcat "$AUTH_IDENTITY_RTE_MSG" "E" && exit 1; }
-
-		AUTH_IDENTITY_RTE_DATA="$(get_json_value "$AUTH_IDENTITY_RTE" 'data')"
-		CHALLEGE_ID="$(get_json_value "$AUTH_IDENTITY_RTE_DATA" 'challege_id')"
-
+		desktop_build_data
 		desktop_get_token
-
 		;;
 	'mobile')
-		# MOBILE_GET_USER_DATA="$(
-		# 	printf '{"data":"{\\"staticPassword\\":\\"%s\\",\\"phone\\":\\"%s\\"}","version":"%s","mac":"%s","gatewayId":"%s","token":"%s"}' \
-		# 	"$(get_encrypt "$GW_PWD")" \
-		# 	"$(get_encrypt "$GW_USER")" \
-		# 	"$MOBILE_APP_VERSION" \
-		# 	"$(get_encrypt "$CLIENT_MAC")" \
-		# 	"$(get_encrypt "$GW_ID")" \
-		# 	"$(get_encrypt '')"
-		# )"
-
-		# [ $ISLOG ] && echo "" && \
-		# echo "MOBILE_GET_USER_DATA:" && \
-		# echo "--> "$MOBILE_GET_USER_DATA"" && \
-		# echo ''
-
-		# MOBILE_USER_RTE="$(printf "$(printf "$(gw_mobile_get_user "$MOBILE_GET_USER_DATA")")" | sed "s@\\\\@@g")"
-		# MOBILE_USER_RTE_CODE="$(get_json_value "$MOBILE_USER_RTE" 'resultCode')"
-
-		# [ $ISLOG ] && echo "" && \
-		# echo "MOBILE_USER_RTE:" && \
-		# echo "--> "$MOBILE_USER_RTE"" && \
-		# echo ''
-
-		# [ "$MOBILE_USER_RTE_CODE" != '0' ] && { MOBILE_USER_RTE_MSG="$(get_json_value "$MOBILE_USER_RTE" 'resultMsg')" && logcat "$MOBILE_USER_RTE_MSG" 'E' && exit 1; }
-
-		# MOBILE_USER_RTE_DATA="$(get_json_value "$MOBILE_USER_RTE" 'data')"
-		# GW_USER_UID="$(get_json_value "$MOBILE_USER_RTE" 'uid')"
-
-		# MOBILE_TOKEN_RTE="$(printf "$(printf "$(gw_mobile_get_token "$GW_USER_UID")")" | sed "s@\\\\@@g")"
-
-		# [ $ISLOG ] && echo "" && \
-		# echo "MOBILE_TOKEN_RTE:" && \
-		# echo "--> "$MOBILE_TOKEN_RTE"" && \
-		# echo ''
-
-		# MOBILE_TOKEN_RTE_CODE="$(get_json_value "$MOBILE_TOKEN_RTE" 'errcode')"
-
-		# [ "$MOBILE_TOKEN_RTE_CODE" != '0' ] && { MOBILE_TOKEN_RTE_MSG="$(get_json_value "$MOBILE_TOKEN_RTE" 'resultMsg')" && logcat "$MOBILE_TOKEN_RTE_MSG" 'E' && exit 1; }
-
-		# MOBILE_TOKEN_RTE_DATA="$(get_json_value "$MOBILE_TOKEN_RTE" 'data')"
-		# ACCESS_TOKEN="$(get_json_value "$MOBILE_TOKEN_RTE" 'access_token')"
-
+		mobile_build_data
 		mobile_get_token
-
 		;;
 	esac
 
@@ -1161,9 +1166,11 @@ Logged:           yes
 		}
 
 		local iota=1
+		local data_iota=1
 		local fail_iota=1
 		while [ 1 ]; do
 			sleep $HEART_BEAT
+
 
 			case "$AUTH_MODE" in
 			'web')
@@ -1179,7 +1186,7 @@ Logged:           yes
 
 			logcat "Token: $AUTH_TOKEN"
 
-			logcat "Heartbeat: $iota" && iota=$((iota + 1))
+			logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
 
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			[ "$AUTH_MODE" = 'mobile' ] && {
@@ -1190,6 +1197,7 @@ Logged:           yes
 			}
 
 			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
+
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
@@ -1198,6 +1206,22 @@ Logged:           yes
 				#GW_GTW=''
 				main
 			}
+
+			[ $data_iota -gt 20 ] && {
+				case "$AUTH_MODE" in
+				'web')
+					web_build_data
+					;;
+				'desktop')
+					desktop_build_data
+					;;
+				'mobile')
+					mobile_build_data
+					;;
+				esac
+				data_iota=1
+			}
+
 		done
 	fi
 }
