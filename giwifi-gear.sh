@@ -12,7 +12,7 @@ AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, andr
 AUTH_TOKEN=''
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
-HEART_BEAT=4
+HEART_BEAT=5
 HEART_BROKEN_TIME=30
 
 AUTH_IFACE=''       # the base interface (get auth info)
@@ -1166,7 +1166,6 @@ Logged:           yes
 		while [ 1 ]; do
 			sleep $HEART_BEAT
 
-
 			case "$AUTH_MODE" in
 			'web')
 				web_get_token
@@ -1186,6 +1185,11 @@ Logged:           yes
 			AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 
 			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
+
+			[ $ISLOG ] && echo "" && \
+			echo "AUTH_TOKEN_RTE:" && \
+			echo "--> "$AUTH_TOKEN_RTE"" && \
+			echo ''
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
