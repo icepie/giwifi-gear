@@ -741,6 +741,8 @@ ap_mac="$AP_MAC"\
 				DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
 
 				[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+				
+				[ ! $ISDAEMON ] && logcat "exit" && exit 0
 				;;
 
 			[nN][oO] | [nN])
