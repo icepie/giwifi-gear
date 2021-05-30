@@ -10,6 +10,9 @@ GW_PWD=''
 
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
+
+AUTH_TOKEN_TMP=''
+
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
 HEART_BEAT=5
@@ -478,6 +481,21 @@ gw_auth_token() {
 ## Parts
 #############################################
 
+auth_token_tmp() {
+
+	logcat "Trying to make magic..."
+
+	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN_TMP" "$AUTH_INFO_TMP")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_TOKEN_RTE:" && \
+	echo "--> "$AUTH_TOKEN_RTE"" && \
+	echo ''
+
+	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to auth by the token!" 'E' && exit; }
+
+}
+
 web_build_data() {
 	# login to get the auth token
 	LOGIN_PAGE="$(gw_web_get_login_page)"
@@ -658,6 +676,9 @@ access_type="$ACCESS_TYPE"\
 				esac
 			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
 				[ $ISDAEMON ] && {
+					
+					[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+
 					logcat "The state of the user is being banned..."
 					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 					sleep $BANNED_WAIT_TIME
@@ -755,6 +776,9 @@ ap_mac="$AP_MAC"\
 			esac
 		elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
 			[ $ISDAEMON ] && {
+
+				[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+
 				logcat "The state of the user is being banned..."
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 				sleep $BANNED_WAIT_TIME
@@ -857,7 +881,11 @@ mobile_get_token() {
 			esac
 		elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
 			[ $ISDAEMON ] && {
+				
+				[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+
 				logcat "The state of the user is being banned..."
+				
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 				sleep $BANNED_WAIT_TIME
 				# restart main
@@ -1183,15 +1211,12 @@ Logged:           yes
 			[ "$AUTH_TOKEN" ] && {
 				logcat "Token: $AUTH_TOKEN"
 				logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
-				AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
+				AUTH_TOKEN_TMP="$AUTH_TOKEN"
+				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
+			} || {
+				logcat "Heartache: $fail_iota" 'E'
+				fail_iota=$((fail_iota + 1))
 			}
-
-			[ "$AUTH_TOKEN_RTE" ] && { fail_iota=1; } || { logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1)); }
-
-			[ $ISLOG ] && echo "" && \
-			echo "AUTH_TOKEN_RTE:" && \
-			echo "--> "$AUTH_TOKEN_RTE"" && \
-			echo ''
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
