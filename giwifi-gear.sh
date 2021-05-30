@@ -1210,13 +1210,15 @@ Logged:           yes
 
 			[ "$AUTH_TOKEN" ] && {
 				logcat "Token: $AUTH_TOKEN"
-				logcat "Heartbeat: $iota" && iota=$((iota + 1)) && data_iota=$((data_iota + 1))
+				logcat "Heartbeat: $iota" && iota=$((iota + 1))
 				AUTH_TOKEN_TMP="$AUTH_TOKEN"
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
 				logcat "Heartache: $fail_iota" 'E'
 				fail_iota=$((fail_iota + 1))
 			}
+			
+			data_iota=$((data_iota + 1))
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
