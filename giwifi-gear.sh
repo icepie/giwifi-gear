@@ -526,9 +526,14 @@ get_auth_state() {
 	AUTH_STATE_RTE="$(gw_get_auth_state)"
 	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
 
-	[ ! "$AUTH_STATE_RTE" ] && \
-	logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E" && \
-	exit 1
+
+	[ $ISDAEMON ] && {
+		[ ! "$AUTH_STATE_RTE" ] && AUTH_STATE_RTE=''
+	} || {
+		[ ! "$AUTH_STATE_RTE" ] && \
+		logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E" && \
+		exit 1
+	}
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_STATE_RTE:" && \
