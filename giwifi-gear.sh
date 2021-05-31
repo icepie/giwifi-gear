@@ -11,7 +11,7 @@ GW_PWD=''
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 
-AUTH_TOKEN_TMP=''
+AUTH_TOKEN_LIST=''
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
@@ -486,6 +486,11 @@ auth_token_list_add() {
 
 	[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""${AUTH_TOKEN_LIST}" "$1"" || AUTH_TOKEN_LIST="$1"
 
+	[ $ISLOG ] && {
+		echo "$(date "+%H:%M:%S") $1 $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
+	}
+
+
 }
 
 auth_token_list_clean() {
@@ -506,11 +511,47 @@ auth_token_list_get() {
 ## Parts
 #############################################
 
-auth_token_tmp() {
+
+get_auth_state() {
+	AUTH_STATE_RTE="$(gw_get_auth_state)"
+	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
+
+	[ ! "$AUTH_STATE_RTE" ] && \
+	logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E" && \
+	exit 1
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_STATE_RTE:" && \
+	echo "--> "$AUTH_STATE_RTE"" && \
+	echo ''
+
+	# Deserialization auth_state json data
+	AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
+	AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
+	GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
+	ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
+	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
+	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
+	CLIENT_IP="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
+	CLIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
+	ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
+	LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
+	CONTACT_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'contact_phone')"
+	SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
+	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
+	ORG_ID="$(get_json_value "$AUTH_STATE_DATA" 'orgId')"
+	TIMESTAMP="$(get_json_value "$AUTH_STATE_DATA" 'timestamp')"
+	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
+}
+
+auth_token_magic() {
 
 	logcat "Trying to make magic..."
 
-	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN_TMP" "$AUTH_INFO_TMP")"
+	AUTH_TOKEN=$(auth_token_list_get)
+	auth_token_list_clean "$auth_token"
+
+	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO_TMP")"
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_TOKEN_RTE:" && \
@@ -723,7 +764,7 @@ access_type="$ACCESS_TYPE"\
 			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
 				[ $ISDAEMON ] && {
 					
-					[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+					[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
 
 					logcat "The state of the user is being banned..."
 					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
@@ -803,7 +844,7 @@ ap_mac="$AP_MAC"\
 		elif [ "$DESKTOP_LOGIN_RTE_CODE" = '55' ]; then
 			[ $ISDAEMON ] && {
 
-				[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+				[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
 
 				logcat "The state of the user is being banned..."
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
@@ -889,7 +930,7 @@ mobile_get_token() {
 		elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
 			[ $ISDAEMON ] && {
 				
-				[ "$AUTH_TOKEN_TMP" ] && auth_token_tmp
+				[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
 
 				logcat "The state of the user is being banned..."
 				
@@ -973,6 +1014,24 @@ optional arguments:
   -v                    show the tool version and exit
 (c) 2021 icepie.dev@gmail.com\
 "
+}
+
+do_auth() {
+	# login and get token...
+	case "$AUTH_MODE" in
+	'web')
+		web_build_data 
+		web_get_token
+		;;
+	'desktop')
+		desktop_build_data
+		desktop_get_token
+		;;
+	'mobile')
+		mobile_build_data
+		mobile_get_token
+		;;
+	esac
 }
 
 main() {
@@ -1086,35 +1145,7 @@ main() {
 	echo "--> "$(gw_get_hotspot_group)"" && \
 	echo ''
 
-	AUTH_STATE_RTE="$(gw_get_auth_state)"
-	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
-
-	[ ! "$AUTH_STATE_RTE" ] && \
-	logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E" && \
-	exit 1
-
-	[ $ISLOG ] && echo "" && \
-	echo "AUTH_STATE_RTE:" && \
-	echo "--> "$AUTH_STATE_RTE"" && \
-	echo ''
-
-	# Deserialization auth_state json data
-	AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
-	AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
-	GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
-	ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
-	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
-	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
-	CLIENT_IP="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
-	CLIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
-	ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
-	LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
-	CONTACT_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'contact_phone')"
-	SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
-	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
-	ORG_ID="$(get_json_value "$AUTH_STATE_DATA" 'orgId')"
-	TIMESTAMP="$(get_json_value "$AUTH_STATE_DATA" 'timestamp')"
-	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
+	get_auth_state
 
 	if [ "$AUTH_STATE" = '2' ]; then
 		logcat "Good! You are authed!"
@@ -1142,21 +1173,7 @@ main() {
 		}
 	fi
 
-	# login and get token...
-	case "$AUTH_MODE" in
-	'web')
-		web_build_data 
-		web_get_token
-		;;
-	'desktop')
-		desktop_build_data
-		desktop_get_token
-		;;
-	'mobile')
-		mobile_build_data
-		mobile_get_token
-		;;
-	esac
+	do_auth
 
 	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token! ("$AUTH_TOKEN")" || { logcat "Fail to get the token!" 'E' && exit 1; }
 
@@ -1203,32 +1220,27 @@ Logged:           yes
 		while [ 1 ]; do
 			sleep $HEART_BEAT
 
-			case "$AUTH_MODE" in
-			'web')
-				web_get_token
-				;;
-			'desktop')
-				desktop_get_token
-				;;
-			'mobile')
-				mobile_get_token
-				;;
-			esac
+			get_auth_state
 
-			[ "$AUTH_TOKEN" ] && {
-				logcat "Token: $AUTH_TOKEN"
+			[ "$AUTH_STATE" = '2' ] && {
 				logcat "Heartbeat: $iota" && iota=$((iota + 1))
-				AUTH_TOKEN_TMP="$AUTH_TOKEN"
+				logcat "Online Time: $ONLINE_TIME"
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
 				logcat "Heartache: $fail_iota" 'E'
 				fail_iota=$((fail_iota + 1))
 			}
 			
-			data_iota=$((data_iota + 1))
+			[ $iota -lt 5 ] && data_iota=10 || data_iota=$((data_iota + 1))
+			
+			# max AUTH_TOKEN_LIST limit
+			[ $((data_iota / 200)) -ge 0 ] && AUTH_TOKEN_LIST=$auth_token_list_get
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
+
+				auth_token_magic
+
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 				sleep $BANNED_WAIT_TIME
 				logcat "restart..."
@@ -1236,19 +1248,11 @@ Logged:           yes
 				main
 			}
 
-			[ $data_iota -gt 20 ] && {
-				case "$AUTH_MODE" in
-				'web')
-					web_build_data
-					;;
-				'desktop')
-					desktop_build_data
-					;;
-				'mobile')
-					mobile_build_data
-					;;
-				esac
+			[ $data_iota -ge 10 ] && {
+				do_auth
 				data_iota=1
+				logcat "Token: $AUTH_TOKEN"
+				[ "$AUTH_TOKEN" ] && auth_token_list_add "$AUTH_TOKEN"
 			}
 
 		done
