@@ -91,7 +91,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
-VERSION='0.92'
+VERSION='1.21'
 
 #############################################
 ## Network Util
@@ -174,7 +174,7 @@ displaytime() {
   (( $D > 0 )) && printf '%d days ' $D
   (( $H > 0 )) && printf '%d hours ' $H
   (( $M > 0 )) && printf '%d minutes ' $M
-  (( $D > 0 || $H > 0 || $M > 0 )) && printf ' '
+  (( $D > 0 || $H > 0 || $M > 0 ))
   printf '%d seconds\n' $S
 }
 
@@ -1237,8 +1237,8 @@ Logged:           yes
 				logcat "Online Time: $(displaytime $ONLINE_TIME)"
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
-				logcat "Heartache: $fail_iota" 'E'
-				fail_iota=$((fail_iota + 1))
+				logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1))
+				auth_token_magic
 			}
 			
 			[ $iota -lt 5 ] && data_iota=30 || data_iota=$((data_iota + 1))
@@ -1257,7 +1257,7 @@ Logged:           yes
 			[ $data_iota -ge 30 ] && {
 				do_auth
 				data_iota=1
-				logcat "Token: $AUTH_TOKEN"
+				logcat "Token(In one hand): $AUTH_TOKEN"
 				[ "$AUTH_TOKEN" ] && auth_token_list_add "$AUTH_TOKEN"
 			}
 
