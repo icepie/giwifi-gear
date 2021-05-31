@@ -578,7 +578,7 @@ auth_token_magic() {
 	echo "--> "$AUTH_TOKEN_RTE"" && \
 	echo ''
 
-	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to make magic by the token!" 'E' }
+	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || logcat "Fail to make magic by the token!" 'E'
 
 }
 
