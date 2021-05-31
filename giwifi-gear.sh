@@ -11,8 +11,11 @@ GW_PWD=''
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 
+# do not edit
 AUTH_TOKEN_LIST=''
-MAX_TOKEN_LIST_LEN=20
+PRE_BUILD_TOKEN_NUM=3
+TOKEN_BUILD_SPEED=10
+MAX_TOKEN_LIST_LEN=5 # > 3
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
@@ -489,36 +492,6 @@ gw_auth_token() {
 }
 
 #############################################
-## Auth Token List
-#############################################
-
-auth_token_list_add() {
-	#auth_token_list_add auth_token
-
-	[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""${AUTH_TOKEN_LIST}" "$1"" || AUTH_TOKEN_LIST="$1"
-
-	[ $ISLOG ] && {
-		echo "$(date "+%H:%M:%S") $1 $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
-	}
-
-
-}
-
-auth_token_list_clean() {
-	#auth_token_list_add auth_token
-
-	[ ${#AUTH_TOKEN_LIST} -le 40 ] && AUTH_TOKEN_LIST=''
-
-	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$1 "}
-
-}
-
-auth_token_list_get() {
-	local auth_token="$(echo $AUTH_TOKEN_LIST | awk '{print $1}')"
-	echo "$auth_token"
-}
-
-#############################################
 ## Parts
 #############################################
 
@@ -564,11 +537,12 @@ auth_token_magic() {
 
 	logcat "Trying to make magic..."
 
-	AUTH_TOKEN=$(auth_token_list_get)
-	auth_token_list_clean "$AUTH_TOKEN"
+	AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
+
+	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$AUTH_TOKEN "}
 
 	[ $ISLOG ] && echo "" && \
-	echo "AUTH_TOKEN:" && \
+	echo "DEL AUTH_TOKEN:" && \
 	echo "--> "$AUTH_TOKEN"" && \
 	echo ''
 
@@ -1237,7 +1211,7 @@ Logged:           yes
 
 		local iota=1
 		local data_iota=1
-		local token_iota=1
+		local token_iota=0
 		local fail_iota=1
 		while [ 1 ]; do
 			sleep $HEART_BEAT
@@ -1253,10 +1227,7 @@ Logged:           yes
 				auth_token_magic
 			}
 			
-			[ $iota -lt 5 ] && data_iota=30 || data_iota=$((data_iota + 1))
-			
-			# max AUTH_TOKEN_LIST limit
-			[ $token_iota -ge $MAX_TOKEN_LIST_LEN ] && AUTH_TOKEN_LIST=$auth_token_list_get && token_iota=1
+			[ $iota -le $PRE_BUILD_TOKEN_NUM ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
@@ -1266,13 +1237,40 @@ Logged:           yes
 				main
 			}
 
-			#echo "FUCK" $AUTH_TOKEN_LIST
-			[ $data_iota -ge 30 ] && {
+			[ $ISLOG ] && {
+				echo "TOKEN POOL: $AUTH_TOKEN_LIST"
+				echo "POOL SIZE: $token_iota"
+			}
+
+			[ $data_iota -ge $TOKEN_BUILD_SPEED ] && {
 				do_auth
-				data_iota=1
+
 				logcat "Token(In one hand): $AUTH_TOKEN"
-				[ "$AUTH_TOKEN" ] && auth_token_list_add "$AUTH_TOKEN"
-				token_iota=$((token_iota + 1))
+				[ "$AUTH_TOKEN" ] && {
+					[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""$AUTH_TOKEN" "${AUTH_TOKEN_LIST}"" || AUTH_TOKEN_LIST="$AUTH_TOKEN"
+
+					[ $ISLOG ] && {
+						echo "$(date "+%H:%M:%S") $AUTH_TOKEN $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
+					}
+
+					token_iota=$((token_iota + 1))
+					data_iota=1
+				}
+
+				# max AUTH_TOKEN_LIST limit
+				[ $token_iota -gt $MAX_TOKEN_LIST_LEN ] && {
+					
+					#auth_token_magic
+
+					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
+					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
+
+					[ $ISLOG ] && {
+						echo "DEL TOKEN: $AUTH_TMP_TOKEN"
+					}
+
+					token_iota=$MAX_TOKEN_LIST_LEN
+				}
 			}
 
 		done
