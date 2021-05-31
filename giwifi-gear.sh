@@ -478,6 +478,31 @@ gw_auth_token() {
 }
 
 #############################################
+## Auth Token List
+#############################################
+
+auth_token_list_add() {
+	#auth_token_list_add auth_token
+
+	[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""${AUTH_TOKEN_LIST}" "$1"" || AUTH_TOKEN_LIST="$1"
+
+}
+
+auth_token_list_clean() {
+	#auth_token_list_add auth_token
+
+	[ ${#AUTH_TOKEN_LIST} -le 40 ] && AUTH_TOKEN_LIST=''
+
+	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$1 "}
+
+}
+
+auth_token_list_get() {
+	local auth_token="$(echo $AUTH_TOKEN_LIST | awk '{print $1}')"
+	echo "$auth_token"
+}
+
+#############################################
 ## Parts
 #############################################
 
@@ -577,6 +602,52 @@ mobile_build_data() {
 
 }
 
+web_rebindmac() {
+	WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
+	WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "WEB_REBINDMAC_RTE:" && \
+	echo "--> "$WEB_REBINDMAC_RTE"" && \
+	echo ''
+
+	#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+	WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
+	WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
+	WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
+
+	[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+}
+
+
+desktop_rebindmac() {
+	DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "DESKTOP_REBINDMAC_RTE:" && \
+	echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
+	echo ''
+
+	DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
+	DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
+
+	[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+}
+
+mobile_rebindmac() {
+	MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "MOBILE_REBINDMAC_RTE:" && \
+	echo "--> "$MOBILE_REBINDMAC_RTE"" && \
+	echo ''
+
+	MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
+	MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
+
+	[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
+}
+
 web_get_token() {
 		# login to get the auth token
 		WEB_LOGIN_DATA="""\
@@ -612,21 +683,7 @@ access_type="$ACCESS_TYPE"\
 		echo ''
 
 		if [ $ISBIND ]; then
-
-			WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
-			WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-			[ $ISLOG ] && echo "" && \
-			echo "WEB_REBINDMAC_RTE:" && \
-			echo "--> "$WEB_REBINDMAC_RTE"" && \
-			echo ''
-
-			#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
-			WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
-			WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
-			WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
-
-			[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+			web_rebindmac
 			logcat "exit"
 			exit
 		fi
@@ -650,20 +707,9 @@ access_type="$ACCESS_TYPE"\
 				read input
 				case $input in
 				[yY][eE][sS] | [yY])
-					WEB_LOGIN_DATA=$WEB_LOGIN_DATA+"&is_signed=2"
-					WEB_REBINDMAC_RTE="$(printf "$(gw_web_rebindmac "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-					[ $ISLOG ] && echo "" && \
-					echo "WEB_REBINDMAC_RTE:" && \
-					echo "--> "$WEB_REBINDMAC_RTE"" && \
-					echo ''
-
-					WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
-					WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
-					WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
-
-					[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
-
+					web_rebindmac
+					logcat "exit"
+					exit
 					;;
 
 				[nN][oO] | [nN])
@@ -718,17 +764,7 @@ ap_mac="$AP_MAC"\
 	echo ''
 
 	if [ $ISBIND ]; then
-		DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-		[ $ISLOG ] && echo "" && \
-		echo "DESKTOP_REBINDMAC_RTE:" && \
-		echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
-		echo ''
-
-		DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
-		DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
-
-		[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
+		desktop_rebindmac
 		logcat "exit"
 		exit
 	fi
@@ -751,19 +787,9 @@ ap_mac="$AP_MAC"\
 			read input
 			case $input in
 			[yY][eE][sS] | [yY])
-				DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-				[ $ISLOG ] && echo "" && \
-				echo "DESKTOP_REBINDMAC_RTE:" && \
-				echo "--> "$DESKTOP_REBINDMAC_RTE"" && \
-				echo ''
-
-				DESKTOP_REBINDMAC_RTE_CODE="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultCode')"
-				DESKTOP_REBINDMAC_RTE_MSG="$(get_json_value "$DESKTOP_REBINDMAC_RTE" 'resultMsg')"
-
-				[ "$DESKTOP_REBINDMAC_RTE_CODE" = '0' ] && logcat "$DESKTOP_REBINDMAC_RTE_MSG" || { logcat "$DESKTOP_REBINDMAC_RTE_MSG" "E" && exit 1; }
-				
-				[ ! $ISDAEMON ] && logcat "exit" && exit 0
+				desktop_rebindmac
+				logcat "exit"
+				exit
 				;;
 
 			[nN][oO] | [nN])
@@ -826,18 +852,7 @@ mobile_get_token() {
 	echo ''
 
 	if [ $ISBIND ]; then
-		MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-		[ $ISLOG ] && echo "" && \
-		echo "MOBILE_REBINDMAC_RTE:" && \
-		echo "--> "$MOBILE_REBINDMAC_RTE"" && \
-		echo ''
-
-		MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
-		MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
-
-		[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
-
+		mobile_rebindmac
 		logcat "exit"
 		exit
 	fi
@@ -858,17 +873,9 @@ mobile_get_token() {
 			read input
 			case $input in
 			[yY][eE][sS] | [yY])
-				MOBILE_REBINDMAC_RTE="$(printf "$(gw_mobile_rebindmac "$MOBILE_LOGIN_DATA")" | sed "s@\\\\@@g")"
-
-				[ $ISLOG ] && echo "" && \
-				echo "MOBILE_REBINDMAC_RTE:" && \
-				echo "--> "$MOBILE_REBINDMAC_RTE"" && \
-				echo ''
-
-				MOBILE_REBINDMAC_RTE_CODE="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultCode')"
-				MOBILE_REBINDMAC_RTE_MSG="$(get_json_value "$MOBILE_REBINDMAC_RTE" 'resultMsg')"
-
-				[ "$MOBILE_REBINDMAC_RTE_CODE" = '0' ] && logcat "$MOBILE_REBINDMAC_RTE_MSG" || { logcat "$MOBILE_REBINDMAC_RTE_MSG" "E" && exit 1; }
+				mobile_rebindmac
+				logcat "exit"
+				exit
 				;;
 
 			[nN][oO] | [nN])
