@@ -76,9 +76,6 @@ PAD_BTYPE='2'
 PHONE_STA_TYPE='phone'
 PAD_STA_TYPE='pad'
 
-#MOBILE_STA_TYPE='phone'  						  # pad or phone
-#MOBILE_BTYPE='1'
-
 MOBILE_IM='00000000-023e-0e94-ffff-ffffef05ac4a'  # IMEI UUID
 MOBILE_IS_INSTALL_WX='1'                          # is installed WeChat?
 MOBILE_AUTH_MODE='1'                              # 1: Cloud Mode 2: Local Mode
@@ -1238,13 +1235,9 @@ Logged:           yes
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
-
-				auth_token_magic
-
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 				sleep $BANNED_WAIT_TIME
 				logcat "restart..."
-				#GW_GTW=''
 				main
 			}
 
