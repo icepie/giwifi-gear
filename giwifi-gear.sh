@@ -1231,7 +1231,7 @@ Logged:           yes
 				fail_iota=$((fail_iota + 1))
 			}
 			
-			[ $iota -lt 5 ] && data_iota=10 || data_iota=$((data_iota + 1))
+			[ $iota -lt 5 ] && data_iota=30 || data_iota=$((data_iota + 1))
 			
 			# max AUTH_TOKEN_LIST limit
 			[ $((data_iota / 200)) -ge 0 ] && AUTH_TOKEN_LIST=$auth_token_list_get
@@ -1248,7 +1248,7 @@ Logged:           yes
 				main
 			}
 
-			[ $data_iota -ge 10 ] && {
+			[ $data_iota -ge 30 ] && {
 				do_auth
 				data_iota=1
 				logcat "Token: $AUTH_TOKEN"
