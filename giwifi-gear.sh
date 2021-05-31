@@ -564,7 +564,12 @@ auth_token_magic() {
 	logcat "Trying to make magic..."
 
 	AUTH_TOKEN=$(auth_token_list_get)
-	auth_token_list_clean "$auth_token"
+	auth_token_list_clean "$AUTH_TOKEN"
+
+	[ $ISLOG ] && echo "" && \
+	echo "AUTH_TOKEN:" && \
+	echo "--> "$AUTH_TOKEN"" && \
+	echo ''
 
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO_TMP")"
 
@@ -573,7 +578,7 @@ auth_token_magic() {
 	echo "--> "$AUTH_TOKEN_RTE"" && \
 	echo ''
 
-	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to auth by the token!" 'E' && exit; }
+	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to make magic by the token!" 'E' }
 
 }
 
