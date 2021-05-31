@@ -90,7 +90,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 ## Tool Config
 #############################################
 
-AWK_TOOL='awk' # it will be upgrade to gawk, when you has gawk...
+AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
 VERSION='0.92'
 
 #############################################
@@ -174,7 +174,7 @@ displaytime() {
   (( $D > 0 )) && printf '%d days ' $D
   (( $H > 0 )) && printf '%d hours ' $H
   (( $M > 0 )) && printf '%d minutes ' $M
-  (( $D > 0 || $H > 0 || $M > 0 )) && printf 'and '
+  (( $D > 0 || $H > 0 || $M > 0 )) && printf ' '
   printf '%d seconds\n' $S
 }
 
