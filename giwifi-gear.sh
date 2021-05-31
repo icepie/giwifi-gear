@@ -12,6 +12,7 @@ AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, andr
 AUTH_TOKEN=''
 
 AUTH_TOKEN_LIST=''
+MAX_TOKEN_LIST_LEN=20
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
@@ -1236,6 +1237,7 @@ Logged:           yes
 
 		local iota=1
 		local data_iota=1
+		local token_iota=1
 		local fail_iota=1
 		while [ 1 ]; do
 			sleep $HEART_BEAT
@@ -1254,7 +1256,7 @@ Logged:           yes
 			[ $iota -lt 5 ] && data_iota=30 || data_iota=$((data_iota + 1))
 			
 			# max AUTH_TOKEN_LIST limit
-			[ $((data_iota / 200)) -ge 0 ] && AUTH_TOKEN_LIST=$auth_token_list_get
+			[ $token_iota -ge $MAX_TOKEN_LIST_LEN ] && AUTH_TOKEN_LIST=$auth_token_list_get && token_iota=1
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
@@ -1264,11 +1266,13 @@ Logged:           yes
 				main
 			}
 
+			#echo "FUCK" $AUTH_TOKEN_LIST
 			[ $data_iota -ge 30 ] && {
 				do_auth
 				data_iota=1
 				logcat "Token(In one hand): $AUTH_TOKEN"
 				[ "$AUTH_TOKEN" ] && auth_token_list_add "$AUTH_TOKEN"
+				token_iota=$((token_iota + 1))
 			}
 
 		done
