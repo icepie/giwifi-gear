@@ -1262,7 +1262,7 @@ Logged:           yes
 					
 					#auth_token_magic
 
-					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
+					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$((MAX_TOKEN_LIST_LEN - 1))"}")"
 					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
 
 					[ $ISLOG ] && {
