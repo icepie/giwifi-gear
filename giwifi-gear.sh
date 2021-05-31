@@ -1224,7 +1224,7 @@ Logged:           yes
 
 			[ "$AUTH_STATE" = '2' ] && {
 				logcat "Heartbeat: $iota" && iota=$((iota + 1))
-				logcat "Online Time: $ONLINE_TIME"
+				logcat "Online Time: $ONLINE_TIME"s""
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
 				logcat "Heartache: $fail_iota" 'E'
