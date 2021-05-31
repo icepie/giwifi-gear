@@ -1258,18 +1258,18 @@ Logged:           yes
 				}
 
 				# max AUTH_TOKEN_LIST limit
-				[ $token_iota -gt $MAX_TOKEN_LIST_LEN ] && {
+				[ $token_iota -ge $MAX_TOKEN_LIST_LEN ] && {
 					
 					#auth_token_magic
 
-					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$((MAX_TOKEN_LIST_LEN - 1))"}")"
+					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
 					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
 
 					[ $ISLOG ] && {
 						echo "DEL TOKEN: $AUTH_TMP_TOKEN"
 					}
 
-					token_iota=$MAX_TOKEN_LIST_LEN
+					token_iota=$((MAX_TOKEN_LIST_LEN-1))
 				}
 			}
 
