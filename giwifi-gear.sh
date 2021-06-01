@@ -11,11 +11,15 @@ GW_PWD=''
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 
+MAGIC_PRO_TIME=8 # -1 is disable
+
 # do not edit
 AUTH_TOKEN_LIST=''
-PRE_BUILD_TOKEN_NUM=3
-TOKEN_BUILD_SPEED=10
-MAX_TOKEN_LIST_LEN=5 # > 3
+PRE_BUILD_TOKEN_NUM=6
+TOKEN_BUILD_SPEED=5
+MAX_TOKEN_LIST_LEN=20 # > 3
+
+TOKEN_IOTA=0
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
@@ -540,6 +544,7 @@ auth_token_magic() {
 	AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
 
 	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$AUTH_TOKEN "}
+	TOKEN_IOTA=$((TOKEN_IOTA - 1))
 
 	[ $ISLOG ] && echo "" && \
 	echo "DEL AUTH_TOKEN:" && \
@@ -769,8 +774,9 @@ access_type="$ACCESS_TYPE"\
 					main
 				}
 			fi
-			logcat 'exit'
-			exit 0
+
+			[ ! $ISDAEMON ] && logcat "exit" && exit 0
+
 		fi
 
 		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
@@ -1211,8 +1217,11 @@ Logged:           yes
 
 		local iota=1
 		local data_iota=1
-		local token_iota=0
+
+		
+
 		local fail_iota=1
+		local magic_iota=0
 		while [ 1 ]; do
 			sleep $HEART_BEAT
 
@@ -1239,7 +1248,7 @@ Logged:           yes
 
 			[ $ISLOG ] && {
 				echo "TOKEN POOL: $AUTH_TOKEN_LIST"
-				echo "POOL SIZE: $token_iota"
+				echo "POOL SIZE: $TOKEN_IOTA"
 			}
 
 			[ $data_iota -ge $TOKEN_BUILD_SPEED ] && {
@@ -1253,12 +1262,19 @@ Logged:           yes
 						echo "$(date "+%H:%M:%S") $AUTH_TOKEN $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
 					}
 
-					token_iota=$((token_iota + 1))
+					TOKEN_IOTA=$((TOKEN_IOTA + 1))
 					data_iota=1
 				}
 
+				[ $magic_iota -ge $MAGIC_PRO_TIME ] && {
+					auth_token_magic
+					magic_iota=0
+				}
+				magic_iota=$((magic_iota + 1))
+		
+
 				# max AUTH_TOKEN_LIST limit
-				[ $token_iota -ge $MAX_TOKEN_LIST_LEN ] && {
+				[ $TOKEN_IOTA -ge $MAX_TOKEN_LIST_LEN ] && {
 					
 					#auth_token_magic
 
@@ -1269,7 +1285,7 @@ Logged:           yes
 						echo "DEL TOKEN: $AUTH_TMP_TOKEN"
 					}
 
-					token_iota=$((MAX_TOKEN_LIST_LEN-1))
+					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN-1))
 				}
 			}
 
