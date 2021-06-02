@@ -779,7 +779,7 @@ access_type="$ACCESS_TYPE"\
 
 		fi
 
-		AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
+		[ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
 
 }
 
@@ -1176,7 +1176,7 @@ main() {
 
 	do_auth
 
-	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token! ("$AUTH_TOKEN")" || { logcat "Fail to get the token!" 'E' && exit 1; }
+	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token! ("$AUTH_TOKEN")" || { logcat "Fail to get the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
 
 	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
@@ -1185,7 +1185,7 @@ main() {
 	echo "--> "$AUTH_TOKEN_RTE"" && \
 	echo ''
 
-	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || { logcat "Fail to auth by the token!" 'E' && exit; }
+	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" && {
 
 	# clear screen
 	[ ! $ISLOG ] && { clear || cls; }
@@ -1204,6 +1204,7 @@ Info:             "$([ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
 --------------------------------------------\
 """
+	}  || { logcat "Fail to auth by the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
 
 	if [ $ISDAEMON ]; then
 
@@ -1217,8 +1218,6 @@ Logged:           yes
 
 		local iota=1
 		local data_iota=1
-
-		
 
 		local fail_iota=1
 		local magic_iota=0
@@ -1254,8 +1253,9 @@ Logged:           yes
 			[ $data_iota -ge $TOKEN_BUILD_SPEED ] && {
 				do_auth
 
-				logcat "Token(In one hand): $AUTH_TOKEN"
 				[ "$AUTH_TOKEN" ] && {
+					logcat "Token(In one hand): $AUTH_TOKEN"
+					
 					[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""$AUTH_TOKEN" "${AUTH_TOKEN_LIST}"" || AUTH_TOKEN_LIST="$AUTH_TOKEN"
 
 					[ $ISLOG ] && {
@@ -1272,7 +1272,8 @@ Logged:           yes
 				}
 				magic_iota=$((magic_iota + 1))
 		
-
+				#echo $magic_iota
+				
 				# max AUTH_TOKEN_LIST limit
 				[ $TOKEN_IOTA -ge $MAX_TOKEN_LIST_LEN ] && {
 					
