@@ -22,7 +22,7 @@ EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended 
 GW_PORT='8060'
 
 IS_MAGIC_PRO=1 # 0 is disable
-MAGIC_PRO_TIME=500  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
+MAGIC_PRO_TIME=240  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
 PRE_BUILD_TOKEN_NUM=3
 TOKEN_BUILD_SPEED=5
@@ -181,11 +181,10 @@ displaytime() {
   local H=$((T/60/60%24))
   local M=$((T/60%60))
   local S=$((T%60))
-  (( $D > 0 )) && printf '%d days ' $D
-  (( $H > 0 )) && printf '%d hours ' $H
-  (( $M > 0 )) && printf '%d minutes ' $M
-  (( $D > 0 || $H > 0 || $M > 0 ))
-  printf '%d seconds\n' $S
+  [ $D -gt 0 ] && printf '%d days ' $D
+  [ $H -gt 0 ] && printf '%d hours ' $H
+  [ $M -gt 0 ] && printf '%d minutes ' $M
+  [ $S -gt 0 ] && printf '%d seconds\n' $S
 }
 
 #############################################
