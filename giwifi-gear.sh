@@ -24,13 +24,14 @@ GW_PORT='8060'
 IS_MAGIC_PRO=1 # 0 is disable
 MAGIC_PRO_TIME=500  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
-PRE_BUILD_TOKEN_NUM=188
+PRE_BUILD_TOKEN_NUM=3
 TOKEN_BUILD_SPEED=5
-MAX_TOKEN_LIST_LEN=200 # the max size of token pool
+MAX_TOKEN_LIST_LEN=20 # the max size of token pool
 
 # do not edit
 TOKEN_IOTA=0
 AUTH_TOKEN_LIST=''
+AUTH_INFO_LIST=''
 
 AP_MAC=''
 
@@ -539,16 +540,23 @@ auth_token_magic() {
 	logcat "Trying to make magic..."
 
 	AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
-
 	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$AUTH_TOKEN "}
+
+	[ "$AUTH_INFO" ] && {
+		AUTH_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} '{print $1}')"
+		AUTH_INFO_LIST=${AUTH_INFO_LIST#"$AUTH_INFO "}
+	}
+
 	TOKEN_IOTA=$((TOKEN_IOTA - 1))
 
-	[ $ISLOG ] && echo "" && \
-	echo "DEL AUTH_TOKEN:" && \
-	echo "--> "$AUTH_TOKEN"" && \
-	echo ''
+	[ $ISLOG ] && {
+		echo "DEL TOKEN: $AUTH_TMP_TOKEN"
+		[ "$AUTH_INFO" ] && {
+			echo "DEL INFO: $AUTH_TMP_INFO"
+		}
+	}
 
-	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO_TMP")"
+	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
 	[ $ISLOG ] && echo "" && \
 	echo "AUTH_TOKEN_RTE:" && \
@@ -776,7 +784,7 @@ access_type="$ACCESS_TYPE"\
 
 		fi
 
-		[ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"
+		[ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"  || AUTH_TOKEN=''
 
 }
 
@@ -857,8 +865,8 @@ ap_mac="$AP_MAC"\
 
 	fi
 
-	AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
-	AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
+	AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')" || AUTH_TOKEN=''
+	AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')" || AUTH_INFO=''
 }
 
 mobile_get_token() {
@@ -944,8 +952,8 @@ mobile_get_token() {
 
 	MOBILE_LOGIN_RTE="$(echo $MOBILE_LOGIN_RTE | grep 'Location')"
 
-	AUTH_TOKEN="$(str_str "$MOBILE_LOGIN_RTE" 'token=' '&')"
-	AUTH_INFO="$(str_str "$MOBILE_LOGIN_RTE" 'info=' 'D')"
+	AUTH_TOKEN="$(str_str "$MOBILE_LOGIN_RTE" 'token=' '&')" || AUTH_TOKEN=''
+	AUTH_INFO="$(str_str "$MOBILE_LOGIN_RTE" 'info=' 'D')" || AUTH_INFO=''
 }
 
 #############################################
@@ -1243,6 +1251,7 @@ Logged:           yes
 
 			[ $ISLOG ] && {
 				echo "TOKEN POOL: $AUTH_TOKEN_LIST"
+				echo "INFO POOL: $AUTH_INFO_LIST"
 				echo "POOL SIZE: $TOKEN_IOTA"
 			}
 
@@ -1250,9 +1259,15 @@ Logged:           yes
 				do_auth
 
 				[ "$AUTH_TOKEN" ] && {
-					logcat "Token(In one hand): $AUTH_TOKEN"
+					logcat "Token (In one hand): $AUTH_TOKEN"
 
 					[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""$AUTH_TOKEN" "${AUTH_TOKEN_LIST}"" || AUTH_TOKEN_LIST="$AUTH_TOKEN"
+
+					[ "$AUTH_INFO" ] && {
+						logcat "Info (In one hand): $AUTH_INFO"
+
+						[ "$AUTH_INFO_LIST" ] && AUTH_INFO_LIST=""$AUTH_INFO" "${AUTH_INFO_LIST}"" || AUTH_INFO_LIST="$AUTH_INFO"
+					}
 
 					[ $ISLOG ] && {
 						echo "$(date "+%H:%M:%S") $AUTH_TOKEN $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
@@ -1261,6 +1276,7 @@ Logged:           yes
 					TOKEN_IOTA=$((TOKEN_IOTA + 1))
 					data_iota=1
 				}
+
 
 				[ $IS_MAGIC_PRO ] && {
 					[ $ONLINE_TIME -ge $MAGIC_PRO_TIME ] && {
@@ -1274,8 +1290,16 @@ Logged:           yes
 					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
 					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
 
+					[ "$AUTH_INFO" ] && {
+						AUTH_TMP_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
+						AUTH_INFO_LIST=${AUTH_INFO_LIST%" $AUTH_TMP_INFO"}
+					}
+
 					[ $ISLOG ] && {
 						echo "DEL TOKEN: $AUTH_TMP_TOKEN"
+						[ "$AUTH_INFO" ] && {
+							echo "DEL INFO: $AUTH_TMP_INFO"
+						}
 					}
 
 					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN-1))
