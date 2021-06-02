@@ -11,17 +11,6 @@ GW_PWD=''
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 
-IS_MAGIC_PRO=1 # 0 is disable
-MAGIC_PRO_TIME=8  # > 2
-
-# do not edit
-AUTH_TOKEN_LIST=''
-PRE_BUILD_TOKEN_NUM=6
-TOKEN_BUILD_SPEED=5
-MAX_TOKEN_LIST_LEN=20 # > 3
-
-TOKEN_IOTA=0
-
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
 HEART_BEAT=5
@@ -31,6 +20,17 @@ AUTH_IFACE=''       # the base interface (get auth info)
 EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended for less than two)
 
 GW_PORT='8060'
+
+IS_MAGIC_PRO=1 # 0 is disable
+MAGIC_PRO_TIME=500  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
+
+PRE_BUILD_TOKEN_NUM=188
+TOKEN_BUILD_SPEED=5
+MAX_TOKEN_LIST_LEN=200 # the max size of token pool
+
+# do not edit
+TOKEN_IOTA=0
+AUTH_TOKEN_LIST=''
 
 AP_MAC=''
 
@@ -505,37 +505,33 @@ get_auth_state() {
 	AUTH_STATE_RTE="$(gw_get_auth_state)"
 	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
 
-
-	[ $ISDAEMON ] && {
-		[ ! "$AUTH_STATE_RTE" ] && AUTH_STATE_RTE=''
+	[ ! "$AUTH_STATE_RTE" ] && {
+		logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E"
+		[ ! $ISDAEMON ] && exit 1
 	} || {
-		[ ! "$AUTH_STATE_RTE" ] && \
-		logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E" && \
-		exit 1
+		[ $ISLOG ] && echo "" && \
+		echo "AUTH_STATE_RTE:" && \
+		echo "--> "$AUTH_STATE_RTE"" && \
+		echo ''
+
+		# Deserialization auth_state json data
+		AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
+		AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
+		GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
+		ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
+		# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
+		STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
+		CLIENT_IP="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
+		CLIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
+		ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
+		LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
+		CONTACT_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'contact_phone')"
+		SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
+		STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
+		ORG_ID="$(get_json_value "$AUTH_STATE_DATA" 'orgId')"
+		TIMESTAMP="$(get_json_value "$AUTH_STATE_DATA" 'timestamp')"
+		SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
 	}
-
-	[ $ISLOG ] && echo "" && \
-	echo "AUTH_STATE_RTE:" && \
-	echo "--> "$AUTH_STATE_RTE"" && \
-	echo ''
-
-	# Deserialization auth_state json data
-	AUTH_STATE_DATA="$(get_json_value "$AUTH_STATE_RTE" 'data')"
-	AUTH_STATE="$(get_json_value "$AUTH_STATE_DATA" 'auth_state')"
-	GW_ID="$(get_json_value "$AUTH_STATE_DATA" 'gw_id')"
-	ACCESS_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'access_type')"
-	# AUTH_STA_TYPE="$(get_json_value "$AUTH_STATE_DATA" 'authStaType')"
-	STATION_SN="$(get_json_value "$AUTH_STATE_DATA" 'station_sn')"
-	CLIENT_IP="$(get_json_value "$AUTH_STATE_DATA" 'client_ip')"
-	CLIENT_MAC="$(get_json_value "$AUTH_STATE_DATA" 'client_mac')"
-	ONLINE_TIME="$(get_json_value "$AUTH_STATE_DATA" 'online_time')"
-	LOGOUT_REASON="$(get_json_value "$AUTH_STATE_DATA" 'logout_reason')"
-	CONTACT_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'contact_phone')"
-	SUGGEST_PHONE="$(get_json_value "$AUTH_STATE_DATA" 'suggest_phone')"
-	STATION_CLOUD="$(get_json_value "$AUTH_STATE_DATA" 'station_cloud')"
-	ORG_ID="$(get_json_value "$AUTH_STATE_DATA" 'orgId')"
-	TIMESTAMP="$(get_json_value "$AUTH_STATE_DATA" 'timestamp')"
-	SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
 }
 
 auth_token_magic() {
@@ -1219,9 +1215,8 @@ Logged:           yes
 
 		local iota=1
 		local data_iota=1
-
 		local fail_iota=1
-		local magic_iota=0
+
 		while [ 1 ]; do
 			sleep $HEART_BEAT
 
@@ -1268,11 +1263,9 @@ Logged:           yes
 				}
 
 				[ $IS_MAGIC_PRO ] && {
-					[ $magic_iota -ge $MAGIC_PRO_TIME ] && {
+					[ $ONLINE_TIME -ge $MAGIC_PRO_TIME ] && {
 						auth_token_magic
-						magic_iota=0
 					}
-					magic_iota=$((magic_iota + 1))
 				}
 				
 				# max AUTH_TOKEN_LIST limit
