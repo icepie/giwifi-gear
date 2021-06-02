@@ -536,33 +536,36 @@ get_auth_state() {
 
 auth_token_magic() {
 
-	logcat "Trying to make magic..."
+	[ "$AUTH_TOKEN_LIST" ] && {
+		logcat "Trying to make magic..."
 
-	AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
-	AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$AUTH_TOKEN "}
+		AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
+		AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST#"$AUTH_TOKEN "}
 
-	[ "$AUTH_INFO" ] && {
-		AUTH_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} '{print $1}')"
-		AUTH_INFO_LIST=${AUTH_INFO_LIST#"$AUTH_INFO "}
-	}
-
-	TOKEN_IOTA=$((TOKEN_IOTA - 1))
-
-	[ $ISLOG ] && {
-		echo "DEL TOKEN: $AUTH_TMP_TOKEN"
 		[ "$AUTH_INFO" ] && {
-			echo "DEL INFO: $AUTH_TMP_INFO"
+			AUTH_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} '{print $1}')"
+			AUTH_INFO_LIST=${AUTH_INFO_LIST#"$AUTH_INFO "}
 		}
-	}
 
-	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
+		TOKEN_IOTA=$((TOKEN_IOTA - 1))
 
-	[ $ISLOG ] && echo "" && \
-	echo "AUTH_TOKEN_RTE:" && \
-	echo "--> "$AUTH_TOKEN_RTE"" && \
-	echo ''
+		[ $ISLOG ] && {
+			echo "DEL TOKEN: $AUTH_TMP_TOKEN"
+			[ "$AUTH_INFO" ] && {
+				echo "DEL INFO: $AUTH_TMP_INFO"
+			}
+		}
 
-	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || logcat "Fail to make magic by the token!" 'E'
+		AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
+
+		[ $ISLOG ] && echo "" && \
+		echo "AUTH_TOKEN_RTE:" && \
+		echo "--> "$AUTH_TOKEN_RTE"" && \
+		echo ''
+
+		[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" || logcat "Fail to make magic by the token!" 'E'
+
+	} || logcat "No energy to make magic!" 'E'
 
 }
 
@@ -656,12 +659,12 @@ web_rebindmac() {
 	echo "--> "$WEB_REBINDMAC_RTE"" && \
 	echo ''
 
-	#WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
+	WEB_REBINDMAC_RTE_STATUS="$(get_json_value "$WEB_REBINDMAC_RTE" 'status')"
 	WEB_REBINDMAC_DATA="$(get_json_value "$WEB_REBINDMAC_RTE" 'data')"
 	WEB_REBINDMAC_DATA_REASONCODE="$(get_json_value "$WEB_REBINDMAC_RTE_DATA" 'reasoncode')"
 	WEB_REBINDMAC_RTE_INFO="$(str_str "$WEB_REBINDMAC_RTE" '"info":"' '","')"
 
-	[ "$WEB_REBINDMAC_DATA_REASONCODE" = 0 ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
+	[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
 }
 
 
@@ -783,7 +786,7 @@ access_type="$ACCESS_TYPE"\
 
 		fi
 
-		[ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '0' ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"  || AUTH_TOKEN=''
+		[ "$(echo "$WEB_LOGIN_RTE_INFO" | grep 'token')" ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"  || AUTH_TOKEN=''
 
 }
 
@@ -1180,21 +1183,21 @@ main() {
 
 	do_auth
 
-	[ "$AUTH_TOKEN" ] && logcat "Successfully get the token! ("$AUTH_TOKEN")" || { logcat "Fail to get the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
+	[ "$AUTH_TOKEN" ] && {
+		logcat "Successfully get the token! ("$AUTH_TOKEN")"
+		AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
 
-	AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN" "$AUTH_INFO")"
+		[ $ISLOG ] && echo "" && \
+		echo "AUTH_TOKEN_RTE:" && \
+		echo "--> "$AUTH_TOKEN_RTE"" && \
+		echo ''
 
-	[ $ISLOG ] && echo "" && \
-	echo "AUTH_TOKEN_RTE:" && \
-	echo "--> "$AUTH_TOKEN_RTE"" && \
-	echo ''
+		[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" && {
 
-	[ "$AUTH_TOKEN_RTE" ] && logcat "OK!" && {
+			# clear screen
+			[ ! $ISLOG ] && { clear || cls; }
 
-	# clear screen
-	[ ! $ISLOG ] && { clear || cls; }
-
-	echo """\
+			echo """\
 --------------------------------------------
 SSID:             "$GW_ID"
 GateWay:          "$GW_GTW"
@@ -1208,7 +1211,12 @@ Info:             "$([ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
 --------------------------------------------\
 """
-	}  || { logcat "Fail to auth by the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
+		}  || { logcat "Fail to auth by the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
+
+	} || {
+		logcat "Fail to get the token!" 'E' 
+		[ ! $ISDAEMON ] && exit 1
+	}
 
 	if [ $ISDAEMON ]; then
 
