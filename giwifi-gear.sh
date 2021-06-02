@@ -11,7 +11,8 @@ GW_PWD=''
 AUTH_TYPE='' # pc/pad/staff for web auth, windows/mac for desktop app auth, android/ios/apad/ipad for mobile app auth, token for directly auth by token
 AUTH_TOKEN=''
 
-MAGIC_PRO_TIME=8 # -1 is disable
+IS_MAGIC_PRO=1 # 0 is disable
+MAGIC_PRO_TIME=8  # > 2
 
 # do not edit
 AUTH_TOKEN_LIST=''
@@ -1255,7 +1256,7 @@ Logged:           yes
 
 				[ "$AUTH_TOKEN" ] && {
 					logcat "Token(In one hand): $AUTH_TOKEN"
-					
+
 					[ "$AUTH_TOKEN_LIST" ] && AUTH_TOKEN_LIST=""$AUTH_TOKEN" "${AUTH_TOKEN_LIST}"" || AUTH_TOKEN_LIST="$AUTH_TOKEN"
 
 					[ $ISLOG ] && {
@@ -1266,18 +1267,16 @@ Logged:           yes
 					data_iota=1
 				}
 
-				[ $magic_iota -ge $MAGIC_PRO_TIME ] && {
-					auth_token_magic
-					magic_iota=0
+				[ $IS_MAGIC_PRO ] && {
+					[ $magic_iota -ge $MAGIC_PRO_TIME ] && {
+						auth_token_magic
+						magic_iota=0
+					}
+					magic_iota=$((magic_iota + 1))
 				}
-				magic_iota=$((magic_iota + 1))
-		
-				#echo $magic_iota
 				
 				# max AUTH_TOKEN_LIST limit
 				[ $TOKEN_IOTA -ge $MAX_TOKEN_LIST_LEN ] && {
-					
-					#auth_token_magic
 
 					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $"$MAX_TOKEN_LIST_LEN"}")"
 					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
