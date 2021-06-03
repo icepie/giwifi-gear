@@ -24,11 +24,12 @@ GW_PORT='8060'
 IS_MAGIC_PRO=1 # 0 is disable
 MAGIC_PRO_TIME=240  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
-PRE_BUILD_TOKEN_NUM=3
+PRE_BUILD_TOKEN_NUM=5
 TOKEN_BUILD_SPEED=5
 MAX_TOKEN_LIST_LEN=20 # the max size of token pool
 
 # do not edit
+TOTAL_ONLINE_TIME=0
 TOKEN_IOTA=0
 AUTH_TOKEN_LIST=''
 AUTH_INFO_LIST=''
@@ -184,7 +185,7 @@ displaytime() {
   [ $D -gt 0 ] && printf '%d days ' $D
   [ $H -gt 0 ] && printf '%d hours ' $H
   [ $M -gt 0 ] && printf '%d minutes ' $M
-  [ $S -gt 0 ] && printf '%d seconds\n' $S
+  [ $S -ge 0 ] && printf '%d seconds\n' $S
 }
 
 #############################################
@@ -867,8 +868,14 @@ ap_mac="$AP_MAC"\
 
 	fi
 
-	AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')" || AUTH_TOKEN=''
-	AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')" || AUTH_INFO=''
+	[ "$(echo "$DESKTOP_LOGIN_RTE_DATA" | grep 'token')" ] && {
+		AUTH_TOKEN="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'token=' '&')"
+		AUTH_INFO="$(str_str "$DESKTOP_LOGIN_RTE_DATA" 'info=' '"')"
+	} || {
+		AUTH_TOKEN=''
+		AUTH_INFO=''
+	}
+
 }
 
 mobile_get_token() {
@@ -954,8 +961,14 @@ mobile_get_token() {
 
 	MOBILE_LOGIN_RTE="$(echo $MOBILE_LOGIN_RTE | grep 'Location')"
 
-	AUTH_TOKEN="$(str_str "$MOBILE_LOGIN_RTE" 'token=' '&')" || AUTH_TOKEN=''
-	AUTH_INFO="$(str_str "$MOBILE_LOGIN_RTE" 'info=' 'D')" || AUTH_INFO=''
+	[ "$(echo "$MOBILE_LOGIN_RTE" | grep 'token')" ] && {
+		AUTH_TOKEN="$(str_str "$MOBILE_LOGIN_RTE" 'token=' '&')"
+		AUTH_INFO="$(str_str "$MOBILE_LOGIN_RTE" 'info=' 'D')"
+	} || {
+		AUTH_TOKEN=''
+		AUTH_INFO=''
+	}
+
 }
 
 #############################################
