@@ -60,7 +60,7 @@ PAD_UA='Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, 
 WIN_UA='Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2'
 MAC_UA='GiWiFi/1.1.6.2 (Mac OS X Version 11.2.3 (Build 20D91))'
 
-WIN_APP_VERSION='1.1.4.2'
+WIN_APP_VERSION='1.1.4.3'
 MAC_APP_VERSION='1.1.6.2'
 
 WIN_MODEL='Microsoft Windows 10, 64-bit'
@@ -102,7 +102,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
-VERSION='1.21'
+VERSION='1.22'
 
 #############################################
 ## Network Util
