@@ -21,8 +21,8 @@ EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended 
 
 GW_PORT='8060'
 
-IS_MAGIC_PRO=1 # 0 is disable
-MAGIC_PRO_TIME=240  # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
+IS_MAGIC_PRO=1     # 0 is disable
+MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
 PRE_BUILD_TOKEN_NUM=5
 TOKEN_BUILD_SPEED=5
@@ -177,21 +177,20 @@ get_nic_gateway() {
 }
 
 displaytime() {
-  local T=$1
-  local D=$((T/60/60/24))
-  local H=$((T/60/60%24))
-  local M=$((T/60%60))
-  local S=$((T%60))
-  [ $D -gt 0 ] && printf '%d days ' $D
-  [ $H -gt 0 ] && printf '%d hours ' $H
-  [ $M -gt 0 ] && printf '%d minutes ' $M
-  [ $S -ge 0 ] && printf '%d seconds\n' $S
+	local T=$1
+	local D=$((T / 60 / 60 / 24))
+	local H=$((T / 60 / 60 % 24))
+	local M=$((T / 60 % 60))
+	local S=$((T % 60))
+	[ $D -gt 0 ] && printf '%d days ' $D
+	[ $H -gt 0 ] && printf '%d hours ' $H
+	[ $M -gt 0 ] && printf '%d minutes ' $M
+	[ $S -ge 0 ] && printf '%d seconds\n' $S
 }
 
 #############################################
 ## Json Handle
 #############################################
-
 
 cat_json_value() {
 	${AWK_TOOL} -v json="$1" -v key="$2" -v defaultValue="$3" 'BEGIN{
@@ -501,7 +500,6 @@ gw_auth_token() {
 ## Parts
 #############################################
 
-
 get_auth_state() {
 	AUTH_STATE_RTE="$(gw_get_auth_state)"
 	##{"resultCode":0,"data":"{\"auth_state\":1,\"gw_id\":\"GWIFI-luoyangligong4\",\"access_type\":\"1\",\"authStaType\":\"0\",\"station_sn\":\"c400ada4a45a\",\"client_ip\":\"172.21.219.234\",\"client_mac\":\"60:F1:89:4A:5C:CB\",\"online_time\":680,\"logout_reason\":32,\"contact_phone\":\"400-038-5858\",\"suggest_phone\":\"400-038-5858\",\"station_cloud\":\"login.gwifi.com.cn\",\"orgId\":\"930\",\"timestamp\":\"1619174989\",\"sign\":\"29C2348DCE52C1E47C9B52076DE26C32\"}"}
@@ -668,7 +666,6 @@ web_rebindmac() {
 	[ "$WEB_REBINDMAC_RTE_STATUS" = '1' ] && logcat "$WEB_REBINDMAC_RTE_INFO" || { logcat "$WEB_REBINDMAC_RTE_INFO" 'E' && exit 1; }
 }
 
-
 desktop_rebindmac() {
 	DESKTOP_REBINDMAC_RTE="$(printf "$(gw_desktop_rebindmac "$DESKTOP_LOGIN_DATA")" | sed "s@\\\\@@g")"
 
@@ -698,8 +695,8 @@ mobile_rebindmac() {
 }
 
 web_get_token() {
-		# login to get the auth token
-		WEB_LOGIN_DATA="""\
+	# login to get the auth token
+	WEB_LOGIN_DATA="""\
 access_type="$ACCESS_TYPE"\
 &acsign="$SIGN"\
 &btype="$AUTH_TYPE"\
@@ -724,70 +721,71 @@ access_type="$ACCESS_TYPE"\
 &user_agent=""\
 &link_data=""\
 """
-		[ "$AUTH_TYPE" = 'staff' ] && WEB_LOGIN_DATA="account_type=1&"$WEB_LOGIN_DATA""
+	[ "$AUTH_TYPE" = 'staff' ] && WEB_LOGIN_DATA="account_type=1&"$WEB_LOGIN_DATA""
 
-		[ $ISLOG ] && echo "" && \
-		echo "WEB_LOGIN_DATA:" && \
-		echo "--> "$WEB_LOGIN_DATA"" && \
-		echo ''
+	[ $ISLOG ] && echo "" && \
+	echo "WEB_LOGIN_DATA:" && \
+	echo "--> "$WEB_LOGIN_DATA"" && \
+	echo ''
 
-		if [ $ISBIND ]; then
-			web_rebindmac
-			logcat "exit"
-			exit
+	if [ $ISBIND ]; then
+		web_rebindmac
+		logcat "exit"
+		exit
+	fi
+
+	WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+
+	[ $ISLOG ] && echo "" && \
+	echo "WEB_LOGIN_RTE:" && \
+	echo "--> "$WEB_LOGIN_RTE"" && \
+	echo ''
+
+	WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
+	WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
+	WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
+	WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
+
+	if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
+		logcat "$WEB_LOGIN_RTE_INFO" 'E'
+		if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
+			printf '%s' 'Are you sure to rebind your device? [Y/n] '
+			local input
+			read -t 20 input
+			case $input in
+			[yY][eE][sS] | [yY])
+				web_rebindmac
+				logcat "exit"
+				exit
+				;;
+
+			[nN][oO] | [nN])
+				logcat "Ok, is ending..."
+				;;
+
+			*)
+				logcat "Invalid input..."
+				;;
+			esac
+		elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
+			[ $ISDAEMON ] && {
+
+				[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
+
+				logcat "The state of the user is being banned..."
+				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
+				sleep $BANNED_WAIT_TIME
+				# restart main
+				logcat "restart..."
+				main
+			}
 		fi
 
-		WEB_LOGIN_RTE="$(printf "$(gw_web_loginaction "$WEB_LOGIN_DATA")" | sed "s@\\\\@@g")"
+		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 
-		[ $ISLOG ] && echo "" && \
-		echo "WEB_LOGIN_RTE:" && \
-		echo "--> "$WEB_LOGIN_RTE"" && \
-		echo ''
+	fi
 
-		WEB_LOGIN_RTE_STATUS="$(get_json_value "$WEB_LOGIN_RTE" 'status')"
-		WEB_LOGIN_RTE_INFO="$(str_str "$WEB_LOGIN_RTE" '"info":"' '","')"
-		WEB_LOGIN_RTE_DATA="$(get_json_value "$WEB_LOGIN_RTE" 'data')"
-		WEB_LOGIN_RTE_DATA_REASONCODE="$(get_json_value "$WEB_LOGIN_RTE_DATA" 'reasoncode')"
-
-		if [ ! "$WEB_LOGIN_RTE_STATUS" = '1' ]; then
-			logcat "$WEB_LOGIN_RTE_INFO" 'E'
-			if [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '43' ]; then
-				printf '%s' 'Are you sure to rebind your device? [Y/n] '
-				read input
-				case $input in
-				[yY][eE][sS] | [yY])
-					web_rebindmac
-					logcat "exit"
-					exit
-					;;
-
-				[nN][oO] | [nN])
-					logcat "Ok, is ending..."
-					;;
-
-				*)
-					logcat "Invalid input..."
-					;;
-				esac
-			elif [ "$WEB_LOGIN_RTE_DATA_REASONCODE" = '55' ]; then
-				[ $ISDAEMON ] && {
-					
-					[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
-
-					logcat "The state of the user is being banned..."
-					logcat "Will try again after $BANNED_WAIT_TIME seconds..."
-					sleep $BANNED_WAIT_TIME
-					# restart main
-					logcat "restart..."
-					main
-				}
-			fi
-
-			[ ! $ISDAEMON ] && logcat "exit" && exit 0
-
-		fi
-
-		[ "$(echo "$WEB_LOGIN_RTE_INFO" | grep 'token')" ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')"  || AUTH_TOKEN=''
+	[ "$(echo "$WEB_LOGIN_RTE_INFO" | grep 'token')" ] && AUTH_TOKEN="$(str_str "$WEB_LOGIN_RTE_INFO" 'token=' '&')" || AUTH_TOKEN=''
 
 }
 
@@ -834,7 +832,8 @@ ap_mac="$AP_MAC"\
 		logcat "$DESKTOP_LOGIN_RTE_MSG" 'E'
 		if [ "$DESKTOP_LOGIN_RTE_CODE" = '43' ]; then
 			printf '%s' 'Are you sure to rebind your device? [Y/n] '
-			read input
+			local input
+			read -t 20 input
 			case $input in
 			[yY][eE][sS] | [yY])
 				desktop_rebindmac
@@ -863,7 +862,7 @@ ap_mac="$AP_MAC"\
 				main
 			}
 		fi
-	
+
 		[ ! $ISDAEMON ] && logcat "exit" && exit 0
 
 	fi
@@ -926,7 +925,8 @@ mobile_get_token() {
 		logcat "$MOBILE_LOGIN_RTE_MSG" 'E'
 		if [ "$MOBILE_LOGIN_RTE_CODE" = '43' ]; then
 			printf '%s' 'Are you sure to rebind your device? [Y/n] '
-			read input
+			local input
+			read -t 20 input
 			case $input in
 			[yY][eE][sS] | [yY])
 				mobile_rebindmac
@@ -944,11 +944,11 @@ mobile_get_token() {
 			esac
 		elif [ "$MOBILE_LOGIN_RTE_CODE" = '55' ]; then
 			[ $ISDAEMON ] && {
-				
+
 				[ "$AUTH_TOKEN_LIST" ] && auth_token_magic
 
 				logcat "The state of the user is being banned..."
-				
+
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
 				sleep $BANNED_WAIT_TIME
 				# restart main
@@ -1041,7 +1041,7 @@ do_auth() {
 	# login and get token...
 	case "$AUTH_MODE" in
 	'web')
-		web_build_data 
+		web_build_data
 		web_get_token
 		;;
 	'desktop')
@@ -1224,10 +1224,10 @@ Info:             "$([ "$AUTH_INFO" ] && echo "$AUTH_INFO" || echo 'none')"
 Logged:           yes
 --------------------------------------------\
 """
-		}  || { logcat "Fail to auth by the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
+		} || { logcat "Fail to auth by the token!" 'E' && [ ! $ISDAEMON ] && exit 1; }
 
 	} || {
-		logcat "Fail to get the token!" 'E' 
+		logcat "Fail to get the token!" 'E'
 		[ ! $ISDAEMON ] && exit 1
 	}
 
@@ -1258,7 +1258,7 @@ Logged:           yes
 				logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1))
 				auth_token_magic
 			}
-			
+
 			[ $iota -le $PRE_BUILD_TOKEN_NUM ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
@@ -1290,20 +1290,19 @@ Logged:           yes
 					}
 
 					[ $ISLOG ] && {
-						echo "$(date "+%H:%M:%S") $AUTH_TOKEN $AUTH_INFO" >> "gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
+						echo "$(date "+%H:%M:%S") $AUTH_TOKEN $AUTH_INFO" >>"gg-$GW_USER-$AUTH_TYPE-$CLIENT_MAC"
 					}
 
 					TOKEN_IOTA=$((TOKEN_IOTA + 1))
 					data_iota=1
 				}
 
-
 				[ $IS_MAGIC_PRO ] && {
 					[ $ONLINE_TIME -ge $MAGIC_PRO_TIME ] && {
 						auth_token_magic
 					}
 				}
-				
+
 				# max AUTH_TOKEN_LIST limit
 				[ $TOKEN_IOTA -ge $MAX_TOKEN_LIST_LEN ] && {
 
@@ -1322,7 +1321,7 @@ Logged:           yes
 						}
 					}
 
-					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN-1))
+					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN - 1))
 				}
 			}
 
