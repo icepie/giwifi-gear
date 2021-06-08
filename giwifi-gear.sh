@@ -24,9 +24,9 @@ GW_PORT='8060'
 IS_MAGIC_PRO=0     # 0: disable 1: enable
 MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
-PRE_BUILD_TOKEN_NUM=5
-TOKEN_BUILD_SPEED=5
-MAX_TOKEN_LIST_LEN=20 # the max size of token pool
+PRE_BUILD_TOKEN_NUM=1
+TOKEN_BUILD_SPEED=10
+MAX_TOKEN_LIST_LEN=3 # the max size of token pool
 
 # do not edit
 TOKEN_IOTA=0
