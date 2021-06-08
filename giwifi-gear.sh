@@ -352,7 +352,7 @@ get_challge() {
 gw_get_gateway() {
 	local nettest
 	local 
-	nettest="$(curl "$CURL_OPT" -s 'http://nettest.gwifi.com.cn' | grep 'delayURL')"
+	nettest="$(curl $CURL_OPT -s 'http://nettest.gwifi.com.cn' | grep 'delayURL')"
 	delayurl="$(str_str "$nettest" 'delayURL("' '")')"
 	printf '%s' "$(str_str "$delayurl" 'http://' ":$GW_REDIRECT_PORT/redirect")"
 }
