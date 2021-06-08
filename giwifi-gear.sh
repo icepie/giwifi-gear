@@ -25,7 +25,7 @@ IS_MAGIC_PRO=0     # 0: disable 1: enable
 MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
 PRE_BUILD_TOKEN_NUM=1
-TOKEN_BUILD_SPEED=10
+TOKEN_BUILD_SPEED=60
 MAX_TOKEN_LIST_LEN=3 # the max size of token pool
 
 # do not edit
@@ -101,7 +101,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
-VERSION='1.23'
+VERSION='1.2.4'
 
 #############################################
 ## Network Util
@@ -351,7 +351,7 @@ get_challge() {
 
 gw_get_gateway() {
 	local nettest
-	local 
+	local delayurl
 	nettest="$(curl $CURL_OPT -s 'http://nettest.gwifi.com.cn' | grep 'delayURL')"
 	delayurl="$(str_str "$nettest" 'delayURL("' '")')"
 	printf '%s' "$(str_str "$delayurl" 'http://' ":$GW_REDIRECT_PORT/redirect")"
