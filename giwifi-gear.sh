@@ -21,7 +21,7 @@ EXTRA_IFACE_LIST='' # 'vwan1 vwan2 vwan3' the extra interface list (Recommended 
 
 GW_PORT='8060'
 
-IS_MAGIC_PRO=1     # 0 is disable
+IS_MAGIC_PRO=0     # 0: disable 1: enable
 MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 
 PRE_BUILD_TOKEN_NUM=5
@@ -49,24 +49,24 @@ BANNED_WAIT_TIME=20
 
 GW_REDIRECT_PORT='8062'
 GW_REDIRECT_URL='http://www.baidu.com'
-PC_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36'
+PC_UA='Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.77 Safari/537.36'
 PAD_UA='Mozilla/5.0 (iPad; CPU OS 6_0 like Mac OS X) AppleWebKit/536.26 (KHTML, like Gecko) Version/6.0 Mobile/10A5376e Safari/8536.25'
 
 #############################################
 ## Desktop App Auth Mode Config
 #############################################
 
-WIN_UA='Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.2'
-MAC_UA='GiWiFi/1.1.6.2 (Mac OS X Version 11.2.3 (Build 20D91))'
+WIN_UA='Asynchronous WinHTTP/1.0 GiWiFiAssist/1.1.4.3'
+MAC_UA='GiWiFi/1.1.6.2 (Mac OS X Version 11.3.1 (Build 20D91))'
 
 WIN_APP_VERSION='1.1.4.3'
 MAC_APP_VERSION='1.1.6.2'
 
 WIN_MODEL='Microsoft Windows 10, 64-bit'
-MAC_MODEL='mac11.2'
+MAC_MODEL='mac11.3'
 
-WIN_APP_UUID='18C6037C-6379-4317-8FE5-8C9B8E573CF8'
-MAC_APP_UUID='bad82d414cb15452938cfe605c7faf02'
+WIN_APP_UUID='18C6037B-6379-4315-8FE5-8C9B8E593CF8'
+MAC_APP_UUID='gad82d424cb15452938cf3602c7f3f02'
 
 STA_NIC_TYPE='2' # 1: Wireless 2: Ethernet
 
@@ -74,10 +74,10 @@ STA_NIC_TYPE='2' # 1: Wireless 2: Ethernet
 ## Mobile App Auth Mode Config
 #############################################
 
-ANDROID_UA='(GiWiFi;Android11;Xiaomi;Redmi K20 Pro Premium Edition)'
-IOS_UA='(GiWiFi;iPhone OS 14_3;Apple;iPad11,3)'
+ANDROID_UA='(GiWiFi;Android11;Samsung;Galaxy S20)'
+IOS_UA='(GiWiFi;iPhone OS 14_3;Apple;iPad11,6)'
 
-ANDROID_STA_MODEL='Xiaomi,Redmi K20 Pro Premium Edition,30,11' # MANUFACTURER,MODEL,SDK,RELEASE
+ANDROID_STA_MODEL='Samsung,Galaxy S20,30,11' # MANUFACTURER,MODEL,SDK,RELEASE
 IOS_STA_MODEL='Apple,iPad11,14,3'
 
 PHONE_BTYPE='1'
