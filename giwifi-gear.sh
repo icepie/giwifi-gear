@@ -121,9 +121,9 @@ check_ip() {
 	local d
 
 	a="$(echo "$ipaddr" | ${AWK_TOOL} -F . '{print $1}')"
-	b="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $2}')"
-	c="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $3}')"
-	d="$(echo $ipaddr | ${AWK_TOOL} -F . '{print $4}')"
+	b="$(echo "$ipaddr" | ${AWK_TOOL} -F . '{print $2}')"
+	c="$(echo "$ipaddr" | ${AWK_TOOL} -F . '{print $3}')"
+	d="$(echo "$ipaddr" | ${AWK_TOOL} -F . '{print $4}')"
 	for num in $a $b $c $d; do
 		if [ "$num" -gt 255 ] || [ "$num" -lt 0 ]; then
 			return 1
@@ -1159,7 +1159,7 @@ main() {
 	get_auth_state
 
 	if [ "$AUTH_STATE" = '2' ]; then
-		logcat "Good! You are authed!"
+		logcat "Good! You are already authed!"
 		if [ $ISQUIT ]; then
 			LOGOUT_RTE="$(gw_logout)"
 			LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
