@@ -26,7 +26,7 @@ MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
 PRE_BUILD_TOKEN_NUM=2
 
 TOKEN_BUILD_SPEED=30
-MAX_TOKEN_LIST_LEN=6 # the max size of token pool
+MAX_TOKEN_LIST_LEN=3 # the max size of token pool
 
 # do not edit
 TOKEN_IOTA=0
@@ -1249,7 +1249,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 
 		local iota=1
 		local data_iota=0
-		local fail_iota=0
+		local fail_iota=1
 
 		while true; do
 			sleep $HEART_BEAT
@@ -1265,8 +1265,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 				auth_token_magic
 			}
 
-			[ $iota -le $PRE_BUILD_TOKEN_NUM ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
-
+			# broken heart
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
 				logcat "Will try again after $BANNED_WAIT_TIME seconds..."
@@ -1276,22 +1275,14 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 			}
 
 			[ $ISLOG ] && {
-				echo "iota: $iota"
-				echo "data_iota: $data_iota"
-				echo "fail_iota: $fail_iota"
-			}
-
-			[ $ISLOG ] && {
 				echo "TOKEN POOL: $AUTH_TOKEN_LIST"
 				echo "INFO POOL: $AUTH_INFO_LIST"
 				echo "POOL SIZE: $TOKEN_IOTA"
 			}
 
-			[ $IS_MAGIC_PRO -gt 1 ] && {
-				[ $ONLINE_TIME -ge $MAGIC_PRO_TIME ] && {
-					auth_token_magic
-				}
-			}
+
+			[ $iota -le $PRE_BUILD_TOKEN_NUM ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
+
 
 			[ $data_iota -ge $TOKEN_BUILD_SPEED ] && {
 				do_auth
@@ -1308,7 +1299,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 					}
 
 					TOKEN_IOTA=$((TOKEN_IOTA + 1))
-					data_iota=0
+					data_iota=1
 				}
 
 				# max AUTH_TOKEN_LIST limit
@@ -1331,6 +1322,8 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 
 					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN - 1))
 				}
+			
+			
 			}
 
 		done
