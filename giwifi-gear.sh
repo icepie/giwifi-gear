@@ -548,7 +548,7 @@ get_auth_state() {
 
 auth_token_magic() {
 
-	[ "$AUTH_TOKEN_LIST" ] && {
+	[ $TOKEN_IOTA -gt 0 ] && {
 		logcat "Trying to make magic..."
 
 		AUTH_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $1}')"
