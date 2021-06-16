@@ -13,7 +13,7 @@ AUTH_TOKEN=''
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
-HEART_BEAT=5
+HEART_BEAT=6
 HEART_BROKEN_TIME=10
 
 AUTH_IFACE=''       # the base interface (get auth info)
@@ -579,6 +579,16 @@ auth_token_magic() {
 
 	} || logcat "No energy to make magic!" 'E'
 
+}
+
+log_out() {
+	LOGOUT_RTE="$(gw_logout)"
+	LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
+	[ "$LOGOUT_RTE_CODE" = '0' ] && {
+		logcat "Successfully logged out!"
+	} || {
+		logcat "Fail to logout!" 'E'
+	}
 }
 
 web_build_data() {
@@ -1161,12 +1171,20 @@ main() {
 	if [ "$AUTH_STATE" = '2' ]; then
 		logcat "Good! You are already authed!"
 		if [ $ISQUIT ]; then
-			LOGOUT_RTE="$(gw_logout)"
-			LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
-			([ "$LOGOUT_RTE_CODE" = '0' ] && logcat "Successfully logged out!") || logcat "Fail to logout!" "E"
+			log_out
 			exit 0
 		fi
-		[ ! $ISDAEMON ] && logcat "exit" && exit 0
+
+		[ ! $ISDAEMON ] && {
+			logcat "exit"
+			exit 0
+		} || {
+			logcat "Will be automatically logged out in 3 seconds!"
+			sleep 3
+			log_out
+			sleep 3
+		}
+
 	fi
 
 	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 0
@@ -1185,6 +1203,8 @@ main() {
 	fi
 
 	do_auth
+
+	get_auth_state
 
 	[ "$AUTH_TOKEN" ] && {
 		logcat "Successfully get the token! ($AUTH_TOKEN)"
@@ -1258,7 +1278,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 
 			[ "$AUTH_STATE" = '2' ] && {
 				logcat "Heartbeat: $iota" && iota=$((iota + 1))
-				logcat "Online Time: $(displaytime $ONLINE_TIME)"
+				logcat "Online Time: $(displaytime "$ONLINE_TIME")"
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
 				logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1))
