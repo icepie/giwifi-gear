@@ -13,7 +13,7 @@ AUTH_TOKEN=''
 
 SERVICE_TYPE='1' # 1: GiWiFi用户 2: 移动用户 3: 联通用户 4: 电信用户
 
-HEART_BEAT=6
+HEART_BEAT=5
 HEART_BROKEN_TIME=10
 
 AUTH_IFACE=''       # the base interface (get auth info)
@@ -1179,15 +1179,15 @@ main() {
 			logcat "exit"
 			exit 0
 		} || {
-			logcat "Will be automatically logged out in 3 seconds!"
-			sleep 3
+			logcat "Will be automatically logged out after $HEART_BEAT seconds!"
+			sleep $HEART_BEAT
 			log_out
-			sleep 3
+			sleep $HEART_BEAT
 		}
 
 	fi
 
-	[ $ISQUIT ] && logcat "You do not need to logout!" "E" && exit 0
+	[ $ISQUIT ] && logcat "You do not need to logout!" 'E' && exit 0
 
 	if [ ! "$AUTH_TYPE" = 'token' ]; then
 		[ ! "$GW_USER" ] && {
@@ -1279,6 +1279,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 			[ "$AUTH_STATE" = '2' ] && {
 				logcat "Heartbeat: $iota" && iota=$((iota + 1))
 				logcat "Online Time: $(displaytime "$ONLINE_TIME")"
+				fail_iota=0
 				# AUTH_TOKEN_RTE="$(gw_auth_token "$AUTH_TOKEN")"
 			} || {
 				logcat "Heartache: $fail_iota" 'E' && fail_iota=$((fail_iota + 1))
