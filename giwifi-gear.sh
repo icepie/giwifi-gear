@@ -520,6 +520,7 @@ get_auth_state() {
 	[ ! "$AUTH_STATE_RTE" ] && {
 		logcat "Fail to get the auth state! (visit https://blog.icepie.net/project/giwifi-gear for more info)" "E"
 		[ ! $ISDAEMON ] && exit 1
+		return 1
 	} || {
 		[ $ISLOG ] && echo "" &&
 			echo "AUTH_STATE_RTE:" &&
@@ -543,6 +544,7 @@ get_auth_state() {
 		# ORG_ID="$(get_json_value "$AUTH_STATE_DATA" 'orgId')"
 		# TIMESTAMP="$(get_json_value "$AUTH_STATE_DATA" 'timestamp')"
 		SIGN="$(get_json_value "$AUTH_STATE_DATA" 'sign')"
+		return 0
 	}
 }
 
@@ -1204,7 +1206,12 @@ main() {
 
 	do_auth
 
-	get_auth_state
+	sleep $HEART_BEAT
+
+	# reacquire details
+	while get_auth_state; do
+		break
+	done
 
 	[ "$AUTH_TOKEN" ] && {
 		logcat "Successfully get the token! ($AUTH_TOKEN)"
@@ -1274,7 +1281,10 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 		while true; do
 			sleep $HEART_BEAT
 
-			get_auth_state
+			# Reacquire details
+			while get_auth_state; do
+				break
+			done
 
 			[ "$AUTH_STATE" = '2' ] && {
 				logcat "Heartbeat: $iota" && iota=$((iota + 1))
