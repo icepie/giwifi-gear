@@ -163,14 +163,11 @@ get_os_type() {
 get_nic_gateway() {
 	# get_nic_gateway <nic_name>
 
-	local OS
 	local gateway
-
-	OS="$(get_os_type)"
 
 	if [ "$OS" == 'windows' ]; then
 		gateway="$(chcp.com 437 >/dev/null && netsh interface ip show address "$1" 2>/dev/null | grep 'Default Gateway' | ${AWK_TOOL} '{print $3}')"
-	elif [ "$OS" == 'linux' ] || [ "$os" == 'android' ]; then
+	elif [ "$OS" == 'linux' ] || [ "$OS" == 'android' ]; then
 		gateway="$(ip route list match 0 table all scope global 2>/dev/null | grep 'proto' | grep "$1" | ${AWK_TOOL} '{print $3}')"
 	elif [ "$OS" == 'darwin' ]; then
 		gateway="$(netstat -rn 2>/dev/null | grep 'default' | grep "$1" | ${AWK_TOOL} '{print $2}')"
@@ -987,12 +984,30 @@ init() {
 
 	OS="$(get_os_type)"
 	# check dep
-	hash curl 2>/dev/null || {
-		echo 'Error: curl is not installed.' >&2
-		exit 1
-	}
-	hash openssl 2>/dev/null || { ISNOSSL=1; }
-	hash gawk 2>/dev/null && { AWK_TOOL='gawk'; }
+
+	if [ $OS = 'android' ]; then
+
+		[ -x "$(command -v curl)" ] || {
+			logcat 'Error: curl is not installed.' 'E'
+			exit 1
+		}
+
+		[ -x "$(command -v openssl)" ] || ISNOSSL=1
+
+		[ -x "$(command -v gawk)" ] && AWK_TOOL='gawk'
+
+	else
+
+		hash curl 2>/dev/null || {
+			logcat 'Error: curl is not installed.' 'E'
+			exit 1
+		}
+
+		hash openssl 2>/dev/null || { ISNOSSL=1; }
+
+		hash gawk 2>/dev/null && { AWK_TOOL='gawk'; }
+
+	fi
 
 }
 
@@ -1069,11 +1084,6 @@ main() {
 		echo "TOOL_PATH:" &&
 		echo "--> $0" &&
 		echo ''
-
-	if [ $ISNOSSL ] && [ ! $AUTH_MODE = 'web' ]; then
-		logcat 'openssl is not installed. you can only use the web auth type (staff/pc/pad)!' 'E'
-		exit 1
-	fi
 
 	# check the conflicting parameters
 	if ([ $ISBIND ] && [ $ISQUIT ]) || ([ $ISBIND ] && [ $ISDAEMON ]) || ([ $ISQUIT ] && [ $ISDAEMON ]); then
@@ -1153,6 +1163,12 @@ main() {
 		exit 1
 		;;
 	esac
+
+
+	[ $ISNOSSL ] && [ ! $AUTH_MODE = 'web' ] && {
+		logcat 'openssl is not installed. you can only use the web auth type (staff/pc/pad)!' 'E'
+		exit 1
+	}
 
 	[ $ISLOG ] &&
 		echo "AUTH_UA:" &&
