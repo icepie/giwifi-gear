@@ -586,6 +586,12 @@ auth_token_magic() {
 log_out() {
 	LOGOUT_RTE="$(gw_logout)"
 	LOGOUT_RTE_CODE="$(get_json_value "$LOGOUT_RTE" 'resultCode')"
+
+	[ $ISLOG ] && echo "" &&
+		echo "LOGOUT_RTE" &&
+		echo "--> $LOGOUT_RTE" &&
+		echo ''
+
 	[ "$LOGOUT_RTE_CODE" = '0' ] && {
 		logcat "Successfully logged out!"
 	} || {
