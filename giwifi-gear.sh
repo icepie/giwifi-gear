@@ -23,10 +23,10 @@ GW_PORT='8060'
 
 IS_MAGIC_PRO=0     # 0: disable 1: enable
 MAGIC_PRO_TIME=240 # will make magic when ${MAGIC_PRO_TIME} > $(ONLINE_TIME)
-PRE_BUILD_TOKEN_NUM=2
+PRE_BUILD_TOKEN_NUM=2 # the number of getting tokens after fisrt auth
 
 TOKEN_BUILD_SPEED=30
-MAX_TOKEN_LIST_LEN=6 # the max size of token pool
+MAX_TOKEN_LIST_LEN=5 # the max size of token pool
 
 # do not edit
 TOKEN_IOTA=0
@@ -564,9 +564,9 @@ auth_token_magic() {
 		TOKEN_IOTA=$((TOKEN_IOTA - 1))
 
 		[ $ISLOG ] && {
-			echo "DEL TOKEN: $AUTH_TMP_TOKEN"
+			echo "DEL TOKEN: $AUTH_TOKEN"
 			[ "$AUTH_INFO" ] && {
-				echo "DEL INFO: $AUTH_TMP_INFO"
+				echo "DEL INFO: $AUTH_INFO"
 			}
 		}
 
@@ -1296,7 +1296,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 				auth_token_magic
 			}
 
-			[ $iota -le $PRE_BUILD_TOKEN_NUM ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
+			[ $iota -le $((PRE_BUILD_TOKEN_NUM + 1)) ] && data_iota=$TOKEN_BUILD_SPEED || data_iota=$((data_iota + 1))
 
 			[ $fail_iota -gt $HEART_BROKEN_TIME ] && {
 				logcat "My heart is broken!" 'E'
@@ -1343,13 +1343,13 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 				}
 
 				# max AUTH_TOKEN_LIST limit
-				[ $TOKEN_IOTA -ge $MAX_TOKEN_LIST_LEN ] && {
+				[ $TOKEN_IOTA -ge $((MAX_TOKEN_LIST_LEN + 1)) ] && {
 
-					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} "{print $$MAX_TOKEN_LIST_LEN}")"
+					AUTH_TMP_TOKEN="$(echo $AUTH_TOKEN_LIST | ${AWK_TOOL} '{print $NF}')"
 					AUTH_TOKEN_LIST=${AUTH_TOKEN_LIST%" $AUTH_TMP_TOKEN"}
 
 					[ "$AUTH_INFO" ] && {
-						AUTH_TMP_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} "{print $$MAX_TOKEN_LIST_LEN}")"
+						AUTH_TMP_INFO="$(echo $AUTH_INFO_LIST | ${AWK_TOOL} '{print $NF}')"
 						AUTH_INFO_LIST=${AUTH_INFO_LIST%" $AUTH_TMP_INFO"}
 					}
 
@@ -1360,7 +1360,7 @@ Logged:           $([ "$AUTH_STATE" = '2' ] && echo 'yes' || echo 'no')
 						}
 					}
 
-					TOKEN_IOTA=$((MAX_TOKEN_LIST_LEN - 1))
+					TOKEN_IOTA=$MAX_TOKEN_LIST_LEN
 				}
 			}
 
