@@ -1190,7 +1190,10 @@ main() {
 		echo "--> $(gw_get_hotspot_group)" &&
 		echo ''
 
-	get_auth_state
+	# reacquire details
+	while get_auth_state; do
+		break
+	done
 
 	if [ "$AUTH_STATE" = '2' ]; then
 		logcat "Good! You are already authed!"
@@ -1261,7 +1264,10 @@ main() {
 			TOKEN_IOTA=$((TOKEN_IOTA + 1))
 		}
 
-		get_auth_state
+		# reacquire details
+		while get_auth_state; do
+			break
+		done
 
 		# clear screen
 		[ ! $ISLOG ] && { clear || cls; }
