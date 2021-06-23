@@ -101,7 +101,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
-VERSION='1.2.5'
+VERSION='1.2.6'
 
 #############################################
 ## Network Util
