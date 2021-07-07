@@ -1,3 +1,4 @@
 *.py
 connect.log
 test.sh
+*.pkg.tar.zst
