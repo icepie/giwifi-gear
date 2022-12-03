@@ -1,6 +1,6 @@
 # Maintainer: Tea <icepie.dev@gmail.com>
 pkgname=giwifi-gear.sh
-pkgver=1.3.1
+pkgver=1.3.2
 pkgrel=1
 pkgdesc="A UNIX shell command line interpreter tool for giwifi"
 arch=('any')
@@ -23,7 +23,7 @@ install=
 changelog=
 source=($pkgname)
 noextract=()
-sha256sums=('13bfbd6d93f74fab3794bba53669e4354eb9b7804679f777537288924d0f6c41')
+sha256sums=('SKIP')
 
 build() {
     ls -al

@@ -101,7 +101,7 @@ MOBILE_APP_VERSION='2.4.1.4'
 #############################################
 
 AWK_TOOL='awk' # it will be upgrade to gawk, when you have gawk...
-VERSION='1.3.1'
+VERSION='1.3.2'
 
 #############################################
 ## Network Util
@@ -992,7 +992,7 @@ get_user_info() {
 	echo "--> $MOBILE_GET_USER_DATA" &&
 	echo ''
 
-	MOBILE_GET_USER_RTE="$(gw_mobile_get_user "$MOBILE_GET_USER_DATA")"
+	MOBILE_GET_USER_RTE="$(printf "$(printf "$(gw_mobile_get_user $MOBILE_GET_USER_DATA)")" | sed "s@\\\\@@g")"
 	MOBILE_GET_USER_RTE_CODE="$(str_str "$MOBILE_GET_USER_RTE" '"resultCode":' ',')"
 	MOBILE_GET_USER_RTE_MSG="$(str_str "$(printf $MOBILE_GET_USER_RTE)" '"resultMsg":"' '",')"
 	MOBILE_GET_USER_RTE_DATA="$(get_json_value "$MOBILE_GET_USER_RTE" 'data')"
