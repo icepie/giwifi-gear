@@ -21,7 +21,7 @@ $ ./giwifi-gear.sh -h
 giwifi-gear.sh
   A cli tool for login giwifi by cloud auth mode (multi-platform, fast, small)
 usage:
-  giwifi-gear.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-q] [-b] [-d] [-l] [-v]
+  giwifi-gear.sh [-h] [-g <GATEWAY>] [-u <USERNAME>] [-p <PASSWORD>] [-t <TYPE>] [-T <TOKEN>] [-i <IFACE>] [-e <EXTRA_IFACE>] [-I] [-B] [-R] [-q] [-b] [-d] [-l] [-v]
 optional arguments:
   -h                    show this help message and exit
   -g <GATEWAY>          set the gateway
@@ -33,10 +33,13 @@ optional arguments:
   -T <TOKEN>            set the token (need to use -t token)
   -b                    bind or rebind your device
   -q                    sign out of account authentication
+  -I                    show more user info and host group info
+  -B                    get the rebind mac counts
+  -R					get the online records (raw data, within 6 months?)
   -d                    running in the daemon mode (remove sharing restrictions)
   -l                    print the log info
   -v                    show the tool version and exit
-(c) 2021 icepie.dev@gmail.com
+(c) 2020-2022 icepie.dev@gmail.com
 ```
 
 ## example
@@ -64,3 +67,5 @@ quit auth
 ```bash
 $ giwifi-gear.sh -g 172.21.1.1 -q
 ```
+
+and more...
