@@ -10,7 +10,8 @@ VERSION=0.2
 
 GW_USER=""
 GW_PWD=""
-GW_URL="210.44.64.60"
+GW_URL="10.189.1.3"
+GW_IF="macvlan1"
 
 # you need to config the crypto tool path
 # go: https://github.com/icepie/giwifi-gear/releases/tag/crypto-go-beta1
@@ -48,6 +49,18 @@ url_decode() {
 
 }
 
+displaytime() {
+	local T=$1
+	local D=$((T / 60 / 60 / 24))
+	local H=$((T / 60 / 60 % 24))
+	local M=$((T / 60 % 60))
+	local S=$((T % 60))
+	[ $D -gt 0 ] && printf '%d days ' $D
+	[ $H -gt 0 ] && printf '%d hours ' $H
+	[ $M -gt 0 ] && printf '%d minutes ' $M
+	[ $S -ge 0 ] && printf '%d seconds\n' $S
+}
+
 #############################################
 ## string handle
 #############################################
@@ -83,7 +96,7 @@ logcat() {
         fi
 
         if [ "$1" ]; then
-                echo "$time" "$flag": "$1"
+                echo -e "$time" "$flag": "$1"
         fi
 }
 
@@ -156,7 +169,17 @@ gw_mix_crypto() {
 }
 
 gw_get_login_page() {
-    printf '%s' "$(curl -s -L -A "$PC_UA" "http://$1/gportal/web/login" | grep 'name=')"
+    printf '%s' "$(curl -s -L --interface $GW_IF -A "$PC_UA" "http://$1/gportal/web/login" | grep 'name=')"
+}
+
+gw_query_auth_state() {
+    printf '%s' "$(curl -s \
+		-A "$PC_UA" \
+        --interface $GW_IF \
+		-X POST \
+		-d "$1" \
+		"http://$GW_URL/gportal/web/queryAuthState"
+	)"
 }
 
 gw_loginaction() {
@@ -166,30 +189,31 @@ gw_loginaction() {
 
 	printf '%s' "$(curl -s \
 		-A "$PC_UA" \
+        --interface $GW_IF \
 		-X POST \
 		-d "$1" \
 		"http://$GW_URL/gportal/web/authLogin?round=$rannum"
 	)"
 }
 
+login() {
+    # get the login page
+    GW_LOGIN_PAGE="$(gw_get_login_page $GW_URL)"
 
-# get the login page
-GW_LOGIN_PAGE="$(gw_get_login_page $GW_URL)"
+    # get params form the login page
+    GW_NAS_NAME="$(str_str "$GW_LOGIN_PAGE" 'name="nasName" value="' '"')"
+    GW_NAS_IP="$(str_str "$GW_LOGIN_PAGE" 'name="nasIp" value="' '"')"
+    GW_USER_IP="$(str_str "$GW_LOGIN_PAGE" 'name="userIp" value="' '"')"
+    GW_USER_MAC="$(str_str "$GW_LOGIN_PAGE" 'id="userMac" value="' '"')"
+    GW_SSID="$(str_str "$GW_LOGIN_PAGE" 'name="ssid" value="' '"')"
+    GW_AP_MAC="$(str_str "$GW_LOGIN_PAGE" 'name="apMac" value="' '"')"
+    GW_PID="$(str_str "$GW_LOGIN_PAGE" 'name="pid" value="' '"')"
+    GW_VLAN="$(str_str "$GW_LOGIN_PAGE" 'name="vlan" value="' '"')"
+    GW_SIGN="$(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"')"
+    GW_IV="$(str_str "$GW_LOGIN_PAGE" 'id="iv" value="' '"')"
 
-# get params form the login page
-GW_NAS_NAME="$(str_str "$GW_LOGIN_PAGE" 'name="nasName" value="' '"')"
-GW_NAS_IP="$(str_str "$GW_LOGIN_PAGE" 'name="nasIp" value="' '"')"
-GW_USER_IP="$(str_str "$GW_LOGIN_PAGE" 'name="userIp" value="' '"')"
-GW_USER_MAC="$(str_str "$GW_LOGIN_PAGE" 'id="userMac" value="' '"')"
-GW_SSID="$(str_str "$GW_LOGIN_PAGE" 'name="ssid" value="' '"')"
-GW_AP_MAC="$(str_str "$GW_LOGIN_PAGE" 'name="apMac" value="' '"')"
-GW_PID="$(str_str "$GW_LOGIN_PAGE" 'name="pid" value="' '"')"
-GW_VLAN="$(str_str "$GW_LOGIN_PAGE" 'name="vlan" value="' '"')"
-GW_SIGN="$(str_str "$GW_LOGIN_PAGE" 'name="sign" value="' '"')"
-GW_IV="$(str_str "$GW_LOGIN_PAGE" 'id="iv" value="' '"')"
-
-# nasName=WFXY_NE40E-X8_GateWay_01&nasIp=&userIp=100.65.5.150&userMac=&ssid=&apMac=&pid=20&vlan=&sign=x55KxWFCzAjljfemHhSdI%252B%252FKDtIOOwt6gmiARCrIC%252BA6ithbMIml7022fXxzhl24X3T1CsfsZ%252Bajyc%252BiNT%252FM6A%253D%253D&iv=f86ce181a5dd74b5&name=&password=
-GW_LOGIN_RAW_DATA="""\
+    # nasName=WFXY_NE40E-X8_GateWay_01&nasIp=&userIp=100.65.5.150&userMac=&ssid=&apMac=&pid=20&vlan=&sign=x55KxWFCzAjljfemHhSdI%252B%252FKDtIOOwt6gmiARCrIC%252BA6ithbMIml7022fXxzhl24X3T1CsfsZ%252Bajyc%252BiNT%252FM6A%253D%253D&iv=f86ce181a5dd74b5&name=&password=
+    GW_LOGIN_RAW_DATA="""\
 nasName="$GW_NAS_NAME"\
 &nasIp="$GW_NAS_IP"\
 &userIp="$GW_USER_IP"\
@@ -204,15 +228,48 @@ nasName="$GW_NAS_NAME"\
 &password="$GW_PWD"\
 """
 
-echo "$GW_LOGIN_RAW_DATA \
-"
+    echo "$GW_LOGIN_RAW_DATA \
+    "
 
-# use giwifi-mix-crypto to build the login data
-GW_LOGIN_DATA="data="$(url_encode "$(gw_mix_crypto "$GW_LOGIN_RAW_DATA" '1234567887654321' "$GW_IV")")"&iv="$GW_IV""
+    # use giwifi-mix-crypto to build the login data
+    GW_LOGIN_DATA="data="$(url_encode "$(gw_mix_crypto "$GW_LOGIN_RAW_DATA" '1234567887654321' "$GW_IV")")"&iv="$GW_IV""
 
-echo $GW_LOGIN_DATA
+    echo $GW_LOGIN_DATA
 
-GW_LOGIN_RTE="$(gw_loginaction "$GW_LOGIN_DATA")"
-## {"data":{"resultCode":2,"reasoncode":1},"info":"u7ec8u7aefu5df2u8ba4u8bc1","status":0}
+    GW_LOGIN_RTE="$(gw_loginaction "$GW_LOGIN_DATA")"
+    ## {"data":{"resultCode":2,"reasoncode":1},"info":"u7ec8u7aefu5df2u8ba4u8bc1","status":0}
+    GW_LOGIN_CODE="$(get_json_value "$GW_LOGIN_RTE" 'resultCode')"
+    GW_LOGIN_INFO="$(str_str "$GW_LOGIN_RTE" 'info":"' '",')"
+}
 
-echo $GW_LOGIN_RTE
+# echo -e $GW_LOGIN_CODE
+
+login
+
+if [ "$GW_LOGIN_CODE" != '0' ]; then
+    logcat $GW_LOGIN_INFO E
+    exit 1
+fi
+
+logcat $GW_LOGIN_INFO
+
+
+i=1
+while :; do
+    sleep $HEART_BEAT
+    echo "Heartbeat: $i" && i=$((i+1))
+    # use double printf to handel unicode
+    GW_STATUS=$(gw_query_auth_state "userIp=$GW_USER_IP" )
+    GW_STATUS_CODE=$(get_json_value "$GW_STATUS" 'authState')
+    GW_ONLINE_TIME=$(get_json_value "$GW_STATUS" 'onlineTime')
+    if [ "$GW_STATUS_CODE" != '2' ]; then
+        login
+        if [ "$GW_LOGIN_CODE" != '0' ]; then
+            logcat $GW_LOGIN_INFO E
+        fi
+        logcat $GW_LOGIN_INFO 
+    else    
+        logcat "Online Time: $(displaytime "$GW_ONLINE_TIME")" 
+    fi
+done
+
